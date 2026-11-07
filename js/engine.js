@@ -172,6 +172,7 @@ const tshort=x=>TEAM(x.team).short;
 function startAttack(S,x,I,dur){
  x.intent='attack';x.I=I;x.atkUntil=S.t+dur;
  S.attacks.push({id:x.id,cl:x.cl,t:S.t});
+ for(const y of S.riders)if(y.isMe&&y.order==='copri'&&y.cl===x.cl&&y.team!==x.team&&!y.finished&&y.intent!=='attack')coverCheck(S,y);
  const k2g=S.len-x.pos;
  if(x.isMe)slog(S,`Scatta ${x.r.name}!`,true);
  else if((k2g<35||x.role==='lead')&&S.t-S.lastAtkLog>40&&S.breakFormed){S.lastAtkLog=S.t;slog(S,`Attacco di ${x.r.name} (${tshort(x)})`)}
@@ -217,8 +218,15 @@ function escort(S,x){
  }else if(x.pos>cap.pos){x.intent='ease';x.easeI=0.35}
  else{x.intent='pull';x.I=0.95}
 }
+function coverCheck(S,x){
+ for(const a of S.attacks){const at=S.byId[a.id];
+  if(a.cl!==x.cl||at===x||at.team===x.team||S.t-a.t>40||at.intent!=='attack'||at.finished)continue;
+  if(x.W>0.2*x.Wmax&&x.E>10){x.intent='follow';x.followId=at.id;slog(S,`${x.r.name} risponde allo scatto di ${at.r.name}`,true);return}
+ }
+ x.intent='sit';
+}
 function applyOrder(S,x){
- switch(x.order){case'ruota':x.intent='sit';break;case'tira':x.intent='pull';x.I=0.9;break;case'scorta':escort(S,x);break}
+ switch(x.order){case'ruota':x.intent='sit';break;case'copri':coverCheck(S,x);break;case'tira':x.intent='pull';x.I=0.9;break;case'scorta':escort(S,x);break}
 }
 function decide(S,x){
  if(x.finished||x.stop>0||x.intent==='sprint')return;
@@ -318,6 +326,15 @@ function tick(S){
   }
  }
  for(const x of act){
+  if(x.stop>0||x.finished)continue;
+  const i=gi(S,x.pos);let pc=1.2e-6;
+  if(c.surf[i])pc*=6;if(c.g[i]<-5)pc*=4;if(x.cl&&x.cl.rs.length>30)pc*=1.5;if(S.len-x.pos<0.6&&x.cl&&x.cl.rs.length>10)pc*=25;
+  if(R()<pc){const roll=R();
+   if(roll<0.1){x.dnf=true;x.finished=true;x.inj=rint(2,6);x.v=0;x.P=0;slog(S,`Caduta: ${x.r.name} (${tshort(x)}) si ritira`,x.isMe)}
+   else{x.stop=rint(3,10);if(roll<0.3)x.inj=rint(1,2);if(x.isMe||x.role==='lead')slog(S,`Caduta per ${x.r.name} (${tshort(x)})${x.inj?': si rialza dolorante':''}`,x.isMe)}}
+ }
+ for(const x of act){
+  if(x.finished)continue;
   if(x.stop>0){x.stop--;x.v=0;x.P=0;continue}
   const sf=c.surf[gi(S,x.pos)];
   if(R()<4e-6*(sf?9:1)&&S.len-x.pos>3){x.stop=rint(4,8);x.v=0;x.P=0;
@@ -362,6 +379,7 @@ function tick(S){
   }
  }
  for(const x of act){
+  if(x.dnf)continue;
   const fe=ftpE(x);
   if(x.P>fe)x.W-=(x.P-fe)*dt;else x.W=Math.min(x.Wmax,x.W+(fe-x.P)*dt*0.3);
   if(x.W<0)x.W=0;

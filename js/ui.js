@@ -45,7 +45,7 @@ function render(){
 function renderTop(){
  const d=weekDate(G.week);
  $('#top').innerHTML=`<div class="wrap topin"><div class="crest">${myJersey(34)}</div>
-  <div style="min-width:0"><div class="tn">${esc(G.name)}</div><div class="sub"><span class="chip cat">${myCat().lab}</span> ${G.phase==='season'?`Sett. ${G.week} · ${d.getDate()} ${MESI[d.getMonth()]} ${SEASON}`:`Fine stagione ${SEASON}`}<span class="hide-s">· ${esc(G.sede.city)}${mainSponsor()?' · '+esc(mainSponsor().name):''}</span></div></div>
+  <div style="min-width:0"><div class="tn">${esc(G.name)}</div><div class="sub"><span class="chip cat">${myCat().lab}</span> ${G.phase==='season'?`Sett. ${G.week} · ${d.getDate()} ${MESI[d.getMonth()]} ${SEASON}`:`Fine stagione ${SEASON}`}<span class="hide-s">· ${esc(G.sede.city)}</span></div></div>
   <div class="hud"><div><small>Cassa</small><b class="${G.cash<0?'neg':''}">${eurk(G.cash)}</b></div><div><small>Reputazione</small><b>${Math.round(G.rep)}</b></div><div class="hide-s"><small>Sponsor</small><b>${sponsorSat()}%</b></div></div>
   <button class="iconbtn" data-act="fullscreen" aria-label="Schermo intero">${ic('full',20)}</button></div>`;
 }
@@ -199,14 +199,16 @@ function riderCard(r){
    <div class="tags"><span class="chip ${r.age<=22?'u23':''}">${catOf(r)}</span>${r.neo?'<span class="chip">1° anno</span>':''}<span>${ARCH[r.arch].lab} · ${r.age} anni · ${r.nat}</span></div></div>
   <div class="rr2"><span class="cond" style="--c:${c.c}">${c.t}</span><small>${r.days} gg</small></div>
   ${statRow(r)}
-  <div class="cline">${camp?'<span class="chip amber">In altura</span>':''}${ae>0?`<span class="chip amber">Altura +${(ae*100).toFixed(1)}%</span>`:''}${contractLine(r)}</div>
+  <div class="cline">${injured(r)?`<span class="chip red">Infortunato fino al ${weekLab(r.injUntil)}</span>`:r.injRec&&G.week<=r.injRec?'<span class="chip amber">Rientro: recupero lento</span>':''}${recDays(r)?`<span class="chip">Recupero ~${recDays(r)} gg</span>`:''}${camp?'<span class="chip amber">In altura</span>':''}${ae>0?`<span class="chip amber">Altura +${(ae*100).toFixed(1)}%</span>`:''}${contractLine(r)}</div>
  </button>`;
 }
 function renderTeam(){
  const rs=ME().riders.map(RID);
  const u=rs.filter(r=>r.age<=22).sort((a,b)=>ovr(b)-ovr(a)),e=rs.filter(r=>r.age>22).sort((a,b)=>ovr(b)-ovr(a));
  const inc=incoming();
- $('#view').innerHTML=`<div class="kv kv4"><div><small>Corridori</small><b>${rs.length}/${myCat().max}</b></div><div><small>Monte ingaggi</small><b>${eurk(payroll())}</b></div><div><small>Giorni di gara</small><b>${rs.reduce((a,r)=>a+r.days,0)}</b></div><div><small>Vittorie</small><b>${rs.reduce((a,r)=>a+r.wins,0)}</b></div></div>
+ const ms=mainSponsor();
+ $('#view').innerHTML=`<div class="teamhead">${myJersey(46)}<div style="min-width:0"><div class="eyebrow">Nome ufficiale ${SEASON} · ${myCat().lab} · ${esc(G.sede.city)}</div><h2 class="teamname">${ms?`<span class="msp">${esc(ms.name)}</span> `:''}${esc(G.name)}</h2></div></div>
+ <div class="kv kv4"><div><small>Corridori</small><b>${rs.length}/${myCat().max}</b></div><div><small>Monte ingaggi</small><b>${eurk(payroll())}</b></div><div><small>Giorni di gara</small><b>${rs.reduce((a,r)=>a+r.days,0)}</b></div><div><small>Vittorie</small><b>${rs.reduce((a,r)=>a+r.wins,0)}</b></div></div>
   <div class="note" style="margin:8px 0 14px">SAL salita · PIA pianura · CRO cronometro · VOL volata · RES resistenza · REC recupero. Programma consigliato 50–70 giorni di corsa.</div>
   <div class="sec"><div class="sec-h"><h2>Under 23</h2><span class="eyebrow">19–22 anni</span></div><div class="cols">${u.map(riderCard).join('')||'<div class="note">Nessun Under 23.</div>'}</div></div>
   <div class="sec"><div class="sec-h"><h2>Elite</h2><span class="eyebrow">23 anni e oltre</span></div><div class="cols">${e.map(riderCard).join('')}</div></div>
@@ -224,7 +226,7 @@ function riderSheet(id){
   <div><small>Peso</small><b>${r.mass.toFixed(1)}</b> kg</div><div><small>Volata</small><b>${r.spr}</b> W</div><div><small>Potenziale</small><b style="font-size:16px;color:var(--amber)">${pot}</b></div></div>
   <div class="card pad">${statRow(r)}</div>
   <div class="card pad two"><div><div class="eyebrow">Condizione</div><div class="cond" style="--c:${c.c};margin-top:4px">${c.t}</div>${altEff(r,G.week)>0?`<div class="note">Effetto altura +${(altEff(r,G.week)*100).toFixed(1)}%</div>`:''}${camp?`<div class="note">In ritiro: ${weekLab(camp.from)}–${weekLab(camp.to)}</div>`:''}</div>
-   <div><div class="eyebrow">Fatica · giorni</div><div class="bar f" style="margin-top:6px"><i style="width:${r.fat}%"></i></div><div class="note">${Math.round(r.fat)}/100 · ${r.days} giorni di corsa</div></div></div>
+   <div><div class="eyebrow">Fatica · giorni</div><div class="bar f" style="margin-top:6px"><i style="width:${r.fat}%"></i></div><div class="note">${Math.round(r.fat)}/100 · ${recDays(r)?`recupero completo in ~${recDays(r)} giorni`:'riposato'} · ${r.days} giorni di corsa</div>${injured(r)?`<div class="msg no" style="margin-top:6px">Infortunato fino al ${weekLab(r.injUntil)}</div>`:r.injRec&&G.week<=r.injRec?'<div class="note">Appena rientrato da un infortunio: recupera la fatica più lentamente.</div>':''}</div></div>
  </div><div class="stack">
   ${r.team==='t0'?`<div class="card pad stack"><div class="eyebrow">Contratto</div><div>${eur(r.sal)} l'anno · fino al ${r.cEnd}${r.nextSal?` · dal ${SEASON+1}: ${eur(r.nextSal)}`:''}</div>${r.leavingTo?`<div class="note">Ha firmato con ${esc(TEAM(r.leavingTo).name)} per il ${SEASON+1}.</div>`:''}
    <div class="row">${negMode(r)==='renew'?`<button class="btn primary" data-act="neg" data-v="${r.id}">Rinnova</button>`:''}<button class="btn ghost" data-act="release" data-v="${r.id}">Svincola</button></div></div>`:''}
@@ -443,7 +445,7 @@ function renderConvoca(){
    const why=whyCant(r,race),on=SEL.ids.has(r.id),c=condOf(r),fit=Math.round(avgSuit(r,race)),ae=altEff(r,race.w);
    return`<div class="pick ${why?'off':''}"><input type="checkbox" id="p_${r.id}" data-act="pick" data-v="${r.id}" ${on?'checked':''} ${why?'disabled':''} aria-label="Convoca ${esc(r.name)}">
     <label for="p_${r.id}" style="min-width:0"><div class="nm">${esc(r.name)} <span class="chip ${r.age<=22?'u23':''}">${catOf(r)}</span></div>
-     <div class="sm"><span>${ARCH[r.arch].lab}</span><span class="cond" style="--c:${c.c}">${c.t}</span>${ae>0?`<span class="chip amber">altura +${(ae*100).toFixed(1)}%</span>`:''}<span>fatica ${Math.round(r.fat)}</span><span${r.days>65?' style="color:var(--danger)"':''}>${r.days} gg</span>${why?`<span>· ${why}</span>`:''}</div>
+     <div class="sm"><span>${ARCH[r.arch].lab}</span><span class="cond" style="--c:${c.c}">${c.t}</span>${ae>0?`<span class="chip amber">altura +${(ae*100).toFixed(1)}%</span>`:''}<span>fatica ${Math.round(r.fat)}${recDays(r)?` · recupero ${recDays(r)} gg`:''}</span><span${r.days>65?' style="color:var(--danger)"':''}>${r.days} gg</span>${why?`<span>· ${why}</span>`:''}</div>
      <div class="sm"><span>Adatto</span><div class="bar fit"><i style="width:${fit}%"></i></div><span class="mono">${fit}</span></div></label>
     <button class="star" data-act="cap" data-v="${r.id}" aria-pressed="${SEL.cap===r.id}" ${!on?'disabled':''} title="Capitano">C</button></div>`}).join('')}</div>
   <div class="note" style="margin-top:8px">C = capitano: la squadra lavora per lui. Puoi cambiare gli ordini in corsa.</div></div></div>
@@ -492,17 +494,18 @@ function renderRaceSkeleton(){
   <div class="eyebrow">${esc(RC.race.name)} · ${stageTitle()} · ${TYPE_LAB[c.type]}</div>
   <div class="kmbig"><div class="k" id="k2g">0<small>km all'arrivo</small></div>
    <div class="o"><div>Tempo<b id="rt">0'00"</b></div><div>Media<b id="ravg">—</b></div><div>Pendenza<b id="rgr">0%</b></div></div></div>
+  <div class="nextp" id="nextp"></div>
   <div class="prof"><canvas id="pc"></canvas><button class="chip zoom" data-act="zoom" id="zbtn">Zoom</button></div>
  </div></div>
  <div class="wrap rbody">
   <div><div class="eyebrow">Situazione corsa</div><div class="card groups" id="grps"></div></div>
   <div><div class="eyebrow">Radio corsa</div><div class="card radio" id="radio"></div></div>
  </div></section>
- <section class="rcol rr"><div class="wrap rbody"><div><div class="eyebrow">I tuoi corridori · ordini radio</div><div class="card" id="mine"></div></div></div></section></div>
+ <section class="rcol rr"><div class="wrap rbody"><div><div class="eyebrow">Consigli dell'ammiraglia</div><div class="tips" id="tips"></div></div><div><div class="eyebrow">I tuoi corridori · ordini radio</div><div class="card" id="mine"></div></div></div></section></div>
  <div class="ctrl"><div class="wrap">
   <button class="btn play" data-act="play" id="playb" aria-label="Pausa">❚❚</button>
   <div class="sp" id="spd">${[[25,'1×'],[75,'3×'],[250,'10×']].map(([v,l])=>`<button data-act="speed" data-v="${v}" aria-pressed="${LIVE.speed===v}">${l}</button>`).join('')}</div>
-  <span style="flex:1"></span><button class="btn ghost" data-act="jump">Finale</button><button class="btn ghost" data-act="end">Fine</button>
+  <span style="flex:1"></span><button class="btn ghost" data-act="guide" aria-label="Guida tattica">?</button><button class="btn ghost" data-act="jump">Finale</button><button class="btn ghost" data-act="end">Fine</button>
  </div></div>`;
  renderMine(true);updateRaceUI();
 }
@@ -544,9 +547,11 @@ function updateRaceUI(){
    <div style="min-width:0"><div class="gn">${o.name} <span class="gc">${o.rs.length} corridor${o.rs.length===1?'e':'i'}</span></div>${notable?`<div class="gc">${notable}</div>`:''}</div>
    <div class="gg">${o===gd[0]?'—':fmtGap(o.g)}</div>${mine.length?`<div class="mine">${mine.map(x=>`<span class="chip u23">${esc(rname(x))}</span>`).join('')}</div>`:''}</div>`}).join('')+(gd.length>7?`<div class="grp"><span></span><div class="gc">+ altri ${gd.length-7} gruppetti</div><span></span></div>`:'')+(S.finish.length?`<div class="grp"><span class="dot" style="background:var(--ok)"></span><div class="gn">Arrivati <span class="gc">${S.finish.length}</span></div><span></span></div>`:'');
  renderMine(false);
+ $('#nextp').textContent=nextPoint(S,lead);
+ $('#tips').innerHTML=dsTips(S).map(t=>`<div class="tip ${t.k}">${esc(t.t)}</div>`).join('');
  $('#radio').innerHTML=S.log.slice(-8).reverse().map(l=>`<div><span class="km">${km1(l.km)}</span><span class="${l.me?'me':''}">${esc(l.txt)}</span></div>`).join('')||'<div><span class="km">—</span><span class="muted">Partenza. Il gruppo è compatto.</span></div>';
 }
-const ORD=[['auto','Auto'],['ruota','Ruota'],['tira','Tira'],['scatta','Scatta'],['scorta','Scorta']];
+const ORD=[['auto','Auto'],['ruota','Ruota'],['copri','Copri'],['tira','Tira'],['scatta','Scatta'],['scorta','Scorta']];
 function renderMine(full){
  const S=LIVE.S;if(!S)return;
  const mine=S.byTeam['t0']||[],box=$('#mine'),capId=S.plans['t0']&&S.plans['t0'].lead&&S.plans['t0'].lead.id;
@@ -559,10 +564,11 @@ function renderMine(full){
  for(const x of mine){
   const w=$('#w_'+x.id);if(!w)continue;
   let where;
-  if(x.finished)where=`Arrivato ${ord(S.finish.indexOf(x)+1)}`;
+  if(x.dnf)where='Ritirato dopo una caduta';
+  else if(x.finished)where=`Arrivato ${ord(S.finish.indexOf(x)+1)}`;
   else if(x.stop>0)where='Foratura!';
   else{const g=gd.find(o=>o.rs.includes(x));where=g?`${g.name}${g===gd[0]?'':' '+fmtGap(g.g)}`:''}
-  const it={attack:'scatto',follow:'in scia a uno scatto',pull:'in testa',ease:'si rialza',sprint:'volata'}[x.intent];
+  const it=x.dnf?'ritirato':{attack:'scatto',follow:'risponde a uno scatto',pull:'in testa',ease:'si rialza',sprint:'volata'}[x.intent];
   w.textContent=where+(it&&!x.finished?' · '+it:'');
   $('#be_'+x.id).style.width=x.E+'%';$('#bw_'+x.id).style.width=(x.W/x.Wmax*100)+'%';
   $('#pw_'+x.id).textContent=x.finished?'':Math.round(x.P)+' W';
@@ -629,7 +635,7 @@ function jerLine(j){
 function showFinal(RC){
  const race=RC.race,r=race.result;
  const top=r.top.map((x,i)=>`<tr class="${RID(x.id)&&RID(x.id).team==='t0'?'me':''}"><td class="n">${i+1}</td><td>${esc(x.name)} <span class="tm">${esc(x.team)}</span></td><td class="r">${i===0?fmtT(x.t):fmtGap(x.t-r.top[0].t)}</td></tr>`).join('');
- const mine=r.mine.map(m=>`<tr class="me"><td class="n">${m.pos}</td><td>${esc(m.name)}<div class="tm">${m.km} km in fuga</div></td><td class="r">${m.pts?m.pts+' pt':''}</td></tr>`).join('');
+ const mine=r.mine.map(m=>`<tr class="me"><td class="n">${m.pos>=999?'rit.':m.pos}</td><td>${esc(m.name)}<div class="tm">${m.km} km in fuga</div></td><td class="r">${m.pts?m.pts+' pt':''}</td></tr>`).join('');
  openSheet(sheetHead(`Bilancio · ${race.lab}`,esc(race.name),`${RC.stageRace?'Vincitore finale':'Vincitore'}: <b>${esc(r.winner)}</b> (${esc(r.winnerTeam)})`)+
  `<div class="pb wrap"><div class="kv kv4"><div><small>Punti</small><b>${r.myPts}</b></div><div><small>Premi</small><b>${eurk(r.prize)}</b></div><div><small>Sponsor</small><b class="${r.dS>=0?'pos':'neg'}">${r.dS>=0?'+':''}${r.dS}</b></div><div><small>Reputazione</small><b class="${r.dR>=0?'pos':'neg'}">${r.dR>=0?'+':''}${r.dR}</b></div></div>
   <div class="negbox" style="margin-top:12px"><div><div class="sec-h"><h3>La tua squadra</h3></div><div class="card tbl"><table class="t">${mine}</table></div></div>
@@ -705,6 +711,63 @@ function sponsorSheet(id){
  <div class="pf"><div class="wrap fr"><button class="btn ghost" data-act="close">Chiudi</button>${!c&&!off?`<button class="btn primary" data-act="sppropose" ${sel.st===null||sel.it.p<=0||cooling?'disabled':''}>Proponi la sponsorizzazione</button>`:''}</div></div>`,'wide');
 }
 
+
+/* ---------- consigli dell'ammiraglia e guida tattica ---------- */
+function nextClimb(S,pos){const cs=S.course.climbs;for(let i=0;i<cs.length;i++)if(cs[i].top>pos)return Object.assign({last:i===cs.length-1},cs[i]);return null}
+function nextPoint(S,pos){
+ const c=S.course,out=[];
+ const nc=nextClimb(S,pos);
+ if(nc)out.push({km:Math.max(0,nc.start-pos),t:nc.start>pos?`GPM ${nc.cat==='HC'?'HC':nc.cat+'ª'} ${nc.name} tra ${km1(nc.start-pos)} km (${km1(nc.len)} km al ${nc.avg.toFixed(1).replace('.',',')}%)`:`In salita: ${nc.name}, cima tra ${km1(nc.top-pos)} km`});
+ const i0=gi(S,pos);
+ if(c.surf[i0])out.push({km:0,t:c.surf[i0]===1?'Sul pavé: il gruppo si allunga, rischio cadute e forature':'Sullo sterrato: il gruppo si allunga, rischio forature'});
+ else for(let i=i0;i<c.N;i++)if(c.surf[i]){out.push({km:(i-i0)/10,t:`${c.surf[i]===1?'Pavé':'Sterrato'} tra ${km1((i-i0)/10)} km`});break}
+ if(c.sprintKm&&c.sprintKm>pos)out.push({km:c.sprintKm-pos,t:`Traguardo volante tra ${km1(c.sprintKm-pos)} km`});
+ out.sort((a,b)=>a.km-b.km);
+ return out[0]?out[0].t:`Arrivo tra ${km1(S.len-pos)} km`;
+}
+function dsTips(S){
+ const tips=[],me=(S.byTeam.t0||[]).filter(x=>!x.finished);if(!me.length||!S.clusters.length)return tips;
+ const plan=S.plans.t0,cap=plan&&plan.lead,main=S.main,lead=S.clusters[0].front,k2g=S.len-lead;
+ const nm=x=>x.r.name.split(' ').slice(-1)[0];
+ const inBreak=me.filter(x=>x.cl&&x.cl.idx<main.idx);
+ if(!S.breakFormed&&lead<45&&!inBreak.length)tips.push({k:'info',t:'Si lotta per la fuga. Un gregario con "Scatta" può entrarci: in fuga guadagni visibilità per gli sponsor e punti GPM, e il capitano risparmia energie in gruppo.'});
+ if(inBreak.length){const g=main.idx>0?gapSec(S,main.front)-gapSec(S,inBreak[0].pos):0;
+  tips.push({k:'go',t:k2g<12?`${inBreak.map(nm).join(', ')} in fuga a ${km1(k2g)} km dall'arrivo: se la riserva scatti è sopra il 60%, "Scatta" per staccare i compagni di fuga.`:`${inBreak.map(nm).join(', ')} in fuga con ${fmtGap(g)} sul gruppo. "Tira" per difendere il vantaggio, "Ruota" per risparmiarsi se dietro c'è il capitano.`})}
+ if(cap&&!cap.finished){
+  const capOk=cap.cl===main||cap.cl.idx<main.idx,wr=cap.W/cap.Wmax;
+  if(!capOk&&cap.stop<=0)tips.push({k:'warn',t:`${nm(cap)} (capitano) è staccato di ${fmtGap(Math.max(0,gapSec(S,cap.pos)-gapSec(S,main.front)))}. Metti uno o due gregari su "Scorta": lo aspettano e lo riportano sotto.`});
+  const atk=S.attacks.find(a=>a.cl===cap.cl&&S.t-a.t<40&&S.byId[a.id].intent==='attack'&&S.byId[a.id].team!=='t0');
+  if(atk){const ax=S.byId[atk.id];tips.push({k:'warn',t:`Scatta ${ax.r.name} (${tshort(ax)})! Se è pericoloso "Copri" con ${nm(cap)} o con un compagno fresco; se è lontano in classifica o stanco, lascialo andare.`})}
+  const nc=nextClimb(S,cap.pos);
+  if(plan.goal==='sprint'||S.type==='piatta'){
+   if(k2g<15&&k2g>1&&capOk)tips.push({k:'go',t:`Finale da volata: i gregari su "Tira" tengono chiusa la corsa, ${nm(cap)} resta a "Ruota". Lo sprint parte da solo negli ultimi 250 m.`});
+   else if(S.breakFormed&&main.idx>0&&k2g<70&&gapSec(S,main.front)>k2g*3)tips.push({k:'warn',t:`La fuga ha ${fmtGap(gapSec(S,main.front))} a ${Math.round(k2g)} km: se vuoi la volata metti un gregario su "Tira" per chiudere.`});
+  }else if(nc&&nc.last&&capOk){
+   if(nc.start>cap.pos&&nc.start-cap.pos<15)tips.push({k:'info',t:`Ultima salita tra ${km1(nc.start-cap.pos)} km (${km1(nc.len)} km al ${nc.avg.toFixed(1).replace('.',',')}%). ${nm(cap)} a "Ruota" per risparmiare, un gregario su "Tira" per fare selezione.`});
+   else if(cap.pos>=nc.start&&cap.pos<nc.top){const left=nc.top-cap.pos;
+    if(wr>0.55&&left<3.5)tips.push({k:'go',t:`Mancano ${km1(left)} km alla cima e ${nm(cap)} ha il ${Math.round(wr*100)}% di riserva: è il momento di "Scatta".`});
+    else if(wr<0.3)tips.push({k:'warn',t:`${nm(cap)} ha poca riserva (${Math.round(wr*100)}%): resta a "Ruota" e rispondi solo agli scatti dei rivali diretti.`});
+    else tips.push({k:'info',t:`In salita con ${km1(left)} km alla cima: aspetta gli ultimi 2–3 km per attaccare, prima rischi di saltare.`});}
+  }else if(S.course.surf[gi(S,cap.pos)]||['pave','roubaix','sterrato'].includes(S.type)&&k2g<S.finaleKm&&capOk)tips.push({k:'info',t:`Settori decisivi: sul pavé e sullo sterrato il gruppo si spezza. Stai davanti e prova "Scatta" su un settore o un muro se ${nm(cap)} ha energia.`});
+ }
+ for(const x of me)if(x.E<22&&x.intent==='pull'){tips.push({k:'warn',t:`${nm(x)} è quasi senza energia (${Math.round(x.E)}%): toglilo dalla testa con "Ruota" o rischia la crisi.`});break}
+ if(!tips.length)tips.push({k:'info',t:'Corsa tranquilla: tieni tutti a "Ruota" o "Auto" per risparmiare. Le energie servono nel finale.'});
+ return tips.slice(0,3);
+}
+function guideSheet(){
+ if(LIVE&&LIVE.S){LIVE.playing=false;const b=$('#playb');if(b){b.textContent='▶';b.setAttribute('aria-label','Riprendi')}}
+ const sec=(h,b)=>`<div class="card pad"><h3>${h}</h3><div class="note gtx">${b}</div></div>`;
+ openSheet(sheetHead('Guida tattica','Come si legge la corsa','La gara è in pausa. Riprendila con il pulsante play.')+`<div class="pb wrap"><div class="guide">
+ ${sec('Le due barre','<b>Energia</b> (verde) è il serbatoio della giornata: cala sempre, di più se tiri o attacchi. Sotto il 30% il corridore va in crisi e perde molti watt.<br><b>Riserva scatti</b> (gialla) è la benzina per andare oltre la soglia: si svuota in pochi minuti di scatto o di salita al limite e si ricarica pedalando tranquillo. Senza riserva non si risponde agli attacchi.')}
+ ${sec('Gli ordini','<b>Auto</b>: decide l\'ammiraglia (gregari che tirano per il capitano, capitano che attacca nel finale).<br><b>Ruota</b>: resta coperto in scia, consuma fino al 40% in meno.<br><b>Copri</b>: resta coperto ma risponde subito agli scatti dei rivali nel suo gruppo.<br><b>Tira</b>: va in testa a fare il ritmo; consuma molto ma tiene chiusa la corsa o allunga la fuga.<br><b>Scatta</b>: attacco secco di 1–2 minuti, poi continua a tirare.<br><b>Scorta</b>: il gregario resta con il capitano, lo aspetta se è staccato e lo riporta sotto.')}
+ ${sec('Quando attaccare','In <b>salita</b>, negli ultimi 2–3 km prima della cima o dell\'arrivo: in salita la scia conta poco e contano i W/kg.<br>Sui <b>muri e sul pavé</b>: il gruppo si spezza e chi è dietro fatica a rientrare.<br>Dalla <b>fuga</b>, negli ultimi 10 km, per staccare i compagni.<br>In <b>pianura</b> un attacco lontano dall\'arrivo di solito viene ripreso: il gruppo in scia va più veloce di un corridore da solo.<br>Prima di attaccare guarda la riserva scatti: sopra il 60%.')}
+ ${sec('Quando coprire','Usa <b>Copri</b> quando scatta un rivale pericoloso: un uomo di classifica vicino in generale o uno scalatore forte nel finale. Non serve coprire chi è lontano in classifica o scatta a 100 km dall\'arrivo: costa riserva e il gruppo lo riprenderà.')}
+ ${sec('La fuga','Va via nei primi chilometri: manda un gregario con <b>Scatta</b>. In fuga guadagni visibilità per gli sponsor e punti GPM. Le squadre dei velocisti la tengono a qualche minuto e la chiudono nel finale; nelle tappe dure può arrivare.')}
+ ${sec('La volata','Negli ultimi chilometri i gregari su <b>Tira</b> fanno il treno e il velocista resta a <b>Ruota</b>. Negli ultimi 250 m lo sprint parte da solo: vince chi ha più potenza e più riserva rimasta.')}
+ ${sec('Imprevisti','Forature e cadute capitano di più sul pavé, in discesa e nelle volate di gruppo. Se il capitano resta indietro, metti uno o due gregari su <b>Scorta</b>. Dopo una caduta grave il corridore si ritira e salta qualche settimana.')}
+ </div></div><div class="pf"><div class="wrap fr"><button class="btn primary" data-act="close-guide">Ho capito</button></div></div>`,'wide');
+}
+
 /* ---------- eventi ---------- */
 document.addEventListener('click',e=>{
  const t=e.target.closest('[data-act]');if(!t)return;
@@ -750,6 +813,8 @@ document.addEventListener('click',e=>{
   case'sppropose':{const sp=SP(SPN.id);const res=propose(sp,SPN.slot,SPN.years);SPN.msg={ok:res.ok,t:res.msg};toast(res.msg,res.ok?'gold':'');sponsorSheet(SPN.id);renderTop();break}
   case'offyes':{const o=G.offers.find(x=>x.id===v);if(o){const res=acceptOffer(o);toast(res.msg,res.ok?'gold':'bad')}render();break}
   case'offno':{const o=G.offers.find(x=>x.id===v);if(o)declineOffer(o);render();break}
+  case'guide':guideSheet();break;
+  case'close-guide':closeSheet();break;
   case'tt':{const ctx=LIVE.ctx;finishStage(LIVE.RC,simTT(ctx),null,ctx.course);showStageResult();break}
   case'nextstage':closeSheet();startStageLive();break;
   case'simrest':{closeSheet();const RC=LIVE.RC;closeRace();simAsync(RC);break}

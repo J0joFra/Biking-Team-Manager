@@ -357,6 +357,18 @@ table.t{width:100%;border-collapse:collapse;font-size:14px}
 .req.ok{color:var(--ok)}
 .sn{font-weight:700;color:var(--ink)}
 
+.teamhead{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+.teamname{font-size:26px;font-weight:800}
+.teamname .msp{color:var(--accent)}
+.nextp{margin-top:6px;font-size:13px;font-weight:600;color:var(--accent)}
+.tips{display:flex;flex-direction:column;gap:6px}
+.tip{padding:9px 12px;border-radius:10px;font-size:13.5px;line-height:1.35;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--muted)}
+.tip.go{border-left-color:var(--ok)}.tip.warn{border-left-color:var(--danger)}.tip.info{border-left-color:var(--accent)}
+.guide{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+.gtx{font-size:14px;line-height:1.5;color:var(--ink);margin-top:4px;max-width:70ch}
+.orders{grid-template-columns:repeat(6,1fr)!important}
+.orders button{font-size:13px!important}
+
 @media (min-width:560px){.hide-s{display:inline}.hud .hide-s{display:block}}
 
 /* ORIZZONTALE: barra laterale, due colonne */
@@ -391,6 +403,7 @@ table.t{width:100%;border-collapse:collapse;font-size:14px}
  .pickgrid .pick:last-child{border-bottom:1px solid var(--line)}
  .negbox{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
  .rsgrid{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);align-items:start}
+ .guide{grid-template-columns:repeat(2,minmax(0,1fr))}
  .race{overflow:hidden;display:flex;flex-direction:column;padding-bottom:0}
  .race-grid{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr)}
  .rcol{overflow-y:auto;min-height:0}

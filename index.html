@@ -1,0 +1,1779 @@
+<title>Ammiraglia</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: app a colonna singola (max 560px) come il foglio di un direttore sportivo; barra in alto, schede in basso; la gara è una vista a tutto schermo con il profilo altimetrico in testa */
+:root{
+  --bg:#EDF0EC; --surface:#FFFFFF; --sunk:#E2E7E2; --ink:#16212A; --muted:#5C6970; --line:#D2D9D3;
+  --accent:#1D4ED1; --accent-soft:#DCE5FB; --on-accent:#FFFFFF;
+  --amber:#D89C08; --amber-soft:#F8EBC4; --danger:#BE3329; --ok:#2C8549;
+  --terrain:#C3D0BE; --terrain-edge:#6C866C; --kom:#B4322A;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1417; --surface:#172126; --sunk:#111A1E; --ink:#E5EBED; --muted:#8E9EA6; --line:#26343B;
+  --accent:#6E95FF; --accent-soft:#1F2D52; --on-accent:#0B1020;
+  --amber:#F0BB3C; --amber-soft:#3A3016; --danger:#F06A5E; --ok:#5CC27E;
+  --terrain:#2C3D35; --terrain-edge:#7FA287; --kom:#F06A5E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1417; --surface:#172126; --sunk:#111A1E; --ink:#E5EBED; --muted:#8E9EA6; --line:#26343B;
+  --accent:#6E95FF; --accent-soft:#1F2D52; --on-accent:#0B1020;
+  --amber:#F0BB3C; --amber-soft:#3A3016; --danger:#F06A5E; --ok:#5CC27E;
+  --terrain:#2C3D35; --terrain-edge:#7FA287; --kom:#F06A5E; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.4;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:40;background:var(--bg)}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;letter-spacing:.01em;text-wrap:balance;margin:0}
+.eyebrow{font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px;padding:0 16px;border-radius:8px;font-family:var(--f-display);font-weight:600;font-size:16px;letter-spacing:.03em;text-transform:uppercase;background:var(--sunk);color:var(--ink)}
+.btn.primary{background:var(--accent);color:var(--on-accent)}
+.btn.ghost{background:transparent;border:1px solid var(--line)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.chip{display:inline-flex;align-items:center;gap:4px;font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:5px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.chip.u23{background:var(--accent-soft);color:var(--accent)}
+.chip.cls{background:var(--ink);color:var(--bg)}
+.chip.amber{background:var(--amber-soft);color:var(--amber)}
+.chip.red{background:transparent;color:var(--danger);border:1px solid currentColor}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:12px;padding-block:10px}
+.crest{width:36px;height:36px;border-radius:8px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:17px;flex:none}
+.top .tn{font-family:var(--f-display);font-weight:700;font-size:19px;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .sub{font-size:12.5px;color:var(--muted)}
+.top .meta{margin-left:auto;text-align:right;flex:none}
+.top .meta b{font-family:var(--f-display);font-size:18px}
+main.view{padding-block:14px 100px}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs .wrap{display:grid;grid-template-columns:repeat(4,1fr)}
+.tabs button{padding:10px 4px 9px;font-family:var(--f-display);font-weight:600;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-top:3px solid transparent}
+.tabs button[aria-current="true"]{color:var(--ink);border-top-color:var(--accent)}
+
+/* sections */
+.sec{display:flex;flex-direction:column;gap:10px;margin-bottom:22px}
+.sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.sec-h h2{font-size:22px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+
+/* calendar */
+.month{font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:6px 2px 0}
+.ev{display:grid;grid-template-columns:52px 1fr;gap:12px;padding:12px;align-items:start}
+.ev .d{font-family:var(--f-display);text-align:center;line-height:1}
+.ev .d b{display:block;font-size:24px}
+.ev .d span{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.ev .nm{font-weight:600;font-size:16px;line-height:1.2}
+.ev .mt{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:5px;font-size:13px;color:var(--muted)}
+.ev.done{opacity:.78}
+.ev.next{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.ev .act{grid-column:2;display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.ev .res{grid-column:2;font-size:13.5px}
+.stbars{display:inline-flex;align-items:flex-end;gap:2px;height:16px}
+.stbars i{display:block;width:5px;border-radius:1px;background:var(--terrain-edge)}
+.stbars i.tt{background:var(--accent)}
+
+/* roster */
+.rider{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:12px;text-align:left;width:100%}
+.rider .nm{font-weight:600;font-size:16px}
+.rider .tags{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-top:3px;font-size:13px;color:var(--muted)}
+.statrow{grid-column:1/-1;display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:6px}
+.stat{display:flex;flex-direction:column;gap:3px}
+.stat small{font-family:var(--f-display);font-weight:600;font-size:11px;letter-spacing:.08em;color:var(--muted)}
+.stat b{font-family:var(--f-display);font-size:17px;line-height:1}
+.bar{height:5px;border-radius:3px;background:var(--sunk);overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.bar.e>i{background:var(--ok)}
+.bar.w>i{background:var(--amber)}
+.bar.f>i{background:var(--danger)}
+.cond{display:inline-flex;align-items:center;gap:5px}
+.cond::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c,var(--muted))}
+
+/* tables */
+table.t{width:100%;border-collapse:collapse;font-size:14px}
+.t td,.t th{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+.t th{font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.t td.n{width:32px;font-family:var(--f-mono);color:var(--muted)}
+.t td.r{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.t tr.me td{background:var(--accent-soft)}
+.t .tm{font-size:12px;color:var(--muted)}
+.tbl{overflow-x:auto;padding:4px 10px}
+
+/* sheet */
+.sheet{position:fixed;inset:0;z-index:50;background:color-mix(in srgb,var(--ink) 45%,transparent);display:flex;align-items:flex-end;justify-content:center}
+.sheet .panel{background:var(--bg);width:100%;max-width:600px;max-height:calc(100% - env(safe-area-inset-top,0px) - 24px);border-radius:16px 16px 0 0;display:flex;flex-direction:column;overflow:hidden}
+.sheet .panel>*{width:100%}
+.sheet .ph{padding-block:14px 10px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:10px}
+.sheet .ph h2{font-size:24px;line-height:1.05}
+.sheet .pb{overflow-y:auto;padding-block:12px 16px;flex:1}
+.sheet .pf{border-top:1px solid var(--line);padding-block:10px calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:8px;align-items:center;background:var(--surface)}
+.x{margin-left:auto;width:36px;height:36px;border-radius:50%;background:var(--sunk);font-size:20px;line-height:1;flex:none}
+
+.pick{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}
+.pick:last-child{border-bottom:0}
+.pick input{width:20px;height:20px;accent-color:var(--accent)}
+.pick .nm{font-weight:600}
+.pick .sm{font-size:12.5px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pick.off{opacity:.45}
+.star{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);font-family:var(--f-display);font-weight:700;color:var(--muted)}
+.star[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:#1b1404}
+.fit{width:54px}
+
+/* race */
+.race{position:fixed;inset:0;z-index:45;background:var(--bg);overflow-y:auto;padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+.race-h{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.race-h .wrap{padding-block:10px 8px}
+.rh1{display:flex;align-items:baseline;gap:8px}
+.rh1 h2{font-size:20px;line-height:1.1;flex:1;min-width:0}
+.kmbig{display:flex;align-items:flex-end;gap:14px;margin-top:6px;flex-wrap:wrap}
+.kmbig .k{font-family:var(--f-display);font-weight:700;font-size:44px;line-height:.9}
+.kmbig .k small{font-size:15px;font-weight:600;color:var(--muted);margin-left:3px}
+.kmbig .o{display:flex;gap:14px;font-size:13px;color:var(--muted)}
+.kmbig .o b{display:block;color:var(--ink);font-family:var(--f-mono);font-size:14px;font-weight:500}
+.prof{position:relative;margin-top:8px}
+.prof canvas{display:block;width:100%;height:150px}
+.zoom{position:absolute;right:0;top:0}
+.groups{display:flex;flex-direction:column;gap:0}
+.grp{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--line)}
+.grp:last-child{border-bottom:0}
+.grp .gn{font-family:var(--f-display);font-weight:700;font-size:16px}
+.grp .gc{font-size:12.5px;color:var(--muted)}
+.grp .gg{font-family:var(--f-mono);font-size:14px;text-align:right}
+.grp .mine{grid-column:1/-1;display:flex;gap:4px;flex-wrap:wrap}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;background:var(--muted)}
+.mr{padding:11px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:7px}
+.mr:last-child{border-bottom:0}
+.mr .l1{display:flex;align-items:baseline;gap:8px}
+.mr .l1 .nm{font-weight:600;font-size:15.5px}
+.mr .l1 .where{margin-left:auto;font-size:13px;color:var(--muted);text-align:right}
+.mr .bars{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:center;font-size:11.5px;color:var(--muted)}
+.mr .bars>div{display:flex;flex-direction:column;gap:3px}
+.orders{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.orders button{min-height:36px;border-radius:7px;background:var(--sunk);font-family:var(--f-display);font-weight:600;font-size:13.5px;letter-spacing:.04em;text-transform:uppercase}
+.orders button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.orders button.atk{color:var(--danger)}
+.orders button:disabled{opacity:.35}
+.radio{display:flex;flex-direction:column;font-size:13.5px}
+.radio div{padding:6px 12px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:52px 1fr;gap:8px}
+.radio div:last-child{border-bottom:0}
+.radio .km{font-family:var(--f-mono);color:var(--muted);font-size:12.5px}
+.radio .me{color:var(--accent);font-weight:600}
+.ctrl{position:fixed;left:0;right:0;bottom:0;z-index:46;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.ctrl .wrap{display:flex;gap:6px;align-items:center;padding-block:9px}
+.ctrl .sp{display:flex;background:var(--sunk);border-radius:8px;padding:2px}
+.ctrl .sp button{padding:8px 9px;border-radius:6px;font-family:var(--f-mono);font-size:13px}
+.ctrl .sp button[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.ctrl .btn{min-height:38px;padding:0 11px;font-size:14px}
+.ctrl .grow{flex:1}
+.play{width:42px;padding:0!important}
+
+.intro{display:flex;flex-direction:column;gap:14px;padding-block:28px}
+.intro h1{font-size:46px;line-height:.95}
+.intro p{margin:0;max-width:60ch}
+.field{display:flex;flex-direction:column;gap:6px}
+.field input{font:inherit;font-size:17px;padding:11px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.list{display:flex;flex-direction:column}
+.list li{margin-bottom:6px}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kv div{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 10px}
+.kv small{display:block;font-size:11.5px;color:var(--muted);font-family:var(--f-display);letter-spacing:.08em;text-transform:uppercase;font-weight:600}
+.kv b{font-family:var(--f-display);font-size:22px}
+.note{font-size:13px;color:var(--muted)}
+.jer{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px}
+.seg{display:flex;gap:4px;background:var(--sunk);padding:3px;border-radius:9px}
+.seg button{flex:1;padding:7px;border-radius:7px;font-family:var(--f-display);font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-size:13.5px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink)}
+
+.cols{display:flex;flex-direction:column;gap:10px}
+.mrow{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;width:100%;text-align:left}
+.ovr{width:44px;height:44px;border-radius:9px;background:var(--sunk);display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:21px}
+.ovr.hi{background:var(--accent);color:var(--on-accent)}
+.mrow .nm{font-weight:600;font-size:15.5px}
+.mrow .tags{font-size:12.5px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:2px}
+.mrow .pr{text-align:right;font-family:var(--f-mono);font-size:13.5px;white-space:nowrap}
+.mrow .pr small{display:block;font-family:var(--f-body);color:var(--muted);font-size:11.5px}
+.banner{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:9px;background:var(--accent-soft);color:var(--ink);font-size:13.5px}
+.banner.closed{background:var(--sunk)}
+.rotate{display:none}
+@media (orientation:portrait) and (max-width:600px){.rotate{display:flex}}
+.kv.kv4{grid-template-columns:repeat(2,minmax(0,1fr))}
+.stepper{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:6px}
+.stepper button{height:44px;border-radius:8px;background:var(--sunk);font-size:22px;font-weight:600}
+.stepper output{text-align:center;font-family:var(--f-mono);font-size:19px}
+.msg{padding:10px 12px;border-radius:9px;font-size:14px}
+.msg.ok{background:color-mix(in srgb,var(--ok) 18%,transparent)}
+.msg.no{background:color-mix(in srgb,var(--danger) 14%,transparent)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filters select{font:inherit;font-size:14px;padding:7px 9px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.negbox{display:grid;gap:12px}
+.race-grid{display:flex;flex-direction:column}
+.rcol.rl{display:contents}
+.race-h{order:0}.rcol.rr{order:1}.rl>.rbody{order:2}
+.rbody{padding-block:12px;display:flex;flex-direction:column;gap:14px}
+/* Orizzontale: barra laterale, due colonne, gara divisa tra corsa e ammiraglia */
+@media (orientation:landscape) and (min-width:600px){
+ .tabs{top:0;bottom:0;right:auto;width:calc(96px + env(safe-area-inset-left,0px));border-top:0;border-right:1px solid var(--line);padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+ .tabs .wrap{display:flex;flex-direction:column;gap:2px;padding:10px 0 0;max-width:none}
+ .tabs button{border-top:0;border-left:3px solid transparent;text-align:left;padding:13px 8px 13px 12px;font-size:14.5px}
+ .tabs button[aria-current="true"]{border-left-color:var(--accent);background:var(--bg)}
+ .top,main.view{margin-left:calc(96px + env(safe-area-inset-left,0px))}
+ .top .wrap,main.view{padding-left:16px}
+ .wrap{max-width:1100px}
+ main.view{padding-block:12px 28px}
+ .top .wrap{padding-block:6px}
+ .crest{width:30px;height:30px;font-size:15px}
+ .cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:start}
+ .cols>.month,.cols>.full{grid-column:1/-1}
+ .kv.kv4{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .intro{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:14px 28px;align-items:start;padding-block:18px}
+ .intro h1{font-size:40px}
+ .sheet{align-items:center;padding:8px max(8px,env(safe-area-inset-right,0px)) 8px max(8px,env(safe-area-inset-left,0px))}
+ .sheet .panel{max-width:860px;max-height:100%;border-radius:14px}
+ .sheet .ph{padding-block:10px 8px}
+ .sheet .ph h2{font-size:21px}
+ .sheet .pf{padding-block:8px}
+ .pickgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .pickgrid .pick:nth-child(odd){border-right:1px solid var(--line)}
+ .pickgrid .pick:last-child{border-bottom:1px solid var(--line)}
+ .negbox{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+ .race{overflow:hidden;display:flex;flex-direction:column;padding-bottom:0}
+ .race-grid{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr)}
+ .rcol{overflow-y:auto;min-height:0}
+ .rcol.rl{display:block}
+ .rcol.rr{border-left:1px solid var(--line)}
+ .race .wrap{max-width:none}
+ .rcol.rl .wrap{padding-right:12px}
+ .rcol.rr .wrap{padding-left:12px}
+ .race-h{position:static}
+ .race-h .wrap{padding-block:8px 6px}
+ .kmbig{margin-top:2px}
+ .kmbig .k{font-size:32px}
+ .prof canvas{height:clamp(96px,30vh,170px)}
+ .ctrl{position:static}
+ .ctrl .wrap{padding-block:6px;max-width:none}
+ .rbody{padding-block:8px;gap:10px}
+ .mr{padding:8px 10px;gap:5px}
+ .orders button{min-height:32px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<header class="top" id="top" hidden></header>
+<main class="view wrap" id="view"></main>
+<nav class="tabs" id="tabs" hidden>
+  <div class="wrap">
+    <button data-act="tab" data-v="cal">Calendario</button>
+    <button data-act="tab" data-v="team">Squadra</button>
+    <button data-act="tab" data-v="market">Mercato</button>
+    <button data-act="tab" data-v="rank">Classifiche</button>
+  </div>
+</nav>
+<div class="race" id="race" hidden></div>
+<div class="sheet" id="sheet" hidden></div>
+
+<script>
+"use strict";
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+const $=(s,r=document)=>r.querySelector(s);
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+let R=Math.random;
+const rnd=(a,b)=>a+(b-a)*R();
+const rint=(a,b)=>Math.floor(a+(b-a+1)*R());
+const pick=a=>a[Math.floor(R()*a.length)];
+const clamp=(x,a,b)=>x<a?a:x>b?b:x;
+function gauss(){let u=1-R(),v=R();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let SEASON=2027;
+function weekDate(w){const d=new Date(SEASON,0,4+(w-1)*7);return d}
+const MESI=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+const MES3=['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+function fmtT(s){s=Math.round(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+'h':'')+String(m).padStart(h?2:1,'0')+"'"+String(x).padStart(2,'0')+'"'}
+function fmtGap(s){s=Math.round(s);if(s<=0)return 's.t.';const m=Math.floor(s/60),x=s%60;return '+'+(m?m+"'"+String(x).padStart(2,'0')+'"':x+'"')}
+const km1=v=>v.toFixed(1).replace('.',',');
+
+/* ============================================================
+   NAMES, TEAMS, RIDERS
+   ============================================================ */
+const NAMES={
+ ITA:{f:['Luca','Matteo','Andrea','Davide','Simone','Lorenzo','Filippo','Tommaso','Riccardo','Alessio','Nicolò','Gabriele','Edoardo','Federico','Michele','Giacomo','Pietro','Elia','Samuele','Mattia'],l:['Bertolini','Ferraro','Sartori','Mancini','Guidetti','Rinaldi','Vescovi','Pellegrini','Bassetti','Zanetti','Morandi','Caputo','Lazzaro','Fontanella','Baldan','Cattaneo','Righetto','Tomasoni','Valsecchi','Brambati','Dal Molin','Furlan','Peretti','Scarpa','Agostini','Zordan','Cavalieri','Meneghin']},
+ ESP:{f:['Pablo','Javier','Iker','Sergio','Álvaro','Rubén','Unai','Marcos','Adrián','Hugo'],l:['Etxeberria','Moreno','Castillo','Arrieta','Gallardo','Navarro','Olabarria','Serrano','Vidal','Lizarraga','Ortuño','Bermejo']},
+ FRA:{f:['Théo','Hugo','Louis','Maxime','Baptiste','Clément','Lucas','Romain','Quentin','Axel'],l:['Lefèvre','Garnier','Moulin','Bertrand','Chevalier','Roussel','Fabre','Delorme','Marchand','Perrin','Vasseur','Lacombe']},
+ BEL:{f:['Jens','Arne','Senne','Lander','Milan','Robbe','Jasper','Seppe','Wannes','Thibau'],l:['Vermeulen','De Smet','Peeters','Claes','Van Damme','Wouters','Goossens','Verhaegen','De Wilde','Van Acker','Lenaerts','Bracke']},
+ NED:{f:['Daan','Bram','Sem','Thijs','Ruben','Lars','Stijn','Koen','Jelle','Gijs'],l:['Bakker','Visser','Smit','Mulder','Bos','Kuipers','Hendriks','Van Leeuwen','Brouwer','Dekker','Van Beek','Postma']},
+ COL:{f:['Santiago','Brayan','Esteban','Camilo','Andrés','Jhon','Sebastián','Kevin','Wilmar','Yeison'],l:['Rincón','Quintero','Cárdenas','Ospina','Restrepo','Galeano','Patiño','Murillo','Arango','Benavides','Montoya','Zapata']},
+ DEN:{f:['Mikkel','Magnus','Rasmus','Frederik','Emil','Jonas','Anders','Tobias'],l:['Kristensen','Lund','Holm','Thomsen','Bach','Dalgaard','Nørgaard','Vinther','Skov','Juhl']},
+ NOR:{f:['Sindre','Eirik','Håkon','Vegard','Kristian','Torstein','Even'],l:['Haugen','Bakken','Solberg','Myhre','Strand','Aasen','Lunde','Brekke']},
+ SLO:{f:['Žiga','Jan','Matej','Luka','Nejc','Gal','Anže'],l:['Kovač','Zupan','Horvat','Kranjc','Potočnik','Mlakar','Vidmar','Kos']},
+ GBR:{f:['Tom','Oliver','Harry','Finn','Joe','Ethan','Callum'],l:['Whitfield','Barnes','Holloway','Pryce','Ashworth','Kendall','Marsh','Tolland','Rowley']},
+ GER:{f:['Lukas','Jonas','Felix','Moritz','Niklas','Paul','Jannik'],l:['Brandt','Weiß','Krüger','Lehmann','Schuster','Vogt','Hartmann','Böhm']}
+};
+const ARCH={
+ scalatore:{m:[55,63],w:[5.5,6.0],s:[880,1120],tt:[0.245,0.27],e:[60,90],lab:'Scalatore'},
+ puncheur:{m:[61,69],w:[5.3,5.75],s:[1150,1400],tt:[0.24,0.265],e:[55,85],lab:'Puncheur'},
+ velocista:{m:[70,80],w:[4.65,5.05],s:[1420,1720],tt:[0.245,0.27],e:[45,75],lab:'Velocista'},
+ passista:{m:[70,80],w:[4.9,5.3],s:[1100,1350],tt:[0.218,0.24],e:[60,90],lab:'Passista'},
+ cronoman:{m:[68,78],w:[5.05,5.45],s:[1000,1250],tt:[0.205,0.225],e:[60,85],lab:'Cronoman'},
+ gregario:{m:[63,74],w:[4.95,5.35],s:[1050,1300],tt:[0.23,0.255],e:[60,90],lab:'Gregario'}
+};
+const ARCH_MIX=['scalatore','scalatore','puncheur','puncheur','velocista','velocista','passista','passista','cronoman','gregario','gregario','gregario','gregario','gregario','puncheur','scalatore'];
+const AI_TEAMS=[
+ ['Alpenblick Pro Cycling','ALP','pro',['GER','NED','BEL','ITA']],
+ ['Costa Brava Ciclismo','CBC','pro',['ESP','COL','ITA']],
+ ['Polder Energie','POL','pro',['NED','BEL','DEN']],
+ ['Atlantique Cycling','ATL','pro',['FRA','BEL','GBR']],
+ ['Nordlys Racing','NOR','pro',['NOR','DEN','GBR']],
+ ['Ciclistica Valdarno','VAL','conti',['ITA']],
+ ['Team Laguna Veneta','LAG','conti',['ITA','SLO']],
+ ['Biciclette Marchigiane','BMA','conti',['ITA']],
+ ['Vélo Club Ardennes','VCA','conti',['BEL','FRA']],
+ ['Zuid-Holland Cycling','ZHC','conti',['NED']],
+ ['Equipo Meseta','MES','conti',['ESP','COL']],
+ ['Karst Cycling Team','KRS','conti',['SLO','ITA']],
+ ['Fjord Development','FJD','conti',['NOR','DEN']],
+ ['Team Pianura Padana','TPP','conti',['ITA']],
+ ['Sierra Nevada Ciclismo','SNC','conti',['ESP']],
+ ['Brabant Continental','BRA','conti',['BEL','NED']],
+ ['GS Dolomiti','DOL','conti',['ITA','GER']],
+ ['Highlands Racing','HIG','conti',['GBR']],
+ ['Bergamasca Bike Team','BBT','conti',['ITA']],
+ ['Loire Valley Cycling','LOI','conti',['FRA']],
+ ['Andes Desarrollo','AND','conti',['COL']],
+ ['Accademia Toscana U23','ACT','dev',['ITA']],
+ ['Flanders Talent Team','FLT','dev',['BEL']],
+ ['Giovani Romagna','GRO','dev',['ITA']],
+ ['Cantabria Desarrollo','CAN','dev',['ESP']],
+ ['Jura Espoirs','JUR','dev',['FRA']]
+];
+function teamColor(i){return `hsl(${(i*137.5)%360} 55% 48%)`}
+
+const USED=new Set();
+function uniqueName(N){let n;for(let k=0;k<40;k++){n=pick(N.f)+' '+pick(N.l);if(!USED.has(n))break}USED.add(n);return n}
+function genRider(team,nat,arch,age,boost=0){
+ const A=ARCH[arch], N=NAMES[nat];
+ const lvl={pro:0.2,conti:0,dev:-0.05,me:0,fa:-0.04,jr:0}[team.tier];
+ const ageAdj=age<=18?-0.32:age<=19?-0.26:age===20?-0.18:age===21?-0.11:age===22?-0.05:age<=30?0:-0.025*(age-30);
+ const pot=age<=22?clamp(R()*R()*1.15+R()*0.25+boost,0,1):0;
+ const r={
+  id:'r'+(G.nextId++), name:uniqueName(N), nat, age, team:team.id, arch,
+  mass:+rnd(A.m[0],A.m[1]).toFixed(1),
+  wkg:+(rnd(A.w[0],A.w[1])+lvl+ageAdj+gauss()*0.08+pot*0.05+boost*0.12).toFixed(3),
+  spr:Math.round(rnd(A.s[0],A.s[1])+lvl*300+gauss()*50),
+  tt:+rnd(A.tt[0],A.tt[1]).toFixed(3),
+  endu:Math.round(clamp(rnd(A.e[0],A.e[1])+(age<21?-8:0),20,99)),
+  rec:Math.round(clamp(rnd(45,90)+(age<21?-6:0),20,99)),
+  pot, form:+rnd(0.95,0.99).toFixed(3), fat:0, days:0, pts:0, wins:0, res:[], busy:0,
+  neo: age===19 || (team.tier!=='dev' && age===23 && R()<0.5)
+ };
+ r.askMul=+rnd(0.92,1.1).toFixed(3);
+ if(team.tier==='fa'||team.tier==='jr'){r.sal=0;r.cEnd=0;if(team.tier==='jr'){r.junior=true;r.neo=false}}
+ else{r.sal=Math.round(demand(r)*(team.tier==='pro'?2.4:1)*rnd(0.85,1.12)/500)*500;r.cEnd=SEASON+rint(0,2)}
+ return r;
+}
+function stats(r){
+ const ftp=r.mass*r.wkg;
+ return {
+  sal:Math.round(clamp(40+(r.wkg-4.6)/1.6*55,1,99)),
+  pia:Math.round(clamp(45+(ftp-320)/120*47,1,99)),
+  cro:Math.round(clamp(45+(ftp/r.tt-1250)/700*47,1,99)),
+  vol:Math.round(clamp(35+(r.spr-900)/800*57,1,99)),
+  res:r.endu, rec:r.rec
+ };
+}
+function suitType(r,t){
+ const s=stats(r);
+ switch(t){
+  case'piatta':return 0.7*s.vol+0.3*s.pia;
+  case'mossa':return 0.35*s.sal+0.35*s.vol+0.3*s.pia;
+  case'collinare':return 0.65*s.sal+0.25*s.vol+0.1*s.res;
+  case'montagna':return 0.85*s.sal+0.15*s.res;
+  default:return s.cro;
+ }
+}
+function suitRace(r,ev){return ev.stages.reduce((a,s)=>a+suitType(r,s.t),0)/ev.stages.length}
+function condOf(r){
+ const c=r.form*(1-r.fat/260);
+ if(c>=1.0)return{t:'Ottima',c:'var(--ok)'};
+ if(c>=0.972)return{t:'Buona',c:'var(--ok)'};
+ if(c>=0.94)return{t:'Discreta',c:'var(--amber)'};
+ return{t:'Affaticato',c:'var(--danger)'};
+}
+const catOf=r=>r.age<=22?'U23':'Elite';
+
+/* ============================================================
+   CALENDAR
+   ============================================================ */
+const CAL=[
+ ['Trofeo Costa dei Fiori',6,'1.2',['mossa']],
+ ['Gran Premio della Bassa',8,'1.2',['piatta']],
+ ['Giro dei Tre Laghi',9,'2.2',['prologo','piatta','mossa','montagna']],
+ ['Coppa dei Colli',11,'1.2U',['collinare']],
+ ['Circuito del Porto',11,'1.2',['piatta']],
+ ['Ronde van het Polderland',13,'1.1',['piatta']],
+ ['Settimana Appenninica',15,'2.1',['piatta','collinare','montagna','crono','mossa']],
+ ['Trofeo Città di Castelforte',16,'1.2U',['mossa']],
+ ['Giro delle Valli Alpine',18,'2.2U',['piatta','mossa','montagna','montagna','collinare']],
+ ['Gran Premio delle Filande',20,'1.1',['collinare']],
+ ['Coppa di Primavera',20,'1.2U',['piatta']],
+ ['Tour de la Haute-Vallée',22,'2.2',['piatta','collinare','montagna','piatta']],
+ ['Memorial Aldo Fontana',24,'1.2',['mossa']],
+ ['Giro dei Giovani',26,'2.2U',['prologo','piatta','mossa','collinare','montagna','crono','montagna','piatta']],
+ ['Vuelta a la Sierra Alta',29,'2.2',['piatta','montagna','collinare','crono','mossa']],
+ ['Trofeo delle Vendemmie',31,'1.2',['collinare']],
+ ['Coppa d\'Autunno',33,'1.2U',['mossa']],
+ ['Gran Premio di Valmarina',33,'1.1',['piatta']],
+ ['Dirka po Krasu',35,'2.2',['piatta','collinare','montagna']],
+ ['Classica delle Foglie',38,'1.2U',['montagna']],
+ ['Cronometro di Fine Stagione',40,'1.2',['crono']]
+];
+const TYPE_LAB={piatta:'Pianeggiante',mossa:'Mossa',collinare:'Collinare',montagna:'Montagna',crono:'Cronometro',prologo:'Prologo'};
+const TYPE_H={piatta:4,mossa:8,collinare:11,montagna:16,crono:9,prologo:5};
+const HARD={piatta:7,mossa:9,collinare:10,montagna:13,crono:5,prologo:2};
+const PTS={'1.1':[125,85,70,60,50,40,35,30,25,20,15,10,5,5,5],'2.1':[125,85,70,60,50,40,35,30,25,20,15,10,5,5,5],'1.2':[40,30,25,20,15,10,5,3,3,3],'2.2':[40,30,25,20,15,10,5,3,3,3],'1.2U':[40,30,25,20,15,10,5,3,3,3],'2.2U':[40,30,25,20,15,10,5,3,3,3]};
+const STAGE_PTS={'2.1':[14,5,3],'2.2':[7,3,1],'2.2U':[7,3,1]};
+const CLS_DESC={'1.1':'Corsa di un giorno, categoria 1 (con ProTeam)','1.2':'Corsa di un giorno, categoria 2','1.2U':'Corsa di un giorno riservata Under 23','2.1':'Corsa a tappe, categoria 1 (con ProTeam)','2.2':'Corsa a tappe, categoria 2','2.2U':'Corsa a tappe riservata Under 23'};
+
+/* ============================================================
+   GAME STATE
+   ============================================================ */
+let G=null;
+const SAVE_KEY='ammiraglia-save-v2';
+function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(G))}catch(e){}}
+function load(){try{const s=localStorage.getItem(SAVE_KEY);if(s){const g=JSON.parse(s);if(g&&g.v===2){SEASON=g.season;USED.clear();for(const id in g.riders)USED.add(g.riders[id].name);return g}}}catch(e){}return null}
+const ME=()=>G.teams[0];
+const RID=id=>G.riders[id];
+const TEAM=id=>G.teams.find(t=>t.id===id)||(id==='fa'?{id,name:'Svincolato',short:'SV',tier:'none'}:{id,name:'Juniores',short:'JR',tier:'none'});
+
+function newGame(name){
+ const seed=Math.floor(Math.random()*1e9);
+ R=mulberry32(seed);USED.clear();
+ SEASON=2027;USED.clear();
+ G={v:2,season:SEASON,name,seed,week:5,teams:[],riders:{},cal:[],nextId:1,sponsor:60,tab:'cal',kmFuga:0,history:[],budget:950000,cash:950000,news:[],mk:{sub:'renew',cat:'all',role:'all'}};
+ const me={id:'t0',name,short:name.replace(/[^A-Za-zÀ-ÿ ]/g,'').split(/\s+/).filter(Boolean).map(w=>w[0]).join('').slice(0,3).toUpperCase()||'ME',tier:'me',color:'var(--accent)',riders:[]};
+ G.teams.push(me);
+ AI_TEAMS.forEach((d,i)=>G.teams.push({id:'t'+(i+1),name:d[0],short:d[1],tier:d[2],nats:d[3],color:teamColor(i+1),riders:[]}));
+ for(const t of G.teams){
+  const n=t.tier==='pro'?16:t.tier==='dev'?12:t.tier==='me'?14:13;
+  const nU=t.tier==='pro'?2:t.tier==='dev'?12:t.tier==='me'?7:5;
+  const mix=shuffle(ARCH_MIX.slice()).slice(0,n);
+  // garantisci un velocista e uno scalatore per squadra
+  if(!mix.includes('velocista'))mix[0]='velocista';
+  if(!mix.includes('scalatore'))mix[1]='scalatore';
+  for(let i=0;i<n;i++){
+   const age=i<nU?rint(19,22):rint(23,33);
+   const nat=t.tier==='me'?(R()<0.75?'ITA':pick(['SLO','ESP','COL','FRA'])):pick(t.nats);
+   const boost=(t.tier==='me'&&i===0)?0.55:0; // un talento in squadra
+   const r=genRider(t,nat,mix[i],age,boost);
+   G.riders[r.id]=r; t.riders.push(r.id);
+  }
+ }
+ G.cal=buildCal();
+ for(let i=0;i<24;i++){const age=R()<0.25?rint(20,22):rint(23,33);const r=genRider({id:'fa',tier:'fa'},pick(Object.keys(NAMES)),pick(ARCH_MIX),age);G.riders[r.id]=r}
+ genJuniors(16);
+ R=Math.random;
+ save();
+}
+
+function buildCal(){return CAL.map((c,i)=>({id:'e'+i+'_'+SEASON,name:c[0],w:c[1],cls:c[2],u23:c[2].endsWith('U'),perTeam:c[2].includes('.1')?7:6,
+  stages:c[3].map(t=>({t,seed:Math.floor(R()*1e9)})),status:'todo',sel:null,cap:null,result:null}))}
+function genJuniors(n){for(let i=0;i<n;i++){const nat=R()<0.5?'ITA':pick(Object.keys(NAMES));const r=genRider({id:'jr',tier:'jr'},nat,pick(ARCH_MIX),18,R()<0.18?rnd(0.3,0.6):0);G.riders[r.id]=r}}
+function pendingWeek(){const p=G.cal.filter(e=>e.status==='todo');return p.length?Math.min(...p.map(e=>e.w)):null}
+function advanceTo(w){
+ const d=w-G.week; if(d<=0)return;
+ for(const id in G.riders){const r=G.riders[id];
+  for(let k=0;k<d;k++){r.fat=Math.max(0,r.fat-(9+r.rec*0.08)); r.form+= (0.972-r.form)*0.06;}
+ }
+ for(let k=1;k<=d;k++){const wk=G.week+k;
+  if(wk<=WEEK_END)G.cash-=weekly();
+  if(wk>=31)poach();
+ }
+ G.week=w;
+}
+
+/* ============================================================
+   COURSE GENERATION
+   ============================================================ */
+const CLIMB_NAMES=['Colle della Croce','Passo del Lupo','Salita di Montebello','Muro di Sant\'Anna','Colle San Rocco','Passo delle Fate','Côte de Ville-Haute','Alto del Pinar','Muro dei Cappuccini','Colle dei Pini','Passo Lungo','Salita del Castello','Strappo di Borgo Alto','Alto de la Cruz','Kriški vrh','Colle del Vento','Passo di Valfredda','Salita di Torrebruna','Côte des Granges','Muro di Ca\' Bianca'];
+function genCourse(type,seed){
+ const r=mulberry32(seed), ra=(a,b)=>a+(b-a)*r();
+ let len;
+ switch(type){case'prologo':len=+ra(4.5,7.5).toFixed(1);break;case'crono':len=Math.round(ra(16,34));break;case'piatta':len=Math.round(ra(168,202));break;case'mossa':len=Math.round(ra(160,188));break;case'collinare':len=Math.round(ra(150,176));break;default:len=Math.round(ra(138,168));}
+ const N=Math.round(len*10), g=new Float32Array(N);
+ const amp=type==='piatta'||type==='prologo'?0.7:type==='crono'?1.2:1.6;
+ for(let i=0;i<N;){const L=Math.round(ra(12,45)),v=ra(-amp,amp);for(let j=0;j<L&&i<N;j++,i++)g[i]=v}
+ const marks=[];
+ const put=(top,L,avg,desc=true)=>{
+  const s=Math.max(0,Math.round((top-L)*10)),e=Math.min(N,Math.round(top*10));
+  for(let k=s;k<e;k++)g[k]=avg+Math.sin(k*0.9+seed%7)*0.9+(r()-0.5)*1.4;
+  marks.push([s,e]);
+  if(desc){const dl=L*ra(1.0,1.4),de=Math.min(N,e+Math.round(dl*10)),dg=-avg*L/dl;for(let k=e;k<de;k++)g[k]=dg*ra(0.8,1.15)}
+ };
+ const flat=(from,to)=>{for(let k=Math.max(0,Math.round(from*10));k<Math.min(N,Math.round(to*10));k++)g[k]=ra(-0.4,0.5)};
+ if(type==='piatta'){if(r()<0.65)put(len*ra(0.3,0.55),ra(2,4),ra(3,4.5));flat(len-30,len)}
+ else if(type==='mossa'){const n=r()<0.5?3:4,last=len-ra(10,22);
+  for(let i=0;i<n;i++){const top=i===n-1?last:len*0.22+(last-len*0.22-18)*i/(n-1);put(top,ra(2.5,6),ra(4.5,7))}
+  flat(len-3,len)}
+ else if(type==='collinare'){put(len*0.35,ra(3,6),ra(4.5,6.5));put(len*0.62,ra(3,6),ra(4.5,6.5));
+  const L=ra(1.5,3.2);flat(len-L-10,len-L);put(len,L,ra(6.5,9.5),false)}
+ else if(type==='montagna'){const n=r()<0.5?2:3;
+  for(let i=0;i<n-1;i++)put(len*(0.25+0.32*i/Math.max(1,n-2)),ra(7,12),ra(5.5,7.5));
+  if(r()<0.6){const L=ra(9,15);put(len,L,ra(6.5,8.5),false)}
+  else{const L=ra(8,13);put(len-ra(13,20),L,ra(6.5,8.2));flat(len-2,len)}}
+ else if(type==='crono'){if(r()<0.5)put(len*ra(0.4,0.7),ra(1.5,3),ra(3.5,6))}
+ const alt=new Float32Array(N+1);alt[0]=ra(40,380);
+ for(let i=0;i<N;i++)alt[i+1]=alt[i]+g[i];
+ let mn=Infinity,mx=-Infinity;for(const a of alt){mn=Math.min(mn,a);mx=Math.max(mx,a)}
+ if(mn<5){for(let i=0;i<=N;i++)alt[i]+=5-mn;mx+=5-mn;mn=5}
+ const climbs=[];let ni=Math.floor(r()*CLIMB_NAMES.length);
+ for(const [s,e] of marks){
+  const L=(e-s)/10;if(L<0.8)continue;
+  const avg=(alt[e]-alt[s])/(L*1000)*100, sc=avg*avg*L;
+  const cat=sc>=900?'HC':sc>=430?'1':sc>=200?'2':sc>=85?'3':sc>=25?'4':null;
+  if(!cat)continue;
+  climbs.push({start:s/10,top:e/10,len:L,avg,cat,name:CLIMB_NAMES[ni++%CLIMB_NAMES.length]});
+ }
+ const sin=new Float32Array(N),cos=new Float32Array(N);
+ for(let i=0;i<N;i++){const th=Math.atan(g[i]/100);sin[i]=Math.sin(th);cos[i]=Math.cos(th)}
+ const road=type!=='crono'&&type!=='prologo';
+ let sprintKm=null;
+ if(road){sprintKm=Math.round(len*ra(0.52,0.66));for(const c of climbs)if(sprintKm>c.start-1&&sprintKm<c.top+2)sprintKm=Math.round(c.start-3)}
+ return{type,len,N,g,alt,sin,cos,climbs,sprintKm,mn,mx};
+}
+
+/* ============================================================
+   PHYSICS
+   ============================================================ */
+const RHO=1.18,GRAV=9.81,CRR=0.0045,BIKE=8,ETA=0.97,VMAX=20.5;
+function pw(v,m,s,c,cda){return v*(0.5*RHO*cda*v*v+(m+BIKE)*GRAV*(s+CRR*c))/ETA}
+function spd(P,m,s,c,cda){
+ if(pw(VMAX,m,s,c,cda)<=P)return VMAX;
+ let lo=0.3,hi=VMAX;
+ for(let k=0;k<24;k++){const mid=(lo+hi)/2;if(pw(mid,m,s,c,cda)<P)lo=mid;else hi=mid}
+ return(lo+hi)/2;
+}
+const dScale=v=>clamp((v*3.6-14)/18,0,1);
+const dBase=n=>n<=1?0:n===2?0.27:n<=5?0.33:n<=15?0.38:0.44;
+const eMult=E=>E>=30?0.88+0.12*(E-30)/70:0.62+0.26*E/30;
+const ftpE=x=>x.ftp*eMult(x.E);
+
+/* ============================================================
+   RACE SIMULATION
+   ============================================================ */
+function createSim(ctx){
+ const c=ctx.course;
+ const S={course:c,len:c.len,type:c.type,t:0,dt:5,tick:0,done:false,riders:[],byId:{},byTeam:{},plans:{},
+  clusters:[],main:null,breakFormed:false,breakCaught:false,attacks:[],log:[],finish:[],
+  kom:c.climbs.map(()=>[]),sprint:[],passT:new Float64Array(c.N+2).fill(-1),passIdx:-1,
+  stageRace:ctx.stageRace,meTeam:'t0',lastAtkLog:-99,finalKmLogged:false,ctx};
+ S.passT[0]=0;S.passIdx=0;
+ for(const e of ctx.entrants){
+  const r=e.r, fs=(ctx.fat&&ctx.fat[r.id])||0;
+  const x={id:r.id,r,team:r.team,isMe:r.team==='t0',pos:0,E:100,
+   ftp:r.mass*r.wkg*r.form*(1-r.fat/260)*(1-fs/220)*(1+gauss()*0.012),
+   m:r.mass,cda:0.30+(r.mass-60)*0.0025,Wmax:15000+(r.spr-900)*14,spr:r.spr,endF:1.25-r.endu*0.005,
+   order:'auto',intent:'sit',I:0,easeI:0.4,v:0,P:0,stop:0,finished:false,ft:0,kmFuga:0,luck:gauss()*0.035,
+   atkUntil:0,followId:null,gcGap:(ctx.gcGap&&ctx.gcGap[r.id])||0,role:'dom',wasMain:true,lastDrop:-999,cl:null};
+  x.W=x.Wmax;
+  S.riders.push(x);S.byId[x.id]=x;(S.byTeam[x.team]=S.byTeam[x.team]||[]).push(x);
+ }
+ // last climb start -> finale window
+ const lc=c.climbs.length?c.climbs[c.climbs.length-1]:null;
+ S.finaleKm=c.type==='piatta'?5:lc?Math.max(8,c.len-lc.start+1):15;
+ if(c.type==='mossa')S.finaleKm=Math.max(S.finaleKm,25);
+ // field strength for plans
+ const suits=S.riders.map(x=>suitType(x.r,c.type)).sort((a,b)=>b-a);
+ const top5=suits.slice(0,5).reduce((a,b)=>a+b,0)/5;
+ let gcLeader=null;
+ if(ctx.stageRace&&ctx.gcGap){let best=Infinity;for(const x of S.riders)if(x.gcGap<best){best=x.gcGap;gcLeader=x}}
+ S.gcLeaderTeam=gcLeader&&ctx.stageIdx>0?gcLeader.team:null;
+ for(const t in S.byTeam){
+  const rs=S.byTeam[t];
+  const sc=rs.map(x=>({x,s:suitType(x.r,c.type)})).sort((a,b)=>b.s-a.s);
+  let lead=sc[0].x,goal;
+  const gt=c.type;
+  if(ctx.stageRace&&ctx.stageIdx>0&&['montagna','collinare','mossa'].includes(gt)){
+   const g=rs.slice().sort((a,b)=>a.gcGap-b.gcGap)[0];
+   if(g.gcGap<240){lead=g;goal='gc'}
+  }
+  if(!goal){const st=stats(lead.r);
+   goal=gt==='piatta'?(st.vol>=60?'sprint':'break'):gt==='mossa'?((lead.r.arch==='velocista'||lead.r.arch==='puncheur')&&st.vol>=60?'sprint':'hill'):gt==='collinare'?'hill':'gc';
+   if(suitType(lead.r,gt)<top5-12)goal='break';
+  }
+  if(t==='t0'&&ctx.capId&&S.byId[ctx.capId]){lead=S.byId[ctx.capId];const st=stats(lead.r);
+   goal=gt==='piatta'?(st.vol>=55?'sprint':'break'):gt==='mossa'?(st.vol>=62&&st.sal<70?'sprint':'hill'):gt==='collinare'?'hill':'gc'}
+  const ls=suitType(lead.r,gt);
+  for(const o of sc){o.x.role=o.x===lead?'lead':(o.s>=ls-4||(ctx.stageRace&&o.x.gcGap<90))?'free':'dom'}
+  S.plans[t]={lead,goal,pullers:[],I:0.85};
+ }
+ return S;
+}
+const gi=(S,pos)=>Math.min(S.course.N-1,Math.max(0,Math.floor(pos*10)));
+function gapSec(S,pos){const i=Math.min(S.passIdx,Math.max(0,Math.floor(pos*10)));const t=S.passT[i];return t<0?0:Math.max(0,S.t-t)}
+function slog(S,txt,me=false){const lead=S.clusters.length?S.clusters[0].front:0;S.log.push({km:Math.max(0,S.len-lead),txt,me})}
+const rname=x=>x.r.name.split(' ').slice(1).join(' ')||x.r.name;
+const tshort=x=>TEAM(x.team).short;
+
+function startAttack(S,x,I,dur){
+ x.intent='attack';x.I=I;x.atkUntil=S.t+dur;
+ S.attacks.push({id:x.id,cl:x.cl,t:S.t});
+ const k2g=S.len-x.pos;
+ if(x.isMe)slog(S,`Scatta ${x.r.name}!`,true);
+ else if((k2g<35||x.role==='lead')&&S.t-S.lastAtkLog>40&&S.breakFormed){S.lastAtkLog=S.t;slog(S,`Attacco di ${x.r.name} (${tshort(x)})`)}
+}
+
+function updatePlans(S){
+ const main=S.main;if(!main)return;
+ const k2g=S.len-main.front;
+ const ahead=main.idx>0, gap=ahead?gapSec(S,main.front):0;
+ const gr=S.course.g[gi(S,main.front)];
+ const onClimb=gr>3.5;
+ let ws=0,n=0;for(const x of main.rs){ws+=x.r.wkg;n++}S.mainWkg=ws/Math.max(1,n);
+ for(const t in S.plans){
+  const p=S.plans[t];p.pullers=[];
+  const lead=p.lead;if(!lead||lead.finished||lead.cl!==main)continue;
+  const hasAhead=S.byTeam[t].some(y=>!y.finished&&y.cl&&y.cl.idx<main.idx);
+  let k=0,I=0.85;
+  if(p.goal==='sprint'){
+   if(ahead&&!hasAhead){const allow=k2g>90?330:k2g*3.0+15;if(gap>allow){k=Math.min(3,1+Math.floor((gap-allow)/40));I=0.9}else if(gap>45&&S.breakFormed){k=1;I=0.8}}
+   if(k2g<14&&(!hasAhead||!ahead)){k=Math.max(k,2);I=0.95}
+   if(k2g<2.6){k=4;I=1.12}
+  }else if(p.goal==='gc'){
+   if(S.gcLeaderTeam===t&&ahead&&!hasAhead&&gap>200){k=1;I=0.82}
+   if(onClimb&&k2g<S.finaleKm+20){k=2;I=0.96}
+   if(ahead&&!hasAhead&&k2g<S.finaleKm+25&&gap>50){k=Math.max(k,2);I=Math.max(I,0.93)}
+  }else if(p.goal==='hill'){
+   if(ahead&&!hasAhead){const allow=k2g>80?300:k2g*2.4+10;if(gap>allow){k=2;I=0.9}}
+   if(k2g<22&&(!hasAhead||!ahead)){k=Math.max(k,1);I=Math.max(I,0.93)}
+  }
+  if(!k)continue;
+  const doms=S.byTeam[t].filter(y=>y!==lead&&!y.finished&&y.cl===main&&y.E>12&&y.role!=='free'&&!(y.isMe&&y.order!=='auto')).sort((a,b)=>b.E-a.E);
+  p.pullers=doms.slice(0,k);p.I=I;
+ }
+}
+
+function escort(S,x){
+ const cap=S.plans[x.team].lead;
+ if(!cap||cap===x||cap.finished){x.intent='sit';return}
+ if(cap.cl===x.cl){
+  const k2g=S.len-x.pos;
+  if(x.cl.idx>0){const gapAhead=gapSec(S,x.cl.front)-gapSec(S,S.clusters[x.cl.idx-1].front);
+   if(gapAhead<150||k2g<40){x.intent='pull';x.I=0.92;return}}
+  x.intent='sit';
+ }else if(x.pos>cap.pos){x.intent='ease';x.easeI=0.35}
+ else{x.intent='pull';x.I=0.95}
+}
+
+function applyOrder(S,x){
+ switch(x.order){
+  case'ruota':x.intent='sit';break;
+  case'tira':x.intent='pull';x.I=0.9;break;
+  case'scorta':escort(S,x);break;
+ }
+}
+
+function decide(S,x){
+ if(x.finished||x.stop>0)return;
+ if(x.intent==='sprint')return;
+ if(x.intent==='attack'){
+  if(S.t<x.atkUntil&&x.W>0.15*x.Wmax)return;
+  x.intent='pull';x.I=0.9;
+  if(x.isMe&&x.order==='scatta')x.order='tira';
+ }
+ if(x.intent==='follow'){const t=S.byId[x.followId];if(t&&t.intent==='attack'&&!t.finished)return;x.intent='sit'}
+ if(x.isMe&&x.order!=='auto'){applyOrder(S,x);return}
+ aiDecide(S,x);
+}
+
+function aiDecide(S,x){
+ const c=x.cl,main=S.main,plan=S.plans[x.team],lead=plan.lead;
+ const k2g=S.len-x.pos;
+ const gr=S.course.g[gi(S,x.pos)],climbing=gr>3.5;
+ const inFront=c.idx<main.idx,inMain=c===main;
+ // reagire a uno scatto nello stesso gruppo
+ if(x.E>18&&x.W>0.35*x.Wmax&&(x.role!=='dom'||inFront)){
+  for(const a of S.attacks){
+   if(a.cl!==c||a.id===x.id||S.t-a.t>35)continue;
+   const at=S.byId[a.id];if(at.intent!=='attack'||at.team===x.team)continue;
+   let threat=!S.breakFormed&&k2g>40?0.04:k2g<35?0.55:0.2;
+   if(S.stageRace&&at.gcGap<120&&x.role!=='dom')threat=0.85;
+   if(inFront)threat=Math.max(threat,0.45);
+   const rel=clamp((x.r.wkg/at.r.wkg-0.9)*4,0.1,1.3);
+   if(R()<threat*rel){x.intent='follow';x.followId=at.id;return}
+  }
+ }
+ if(inFront){
+  if(lead&&lead!==x&&!lead.finished&&lead.cl.idx>c.idx&&plan.goal!=='break'&&x.role==='dom'&&k2g<60){x.intent='sit';return}
+  if(x.E<12){x.intent='sit';return}
+  if(k2g<30&&c.rs.length>1&&x.W>0.5*x.Wmax){
+   let p=0.018*(k2g<10?3:1)*(climbing?2:1)*clamp(Math.pow(x.r.wkg/5.3,4),0.4,2);
+   if(R()<p){startAttack(S,x,1.25,rnd(40,80));return}
+  }
+  x.intent='pull';x.I=c.rs.length===1?0.9:0.86;return;
+ }
+ if(inMain){
+  if(plan.pullers.includes(x)){x.intent='pull';x.I=plan.I;return}
+  // gregario aspetta il capitano attardato
+  if(x.role==='dom'&&lead&&lead!==x&&!lead.finished&&lead.cl.idx>c.idx&&x.E>20){
+   const gl=gapSec(S,lead.pos)-gapSec(S,x.pos);
+   const helpers=S.byTeam[x.team].filter(y=>y.role==='dom'&&y.cl===main).slice(0,2);
+   if(gl<70&&helpers.includes(x)&&k2g>3){x.intent='ease';x.easeI=0.35;return}
+  }
+  // tentativi di fuga
+  if(!S.breakFormed&&x.pos>1.5&&k2g>45&&x.role!=='lead'&&x.E>70&&!(S.stageRace&&x.gcGap<60)){
+   const pr=plan.goal==='break'?0.007:x.r.arch==='velocista'?0.0008:0.003;
+   if(R()<pr){startAttack(S,x,1.3,rnd(50,100));return}
+  }
+  if(S.breakFormed&&!S.breakCaught&&main.idx>0&&gapSec(S,main.front)<75&&k2g>45&&x.role!=='lead'&&x.E>65&&R()<0.0015){startAttack(S,x,1.3,rnd(50,90));return}
+  // finale per chi punta al risultato
+  if((x.role==='lead'||x.role==='free')&&x.W>0.55*x.Wmax&&x.E>22){
+   let p=0;const st=S.type;
+   if(climbing&&k2g<S.finaleKm)p=0.03*clamp(Math.pow(x.r.wkg/(S.mainWkg||5.3),8),0.15,3);
+   else if(!climbing&&k2g<7&&st!=='piatta'&&x.r.arch!=='velocista'&&k2g>0.6)p=0.01;
+   else if(st==='piatta'&&k2g<4&&k2g>1&&x.r.arch!=='velocista')p=0.003;
+   if(S.stageRace&&x.gcGap>300&&climbing)p*=0.4;
+   if(p&&R()<p){startAttack(S,x,1.3,rnd(40,90));return}
+  }
+  x.intent='sit';return;
+ }
+ // dietro al gruppo principale
+ if(x.role==='lead'||(x.role==='free'&&k2g<60)){if(x.E>8){x.intent='pull';x.I=0.95;return}}
+ if(x.role==='dom'&&lead&&lead!==x&&!lead.finished){
+  if(lead.cl===c&&x.E>12){x.intent='pull';x.I=0.92;return}
+  if(lead.pos<x.pos&&gapSec(S,lead.pos)-gapSec(S,x.pos)<60&&x.E>20){x.intent='ease';x.easeI=0.35;return}
+ }
+ x.intent='sit';
+}
+
+function clusterize(S){
+ const act=S.riders.filter(x=>!x.finished);
+ act.sort((a,b)=>b.pos-a.pos);
+ const cl=[];let cur=null;
+ for(const x of act){
+  if(!cur||cur.last-x.pos>0.025){cur={rs:[],front:x.pos,last:x.pos,idx:cl.length};cl.push(cur)}
+  cur.rs.push(x);cur.last=x.pos;x.cl=cur;
+ }
+ S.clusters=cl;
+ let m=null;for(const c of cl)if(!m||c.rs.length>m.rs.length)m=c;
+ S.main=m;
+ return act;
+}
+
+function tick(S){
+ const dt=S.dt,c=S.course;
+ const act=clusterize(S);
+ if(!act.length){S.done=true;return}
+ const main=S.main;
+ // fuga formata / ripresa
+ if(!S.breakFormed&&main.idx>0&&gapSec(S,main.front)>=40){
+  let n=0;for(let i=0;i<main.idx;i++)n+=S.clusters[i].rs.length;
+  if(n<=14){S.breakFormed=true;const mine=[];for(let i=0;i<main.idx;i++)for(const x of S.clusters[i].rs)if(x.isMe)mine.push(x.r.name);
+   slog(S,`Fuga di ${n} corridor${n===1?'e':'i'} al km ${Math.round(S.clusters[0].front)}`+(mine.length?`: c'è ${mine.join(' e ')}!`:''),mine.length>0)}
+ }
+ if(S.breakFormed&&!S.breakCaught&&!S.finish.length&&main.idx===0&&S.len-main.front>1){S.breakCaught=true;slog(S,`Fuga ripresa dal gruppo a ${Math.round(S.len-main.front)} km dall'arrivo`)}
+ if(!S.finalKmLogged&&S.clusters[0].front>=S.len-1){S.finalKmLogged=true;slog(S,'Triangolo rosso: ultimo chilometro')}
+ // decisioni ogni 30 secondi di corsa
+ if(S.tick%6===0){updatePlans(S);for(const x of act)decide(S,x);S.attacks=S.attacks.filter(a=>S.t-a.t<60)}
+ // volata finale
+ for(const x of act){
+  if(x.intent!=='sprint'&&S.len-x.pos<0.28&&x.stop<=0){
+   const lead=S.plans[x.team].lead;
+   const domWithLead=x.role==='dom'&&lead&&lead!==x&&lead.cl===x.cl&&!lead.finished;
+   const meNo=x.isMe&&(x.order==='tira'||x.order==='scorta')&&lead!==x;
+   if(!domWithLead&&!meNo&&x.E>4)x.intent='sprint';
+   else if(x.intent!=='ease'){x.intent='ease';x.easeI=0.5}
+  }
+ }
+ // forature
+ for(const x of act){
+  if(x.stop>0){x.stop--;x.v=0;x.P=0;continue}
+  if(R()<4e-6&&S.len-x.pos>3){x.stop=rint(4,8);x.v=0;x.P=0;
+   if(x.isMe||x.role==='lead')slog(S,`Foratura per ${x.r.name} (${tshort(x)})`,x.isMe)}
+ }
+ // corridori in azione individuale
+ for(const x of act){
+  if(x.stop>0)continue;
+  const i=gi(S,x.pos),s=c.sin[i],co=c.cos[i];
+  if(x.intent==='attack'){const fe=ftpE(x);x.P=x.W>200?x.I*fe:fe;x.v=spd(x.P,x.m,s,co,x.cda)}
+  else if(x.intent==='sprint'){x.P=x.spr*(0.6+0.4*x.W/x.Wmax)*eMult(x.E)*(1+x.luck);x.v=spd(x.P,x.m,s,co,x.cda*0.85)}
+ }
+ // gruppi
+ for(const cl of S.clusters){
+  const mem=cl.rs.filter(x=>x.stop<=0&&x.intent!=='attack'&&x.intent!=='sprint');
+  if(!mem.length)continue;
+  const i=gi(S,cl.front),s=c.sin[i],co=c.cos[i],gr=c.g[i];
+  const n=cl.rs.length,db=dBase(n);
+  const ws=mem.filter(x=>x.intent==='pull');
+  let v;
+  const k2g=S.len-cl.front;
+  let cI=cl===main?((!S.breakFormed&&k2g>40)?0.66:0.55):0.6;if(gr>3)cI+=0.12;
+  let fs=0,ms=0;for(const x of mem){fs+=ftpE(x);ms+=x.m}
+  const vC=spd(cI*fs/mem.length,ms/mem.length,s,co,0.32);
+  if(ws.length){
+   const k=ws.length,dk=dBase(k);
+   let tgt=0;for(const w of ws)tgt+=w.I*ftpE(w);
+   const rot=(w,vv)=>{const a=Math.max(0,pw(vv,w.m,s,co,w.cda));if(k===1)return a;const b=Math.max(0,pw(vv,w.m,s,co,w.cda*(1-dk*dScale(vv))));return(a+(k-1)*b)/k};
+   let lo=0.3,hi=VMAX;
+   if(ws.reduce((a,w)=>a+rot(w,hi),0)<=tgt)v=hi;
+   else{for(let it=0;it<22;it++){const mid=(lo+hi)/2;let sum=0;for(const w of ws)sum+=rot(w,mid);if(sum<tgt)lo=mid;else hi=mid}v=(lo+hi)/2}
+   v=Math.max(v,vC);
+   for(const x of mem){x._req=ws.includes(x)?rot(x,v):null}
+  }else{v=vC;for(const x of mem)x._req=null}
+  cl.v=v;
+  for(const x of mem){
+   let vv=v,req;
+   const df=1-db*dScale(v);
+   if(x.intent==='follow'){const t=S.byId[x.followId];if(t&&!t.finished&&t.v>0){vv=t.v+clamp((t.pos-x.pos)*1000/dt*0.4,-1,1.5)}}
+   else if(x.intent==='ease'){vv=Math.min(v,spd(x.easeI*ftpE(x),x.m,s,co,x.cda*df))}
+   else{vv=v+clamp((cl.front-x.pos)*1000/dt*0.3,0,1.2)}
+   req=x._req!==null&&x.intent==='pull'?x._req:Math.max(0,pw(vv,x.m,s,co,x.cda*(x.intent==='follow'?(1-0.3*dScale(vv)):df)));
+   const fe=ftpE(x),allow=x.W>300?fe*1.7:fe*1.0;
+   if(req>allow){x.P=allow;vv=spd(allow,x.m,s,co,x.cda*df)}else x.P=req;
+   x.v=vv;
+  }
+ }
+ // movimento e fisiologia
+ for(const x of act){
+  const fe=ftpE(x);
+  if(x.P>fe)x.W-=(x.P-fe)*dt;else x.W=Math.min(x.Wmax,x.W+(fe-x.P)*dt*0.3);
+  if(x.W<0)x.W=0;
+  const inten=Math.max(0,x.P/x.ftp);
+  x.E=Math.max(0,x.E-dt*(0.0006+0.0075*Math.pow(inten,2.5))*x.endF);
+  const prev=x.pos;x.pos+=x.v*dt/1000;
+  if(x.cl&&x.cl.idx<main.idx)x.kmFuga+=x.pos-prev;
+  // GPM
+  c.climbs.forEach((cb,j)=>{if(prev<cb.top&&x.pos>=cb.top&&cb.top<S.len){S.kom[j].push(x);if(S.kom[j].length===1)slog(S,`GPM ${cb.cat==='HC'?'HC':cb.cat+'ª cat.'} ${cb.name}: primo ${x.r.name} (${tshort(x)})`,x.isMe)}});
+  if(c.sprintKm&&prev<c.sprintKm&&x.pos>=c.sprintKm){S.sprint.push(x);if(S.sprint.length===1)slog(S,`Traguardo volante: primo ${x.r.name} (${tshort(x)})`,x.isMe)}
+  // passaggi di testa
+  const ix=Math.min(c.N,Math.floor(Math.min(x.pos,S.len)*10));
+  while(S.passIdx<ix){S.passIdx++;const kmMark=S.passIdx/10;const f=x.v>0?clamp((kmMark-prev)/(x.pos-prev),0,1):1;S.passT[S.passIdx]=S.t+f*dt}
+  if(x.pos>=S.len){x.finished=true;x.ft=S.t+(x.v>0?(S.len-prev)/(x.v/1000):dt);x.pos=S.len;S.finish.push(x);
+   if(S.finish.length===1)slog(S,`Vince ${x.r.name} (${TEAM(x.team).name})!`,x.isMe)}
+ }
+ // corridori della mia squadra che perdono contatto
+ if(S.tick%6===3){
+  for(const x of act){if(!x.isMe||x.finished)continue;
+   const inM=x.cl===main||x.cl.idx<main.idx;
+   if(x.wasMain&&!inM&&gapSec(S,x.pos)-gapSec(S,main.front)>8&&S.t-x.lastDrop>300&&x.stop<=0){x.lastDrop=S.t;slog(S,`${x.r.name} perde contatto dal gruppo`,true)}
+   x.wasMain=inM;}
+ }
+ S.t+=dt;S.tick++;
+ if(S.riders.every(x=>x.finished))S.done=true;
+ if(S.t>9*3600){for(const x of S.riders)if(!x.finished){x.finished=true;x.ft=S.t+(S.len-x.pos)*90;S.finish.push(x)}S.done=true}
+}
+
+function stageResults(S){
+ const fin=S.finish.slice().sort((a,b)=>a.ft-b.ft);
+ let gt=0,prev=-1e9;
+ return fin.map(x=>{if(x.ft-prev>1.0)gt=x.ft;prev=x.ft;return{id:x.id,team:x.team,time:Math.round(gt)}});
+}
+function simTT(ctx){
+ const c=ctx.course;
+ const res=ctx.entrants.map(e=>{const r=e.r,fs=(ctx.fat&&ctx.fat[r.id])||0;
+  const ftp=r.mass*r.wkg*r.form*(1-r.fat/260)*(1-fs/220)*(1+gauss()*0.015);
+  const P=ftp*(c.type==='prologo'?1.12:1.0)*(1-Math.min(0.06,c.len/600));
+  let t=0;for(let i=0;i<c.N;i++){t+=100/spd(P,r.mass,c.sin[i],c.cos[i],r.tt)}
+  return{id:r.id,team:r.team,time:Math.round(t*10)/10};
+ }).sort((a,b)=>a.time-b.time);
+ return res;
+}
+
+/* ============================================================
+   RACE CONTEXT (one-day or stage race)
+   ============================================================ */
+function aiSelect(team,ev){
+ const el=team.riders.map(RID).filter(r=>r.busy!==ev.w&&(!ev.u23||r.age<=22));
+ const sc=el.map(r=>({r,s:suitRace(r,ev)-r.fat*0.35-(r.days>55?12:0)+rnd(0,9)})).sort((a,b)=>b.s-a.s);
+ return sc.slice(0,ev.perTeam).map(o=>o.r);
+}
+function buildField(ev){
+ const ai=G.teams.filter(t=>t.tier!=='me');
+ const elig=t=>t.riders.map(RID).filter(r=>r.busy!==ev.w&&(!ev.u23||r.age<=22)).length;
+ let chosen;
+ if(ev.u23)chosen=shuffle(ai.filter(t=>t.tier!=='pro'&&elig(t)>=4)).slice(0,17);
+ else if(ev.cls.includes('.1'))chosen=ai.filter(t=>t.tier==='pro').concat(shuffle(ai.filter(t=>t.tier==='conti')).slice(0,13));
+ else chosen=shuffle(ai.filter(t=>t.tier!=='pro'&&elig(t)>=6)).slice(0,18);
+ const field=[];
+ for(const id of ev.sel)field.push(RID(id));
+ for(const t of chosen)for(const r of aiSelect(t,ev)){r.busy=ev.w;field.push(r)}
+ return field;
+}
+function newRC(ev){
+ const field=buildField(ev);
+ const RC={ev,field,stage:0,fat:{},gc:{},stages:[],stageRace:ev.stages.length>1,kmFuga:{}};
+ for(const r of field){RC.gc[r.id]={t:0,pts:0,kom:0};RC.fat[r.id]=0;RC.kmFuga[r.id]=0}
+ return RC;
+}
+function gcOrder(RC){return RC.field.map(r=>({id:r.id,team:r.team,t:RC.gc[r.id].t})).sort((a,b)=>a.t-b.t)}
+function stageCtx(RC){
+ const st=RC.ev.stages[RC.stage];
+ const course=genCourse(st.t,st.seed);
+ const gcGap={};
+ if(RC.stageRace&&RC.stage>0){const o=gcOrder(RC);const t0=o[0].t;for(const x of o)gcGap[x.id]=x.t-t0}
+ return{course,entrants:RC.field.map(r=>({r})),fat:RC.fat,gcGap,stageRace:RC.stageRace,stageIdx:RC.stage,capId:RC.ev.cap};
+}
+const FIN_PTS_FLAT=[25,20,16,14,12,10,8,6,4,2],FIN_PTS_HILL=[20,16,12,10,8,6,4,3,2,1],FIN_PTS_TT=[10,8,6,4,2];
+const KOM_PTS={HC:[20,15,12,10,8,6,4,2],'1':[10,8,6,4,2,1],'2':[5,3,2,1],'3':[3,2,1],'4':[1]};
+function finishStage(RC,res,S,course){
+ const road=course.type!=='crono'&&course.type!=='prologo';
+ const sr={type:course.type,len:course.len,res,climbs:course.climbs,koms:[],sprint:[]};
+ // tempi e abbuoni
+ for(const x of res)RC.gc[x.id].t+=x.time;
+ if(RC.stageRace&&road){[10,6,4].forEach((b,i)=>{if(res[i])RC.gc[res[i].id].t-=b})}
+ if(S){
+  if(RC.stageRace&&S.sprint.length){[3,2,1].forEach((b,i)=>{if(S.sprint[i])RC.gc[S.sprint[i].id].t-=b});[6,4,2].forEach((p,i)=>{if(S.sprint[i])RC.gc[S.sprint[i].id].pts+=p})}
+  course.climbs.forEach((cb,j)=>{const arr=S.kom[j]||[];(KOM_PTS[cb.cat]||[]).forEach((p,i)=>{if(arr[i])RC.gc[arr[i].id].kom+=p});sr.koms.push(arr.slice(0,3).map(x=>x.id))});
+  sr.sprint=S.sprint.slice(0,3).map(x=>x.id);
+  for(const x of S.riders){RC.fat[x.id]+=(100-x.E)*0.2*(1.2-x.r.rec/200);RC.kmFuga[x.id]+=x.kmFuga}
+ }else{for(const x of res)RC.fat[x.id]+=5}
+ const fp=!road?FIN_PTS_TT:(course.type==='piatta'||course.type==='mossa')?FIN_PTS_FLAT:FIN_PTS_HILL;
+ fp.forEach((p,i)=>{if(res[i])RC.gc[res[i].id].pts+=p});
+ RC.stages.push(sr);
+ RC.stage++;
+}
+function jerseys(RC){
+ const ids=RC.field.map(r=>r.id);
+ const gc=gcOrder(RC);
+ const best=(f,flt=()=>true)=>{let b=null,bv=-1;for(const id of ids){if(!flt(id))continue;const v=f(id);if(v>bv){bv=v;b=id}}return bv>0?b:null};
+ return{gc:gc[0]&&gc[0].id,pts:best(id=>RC.gc[id].pts),kom:best(id=>RC.gc[id].kom),young:RC.ev.u23?null:(gc.find(x=>RID(x.id).age<=22)||{}).id};
+}
+function finishRace(RC){
+ const ev=RC.ev,P=PTS[ev.cls];
+ const final=RC.stageRace?gcOrder(RC).map(x=>({id:x.id,team:x.team,time:x.t})):RC.stages[0].res;
+ const award={};
+ const add=(id,p)=>{award[id]=(award[id]||0)+p};
+ P.forEach((p,i)=>{if(final[i])add(final[i].id,p)});
+ if(RC.stageRace){const sp=STAGE_PTS[ev.cls];for(const s of RC.stages)sp.forEach((p,i)=>{if(s.res[i])add(s.res[i].id,p)})}
+ for(const id in award)RID(id).pts+=award[id];
+ // vittorie
+ const wins=[];
+ for(const s of RC.stages){if(s.res[0]){RID(s.res[0].id).wins++;wins.push(s.res[0].id)}}
+ if(RC.stageRace&&final[0])RID(final[0].id).wins++;
+ // fatica, forma, crescita
+ const days=ev.stages.length;
+ for(const r of RC.field){
+  r.days+=days;
+  const hard=ev.stages.reduce((a,s)=>a+HARD[s.t],0);
+  r.fat=clamp(r.fat+hard*(1.15-r.rec/200)*(r.days>60?1.4:1)+RC.fat[r.id]*0.15,0,100);
+  r.form=clamp(r.form+days*(r.fat<45?0.005:r.fat<70?0.0005:-0.006),0.9,1.045);
+  if(r.age<=22)r.wkg=+(r.wkg+days*(0.0015+0.0045*r.pot)).toFixed(4);
+  const pos=final.findIndex(x=>x.id===r.id)+1;
+  if(r.team==='t0'||pos<=3)r.res.push({ev:ev.id,pos,n:final.length,w:wins.filter(w=>w===r.id).length});
+ }
+ // sponsor e visibilità
+ const mine=RC.field.filter(r=>r.team==='t0');
+ const myPts=mine.reduce((a,r)=>a+(award[r.id]||0),0);
+ const kmF=mine.reduce((a,r)=>a+RC.kmFuga[r.id],0);
+ const bestPos=Math.min(...mine.map(r=>final.findIndex(x=>x.id===r.id)+1));
+ const myWins=wins.filter(id=>RID(id).team==='t0').length+(RC.stageRace&&final[0]&&RID(final[0].id).team==='t0'?1:0);
+ const factor=ev.cls.includes('.1')?1.6:1;
+ const dS=clamp(Math.round((Math.min(kmF,150)*0.02+myPts*0.1+myWins*5-(bestPos>20?5:bestPos>10?2:0))*factor),-8,15);
+ G.sponsor=clamp(G.sponsor+dS,0,100);G.kmFuga+=kmF;
+ const prize=myPts*100+wins.filter(id=>RID(id).team==='t0').length*1500;G.cash+=prize;
+ ev.status='done';
+ const j=RC.stageRace?jerseys(RC):null;
+ ev.result={prize,final:final.slice(0,10).map(x=>x.id),mine:mine.map(r=>({id:r.id,pos:final.findIndex(x=>x.id===r.id)+1})).sort((a,b)=>a.pos-b.pos),wins:wins,myPts,kmF:Math.round(kmF),dS,bestPos,n:final.length,jer:j,award};
+ for(const r of RC.field)if(r.busy===ev.w&&r.team!=='t0'){} // occupati fino a fine settimana
+ // libera la settimana quando tutte le corse sono finite
+ if(!G.cal.some(e=>e.w===ev.w&&e.status==='todo'))for(const id in G.riders)if(G.riders[id].busy===ev.w)G.riders[id].busy=0;
+ save();
+}
+function simulateWholeRace(RC){
+ while(RC.stage<RC.ev.stages.length){
+  const ctx=stageCtx(RC);
+  if(ctx.course.type==='crono'||ctx.course.type==='prologo'){finishStage(RC,simTT(ctx),null,ctx.course)}
+  else{const S=createSim(ctx);while(!S.done)tick(S);finishStage(RC,stageResults(S),S,ctx.course)}
+ }
+ finishRace(RC);
+}
+
+/* ============================================================
+   UI: SHELL
+   ============================================================ */
+function render(){
+ if(!G){renderIntro();return}
+ $('#top').hidden=false;$('#tabs').hidden=false;
+ renderTop();
+ document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-current',String(b.dataset.v===G.tab)));
+ if(G.tab==='cal')renderCal();else if(G.tab==='team')renderTeam();else if(G.tab==='market')renderMarket();else renderRank();
+}
+function teamPoints(t){return t.riders.reduce((a,id)=>a+RID(id).pts,0)}
+function teamRanking(){return G.teams.map(t=>({t,p:teamPoints(t)})).sort((a,b)=>b.p-a.p)}
+function renderTop(){
+ const pw=pendingWeek()||G.week,d=weekDate(pw);
+ const rk=teamRanking().findIndex(o=>o.t.id==='t0')+1;
+ $('#top').innerHTML=`<div class="wrap"><div class="crest">${esc(ME().short)}</div>
+  <div style="min-width:0"><div class="tn">${esc(G.name)}</div><div class="sub">Continental · ${SEASON} · ${d.getDate()} ${MESI[d.getMonth()]}</div></div>
+  <div class="meta"><b>${teamPoints(ME())}</b> <span class="sub">pt · ${rk}ª</span><div class="sub">Cassa ${eurk(G.cash)} · Sponsor ${G.sponsor}%</div></div></div>`;
+}
+function renderIntro(){
+ $('#top').hidden=true;$('#tabs').hidden=true;
+ $('#view').innerHTML=`<div class="intro">
+  <div style="display:flex;flex-direction:column;gap:14px"><div class="eyebrow">Gestionale di ciclismo · prototipo</div>
+  <h1>Ammiraglia</h1>
+  <p>Dirigi una squadra Continental per una stagione intera: 14 corridori tra Under 23 ed Elite, 21 corse tra classiche di un giorno e giri a tappe, alcune nella stessa settimana. Scegli chi convocare, gestisci fatica e forma, poi segui le tappe dall'ammiraglia dando ordini via radio.</p>
+  <div class="field"><label for="tname" class="eyebrow">Nome della squadra</label><input id="tname" maxlength="34" value="Ciclistica Valle Azzurra"></div>
+  <button class="btn primary" data-act="start">Inizia la stagione 2027</button>
+  ${ROT}</div>
+  <div class="card" style="padding:14px">
+   <div class="eyebrow" style="margin-bottom:6px">Come funziona</div>
+   <ul class="note list" style="margin:0;padding-left:18px">
+    <li><b>Categorie:</b> Under 23 (19–22 anni) ed Elite. Le corse con la "U" (1.2U, 2.2U) sono riservate agli Under 23.</li>
+    <li><b>Programma:</b> nessuno corre tutto. Ogni giorno di gara accumula fatica; il riposo la smaltisce. Oltre i 60 giorni di corsa arriva il sovraccarico.</li>
+    <li><b>In corsa:</b> scia, fughe, cotte e scatti nascono dalla fisica (watt, peso, pendenza). Ordini: Auto, Ruota, Tira, Scatta, Scorta il capitano.</li>
+    <li><b>Mercato:</b> ingaggi e contratti pluriennali, svincolati, acquisti con indennizzo nelle finestre di febbraio e luglio–agosto, rinnovi, pre-contratti e juniores dal 1° agosto. Il budget arriva dallo sponsor.</li>
+   </ul></div>
+ </div>`;
+}
+
+/* ---------- Calendar ---------- */
+function stBars(ev){return `<span class="stbars" aria-label="${ev.stages.map(s=>TYPE_LAB[s.t]).join(', ')}">${ev.stages.map(s=>`<i class="${s.t==='crono'||s.t==='prologo'?'tt':''}" style="height:${TYPE_H[s.t]}px"></i>`).join('')}</span>`}
+function ord(n){return n+'°'}
+function renderCal(){
+ const pw=pendingWeek();
+ let html='';
+ if(pw===null)html+=seasonSummary();
+ else{
+  const nx=G.cal.filter(e=>e.status==='todo'&&e.w===pw);const ww=win();
+  html+=`<div class="sec"><div class="sec-h"><h2>Prossimo impegno</h2><span class="eyebrow">${nx.length>1?'Doppia attività':''}</span></div>
+  ${nx.length>1?`<div class="note">Due corse nella stessa settimana: dividi la rosa, un corridore non può essere in due posti.</div>`:''}
+  ${ww.now||ww.next?`<button class="banner" data-act="tab" data-v="market" style="text-align:left"><span class="chip u23">Mercato</span><span>${ww.label}</span></button>`:''}
+  ${expiringAlert()}</div>`;
+ }
+ let lastM=-1;
+ html=ROT+html;
+ html+='<div class="sec cols">';
+ for(const ev of G.cal){
+  const d=weekDate(ev.w);
+  if(d.getMonth()!==lastM){lastM=d.getMonth();html+=`<div class="month">${MESI[lastM]}</div>`}
+  const isNext=ev.status==='todo'&&ev.w===pw;
+  const same=G.cal.filter(e=>e.w===ev.w).length>1;
+  let res='';
+  if(ev.status==='done'&&ev.result){const m=ev.result.mine[0];
+   const w=ev.result.wins.filter(id=>RID(id).team==='t0').length;
+   res=`<div class="res">${m?`Miglior piazzamento: <b>${ord(m.pos)}</b> ${esc(RID(m.id).name)}`:''}${w?` · <span class="chip amber">${w} vittori${w>1?'e':'a'}</span>`:''} · <span class="muted">${ev.result.myPts} pt</span></div>`}
+  else if(ev.status==='skip')res=`<div class="res muted">Non partecipato</div>`;
+  html+=`<div class="card ev ${ev.status==='done'?'done':''} ${isNext?'next':''}">
+   <div class="d"><b>${d.getDate()}</b><span>${MES3[d.getMonth()]}</span></div>
+   <div style="min-width:0"><div class="nm">${esc(ev.name)}</div>
+    <div class="mt"><span class="chip cls" title="${CLS_DESC[ev.cls]}">${ev.cls}</span>${ev.u23?'<span class="chip u23">Under 23</span>':''}
+    <span>${ev.stages.length>1?ev.stages.length+' tappe':TYPE_LAB[ev.stages[0].t]}</span>${stBars(ev)}${same?'<span class="chip">stessa settimana</span>':''}</div></div>
+   ${res}
+   ${isNext?`<div class="act"><button class="btn primary" data-act="convoca" data-v="${ev.id}">Convocazioni</button><button class="btn ghost" data-act="skip" data-v="${ev.id}">Rinuncia</button></div>`:''}
+  </div>`;
+ }
+ html+='</div>';
+ $('#view').innerHTML=html;
+}
+function seasonSummary(){
+ const rk=teamRanking().findIndex(o=>o.t.id==='t0')+1;
+ const wins=ME().riders.reduce((a,id)=>a+RID(id).wins,0);
+ return `<div class="sec card" style="padding:16px"><div class="eyebrow">Stagione ${SEASON} conclusa</div>
+  <h2 style="font-size:30px">${rk}ª su ${G.teams.length} nella classifica a squadre</h2>
+  <div class="kv"><div><small>Punti</small><b>${teamPoints(ME())}</b></div><div><small>Vittorie</small><b>${wins}</b></div><div><small>Km in fuga</small><b>${Math.round(G.kmFuga)}</b></div></div>
+  <div class="note">Sponsor soddisfatto al ${G.sponsor}%. ${G.sponsor>=70?'Il rinnovo è vicino.':G.sponsor>=45?'Lo sponsor vuole più visibilità.':'Lo sponsor sta valutando di lasciare.'}</div>
+  ${expiringAlert()}
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="nextseason">Passa al ${SEASON+1}</button><button class="btn ghost" data-act="tab" data-v="market">Mercato</button><button class="btn ghost" data-act="newgame">Ricomincia da zero</button></div></div>`;
+}
+
+/* ---------- Team ---------- */
+function riderCard(r){
+ const s=stats(r),c=condOf(r);
+ const st=[['SAL',s.sal],['PIA',s.pia],['CRO',s.cro],['VOL',s.vol],['RES',s.res],['REC',s.rec]];
+ return `<button class="card rider" data-act="rider" data-v="${r.id}">
+  <div style="min-width:0"><div class="nm">${esc(r.name)}</div>
+   <div class="tags"><span class="chip ${r.age<=22?'u23':''}">${catOf(r)}</span>${r.neo?'<span class="chip">1° anno</span>':''}<span>${ARCH[r.arch].lab}</span><span>· ${r.age} anni · ${r.nat}</span></div></div>
+  <div style="text-align:right;font-size:13px"><span class="cond" style="--c:${c.c}">${c.t}</span><div class="muted">${r.days} gg corsa</div></div>
+  <div style="grid-column:1/-1;display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--muted)"><span class="chip">Valore ${ovr(r)}</span>${contractLine(r)}</div>
+  <div class="statrow">${st.map(([k,v])=>`<div class="stat"><small>${k}</small><b>${v}</b><div class="bar"><i style="width:${v}%"></i></div></div>`).join('')}</div>
+ </button>`;
+}
+function renderTeam(){
+ const rs=ME().riders.map(RID);
+ const u=rs.filter(r=>r.age<=22).sort((a,b)=>b.pts-a.pts||a.age-b.age),e=rs.filter(r=>r.age>22).sort((a,b)=>b.pts-a.pts);
+ const days=rs.reduce((a,r)=>a+r.days,0);
+ const inc=Object.values(G.riders).filter(r=>r.next&&r.next.team==='t0');
+ $('#view').innerHTML=`<div class="sec"><div class="kv"><div><small>Corridori</small><b>${rs.length}/${ROSTER_MAX}</b></div><div><small>Giorni di gara</small><b>${days}</b></div><div><small>Vittorie</small><b>${rs.reduce((a,r)=>a+r.wins,0)}</b></div></div>
+  <div class="note">SAL salita · PIA pianura · CRO cronometro · VOL volata · RES resistenza · REC recupero. Programma consigliato: 45–60 giorni di corsa a stagione.</div></div>
+  <div class="sec"><div class="sec-h"><h2>Under 23</h2><span class="eyebrow">19–22 anni</span></div><div class="cols">${u.map(riderCard).join('')}</div></div>
+  <div class="sec"><div class="sec-h"><h2>Elite</h2><span class="eyebrow">23 anni e oltre</span></div><div class="cols">${e.map(riderCard).join('')}</div></div>
+  ${inc.length?`<div class="sec"><div class="sec-h"><h2>In arrivo nel ${SEASON+1}</h2><span class="eyebrow">pre-contratti</span></div><div class="cols">${inc.map(r=>mkRow(r,'inc')).join('')}</div></div>`:''}`;
+}
+function riderSheet(id){
+ const r=RID(id),s=stats(r),c=condOf(r);
+ const ftp=Math.round(r.mass*r.wkg);
+ const pot=r.age<=22?'★'.repeat(1+Math.round(r.pot*4))+'☆'.repeat(4-Math.round(r.pot*4)):'—';
+ const res=r.res.slice().reverse().map(x=>{const ev=G.cal.find(e=>e.id===x.ev);return `<tr><td>${esc(ev.name)} <span class="tm">${ev.cls}</span></td><td class="r">${x.pos?ord(x.pos):'—'}${x.w?` <span class="chip amber">${x.w}× tappa</span>`:''}</td></tr>`}).join('');
+ openSheet(`<div class="ph wrap"><div><div class="eyebrow">${ARCH[r.arch].lab} · ${catOf(r)}${r.neo?' · 1° anno':''}</div><h2>${esc(r.name)}</h2><div class="note">${r.age} anni · ${r.nat} · ${TEAM(r.team).name}</div></div><button class="x" data-act="close" aria-label="Chiudi">×</button></div>
+ <div class="pb wrap" style="display:flex;flex-direction:column;gap:14px">
+  <div class="kv"><div><small>Peso</small><b>${r.mass.toFixed(1)}</b> kg</div><div><small>Soglia</small><b>${ftp}</b> W</div><div><small>W/kg</small><b>${r.wkg.toFixed(2)}</b></div>
+  <div><small>Volata</small><b>${r.spr}</b> W</div><div><small>Condizione</small><b style="font-size:17px" class="cond" >${c.t}</b></div><div><small>Potenziale</small><b style="font-size:16px;color:var(--amber)">${pot}</b></div></div>
+  <div class="card" style="padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+   <div><div class="eyebrow">Fatica</div><div class="bar f" style="margin-top:6px"><i style="width:${r.fat}%"></i></div><div class="note">${Math.round(r.fat)}/100</div></div>
+   <div><div class="eyebrow">Giorni di corsa</div><div class="bar" style="margin-top:6px"><i style="width:${Math.min(100,r.days/65*100)}%;background:${r.days>60?'var(--danger)':'var(--accent)'}"></i></div><div class="note">${r.days} / 60 consigliati</div></div>
+  </div>
+  <div class="card statrow" style="padding:12px;margin:0">${[['SAL',s.sal],['PIA',s.pia],['CRO',s.cro],['VOL',s.vol],['RES',s.res],['REC',s.rec]].map(([k,v])=>`<div class="stat"><small>${k}</small><b>${v}</b><div class="bar"><i style="width:${v}%"></i></div></div>`).join('')}</div>
+  ${r.team==='t0'?`<div class="card" style="padding:12px;display:flex;flex-direction:column;gap:8px"><div class="eyebrow">Contratto</div><div>${eur(r.sal)} l'anno · fino al ${r.cEnd}${r.nextSal?` · dal ${SEASON+1}: ${eur(r.nextSal)}`:''}</div>${r.leavingTo?`<div class="note">Ha già firmato con ${esc(TEAM(r.leavingTo).name)} per il ${SEASON+1}.</div>`:''}
+   <div style="display:flex;gap:8px;flex-wrap:wrap">${negMode(r)==='renew'?`<button class="btn primary" data-act="neg" data-v="${r.id}">Rinnova</button>`:''}<button class="btn ghost" data-act="release" data-v="${r.id}">Svincola</button></div></div>`:''}
+  <div><div class="eyebrow" style="margin-bottom:4px">Risultati ${SEASON}</div>${res?`<div class="card tbl"><table class="t">${res}</table></div>`:'<div class="note">Nessuna corsa disputata.</div>'}</div>
+ </div>`);
+}
+
+/* ---------- Rankings ---------- */
+function renderRank(){
+ const tr=teamRanking().filter(o=>o.p>0||o.t.id==='t0');
+ const riders=Object.values(G.riders).filter(r=>r.pts>0).sort((a,b)=>b.pts-a.pts).slice(0,30);
+ const u23=Object.values(G.riders).filter(r=>r.pts>0&&r.age<=22).sort((a,b)=>b.pts-a.pts).slice(0,10);
+ const row=(r,i)=>`<tr class="${r.team==='t0'?'me':''}"><td class="n">${i+1}</td><td>${esc(r.name)} <div class="tm">${esc(TEAM(r.team).name)} · ${catOf(r)}</div></td><td class="r">${r.wins?r.wins+'V · ':''}${r.pts}</td></tr>`;
+ $('#view').innerHTML=`<div class="sec"><div class="sec-h"><h2>Squadre</h2><span class="eyebrow">punti stagione</span></div>
+  <div class="card tbl"><table class="t">${tr.map((o,i)=>`<tr class="${o.t.id==='t0'?'me':''}"><td class="n">${i+1}</td><td>${esc(o.t.name)} <div class="tm">${o.t.tier==='pro'?'ProTeam':o.t.tier==='dev'?'Development U23':'Continental'}</div></td><td class="r">${o.p}</td></tr>`).join('')}</table></div></div>
+  <div class="sec"><div class="sec-h"><h2>Corridori</h2><span class="eyebrow">top 30</span></div>${riders.length?`<div class="card tbl"><table class="t">${riders.map(row).join('')}</table></div>`:'<div class="note">La classifica si riempie dopo la prima corsa.</div>'}</div>
+  <div class="sec"><div class="sec-h"><h2>Miglior Under 23</h2></div>${u23.length?`<div class="card tbl"><table class="t">${u23.map(row).join('')}</table></div>`:'<div class="note">Nessun punto ancora.</div>'}</div>
+  ${G.history.length?`<div class="sec"><div class="sec-h"><h2>Albo della squadra</h2></div><div class="card tbl"><table class="t">${G.history.slice().reverse().map(h=>`<tr><td class="n">${h.season}</td><td>${h.rank}ª su ${G.teams.length} · ${h.wins} vittorie</td><td class="r">${h.pts} pt</td></tr>`).join('')}</table></div></div>`:''}`;
+}
+
+
+/* ============================================================
+   MERCATO, CONTRATTI, FINANZE
+   ============================================================ */
+const STAFF=380000,ROSTER_MAX=16,ROSTER_MIN=10,WEEK_END=40;
+const eur=n=>'€ '+Math.round(n).toLocaleString('it-IT');
+const eurk=n=>(n<0?'−':'')+'€'+(Math.abs(n)>=1e6?(Math.abs(n)/1e6).toFixed(2).replace('.',',')+'M':Math.round(Math.abs(n)/1000)+'k');
+let ROT='';
+function rotBanner(){let off=false;try{off=localStorage.getItem('amm-rot')==='1'}catch(e){}ROT=off?'':`<div class="banner rotate" style="margin-bottom:12px"><span style="flex:1">Ammiraglia è pensata in orizzontale: gira il telefono per avere corsa e ordini affiancati.</span><button class="chip" data-act="rotok">Ok</button></div>`}
+function ovr(r){return Math.round(Math.max(suitType(r,'piatta'),suitType(r,'mossa'),suitType(r,'collinare'),suitType(r,'montagna'),suitType(r,'crono')))}
+function demand(r){const o=ovr(r);let d=12000+Math.max(0,o-55)**2*55;if(r.age<=21)d+=r.pot*20000;if(r.age>=32)d*=0.85;return d}
+function payroll(){return ME().riders.reduce((a,id)=>a+RID(id).sal,0)}
+function weekly(){return(payroll()+STAFF)/(WEEK_END-5)}
+function remWeeks(){return pendingWeek()===null?0:Math.max(0,WEEK_END-G.week)}
+function projected(extra=0){return G.cash-remWeeks()*weekly()-extra}
+function myRank(){return teamRanking().findIndex(o=>o.t.id==='t0')+1}
+function incoming(){return Object.values(G.riders).filter(r=>r.next&&r.next.team==='t0')}
+function nextRoster(){return ME().riders.map(RID).filter(r=>!r.leavingTo&&r.cEnd>SEASON).length+incoming().length}
+function addNews(t){G.news.unshift({s:SEASON,t});G.news=G.news.slice(0,40)}
+function win(){
+ const pw=pendingWeek(),off=pw===null,cw=off?99:pw;
+ const now=off||cw<=7||(cw>=27&&cw<=34),next=off||cw>=31;
+ let label=off?'Mercato di fine stagione: trattative aperte per il '+(SEASON+1):cw<=7?'Finestra invernale aperta fino a metà febbraio':(cw>=27&&cw<=34)?'Finestra estiva aperta fino a fine agosto':cw<27?'Trasferimenti chiusi: la finestra estiva apre a luglio':'Trasferimenti chiusi fino a fine stagione';
+ if(!off&&next)label+=` · pre-contratti per il ${SEASON+1} aperti`;
+ else if(!off&&cw<31)label+=' · rinnovi sempre possibili';
+ return{now,next,off,label,id:SEASON+(off?'o':cw<=7?'w':cw<=34?'s':'a')};
+}
+function expiringAlert(){
+ const ex=ME().riders.map(RID).filter(r=>r.cEnd===SEASON&&!r.renewed&&!r.leavingTo);
+ if(!ex.length)return'';
+ return `<button class="banner closed" data-act="tab" data-v="market" style="text-align:left"><span class="chip red">${ex.length}</span><span>Contratti in scadenza nel ${SEASON}: ${ex.slice(0,3).map(r=>esc(r.name)).join(', ')}${ex.length>3?'…':''}. Rinnova o lasciali partire.</span></button>`;
+}
+function contractLine(r){
+ if(r.team!=='t0')return'';
+ let tag='';
+ if(r.leavingTo)tag=`<span class="chip red">Va a ${esc(TEAM(r.leavingTo).short)}</span>`;
+ else if(r.renewed)tag='<span class="chip u23">Rinnovato</span>';
+ else if(r.cEnd===SEASON)tag='<span class="chip red">In scadenza</span>';
+ return `<span>${eurk(r.sal)}/anno · fino al ${r.cEnd}</span>${tag}`;
+}
+function negMode(r){
+ const w=win();
+ if(r.team==='t0')return(r.cEnd===SEASON&&!r.renewed&&!r.leavingTo)?'renew':null;
+ if(r.next)return null;
+ if(r.team==='jr')return w.next?'pre':null;
+ if(r.team==='fa')return w.now?'sign':null;
+ const t=TEAM(r.team);
+ if(w.next&&r.cEnd===SEASON)return'pre';
+ if(w.now&&t.tier!=='pro')return'buy';
+ return null;
+}
+function whyNot(r){
+ const w=win();
+ if(r.team==='t0')return r.leavingTo?'Ha già firmato altrove':r.renewed?'Già rinnovato':`Contratto fino al ${r.cEnd}`;
+ if(r.next)return r.next.team==='t0'?'Già firmato per te':'Ha già un accordo altrove';
+ if(r.team==='jr')return'Gli juniores si firmano dal 1° agosto';
+ if(r.team==='fa')return'Finestra di mercato chiusa';
+ if(TEAM(r.team).tier==='pro'&&!(w.next&&r.cEnd===SEASON))return'Le ProTeam non cedono: firmabile solo a contratto in scadenza';
+ return w.now?'':'Finestra chiusa';
+}
+function askSal(r,mode,years){
+ let a=r.junior?8000+r.pot*16000:demand(r);
+ a*=r.askMul||1;
+ if(mode==='renew')a*=1+clamp(r.pts/250,0,0.4);
+ else if(!r.junior){if(TEAM(r.team).tier==='pro')a*=1.7;a*=1+clamp((myRank()-6)/60,0,0.25)}
+ const pref=r.age<=24?3:r.age>=31?1:2;a*=1+0.05*Math.abs(years-pref);
+ a*=1+0.04*(r.neg||0);
+ return Math.round(a/500)*500;
+}
+function feeAsk(r){const yl=Math.max(0.5,r.cEnd-SEASON+(pendingWeek()===null?0:0.5));return Math.round((r.sal*yl*0.9+(r.age<=22?r.pot*45000:0)+5000)/1000)*1000}
+function poach(){
+ for(const r of ME().riders.map(RID)){
+  if(r.cEnd!==SEASON||r.renewed||r.leavingTo||ovr(r)<66)continue;
+  if(R()<0.05){const t=pick(G.teams.filter(t=>t.tier==='pro'||t.tier==='conti'));r.leavingTo=t.id;addNews(`${r.name} firma con ${t.name} per il ${SEASON+1}`)}
+ }
+}
+function moveRider(r,to){
+ const from=G.teams.find(t=>t.id===r.team);if(from)from.riders=from.riders.filter(id=>id!==r.id);
+ r.team=to;const tt=G.teams.find(t=>t.id===to);if(tt&&!tt.riders.includes(r.id))tt.riders.push(r.id);
+}
+function mkRow(r,mode){
+ const o=ovr(r),s=stats(r);
+ const key=[['SAL',s.sal],['VOL',s.vol],['CRO',s.cro],['PIA',s.pia]].sort((a,b)=>b[1]-a[1])[0];
+ const pot=r.age<=22?' · '+'★'.repeat(1+Math.round(r.pot*4)):'';
+ let pr='',sm='';
+ const m=negMode(r),py=r.age<=24?3:r.age>=31?1:2;
+ if(mode==='inc'){pr=eurk(r.next.sal);sm=`fino al ${r.next.cEnd}`}
+ else if(r.team==='t0'){pr=r.leavingTo?'—':r.renewed?eurk(r.nextSal):'~'+eurk(askSal(r,'renew',py));sm=r.leavingTo?'firmato altrove':r.renewed?`fino al ${r.cEnd}`:'richiesta'}
+ else if(m==='buy'){pr='~'+eurk(feeAsk(r));sm='indennizzo'}
+ else if(m==='pre'){pr='~'+eurk(askSal(r,'pre',py));sm=r.junior?'ingaggio':'parametro zero'}
+ else if(m==='sign'){pr='~'+eurk(askSal(r,'sign',py));sm='ingaggio'}
+ else{pr='—';sm=whyNot(r)}
+ const team=r.team==='t0'?'':r.team==='fa'?'Svincolato':r.team==='jr'?'Juniores':`${esc(TEAM(r.team).short)} · fino al ${r.cEnd}`;
+ return `<button class="card mrow" data-act="neg" data-v="${r.id}"><div class="ovr ${o>=75?'hi':''}">${o}</div>
+  <div style="min-width:0"><div class="nm">${esc(r.name)}</div><div class="tags"><span class="chip ${r.age<=22||r.junior?'u23':''}">${r.junior?'Juniores':catOf(r)}</span><span>${ARCH[r.arch].lab} · ${r.age} anni · ${key[0]} ${key[1]}${pot}</span>${team?`<span>· ${team}</span>`:''}</div></div>
+  <div class="pr">${pr}<small>${esc(sm)}</small></div></button>`;
+}
+function renderMarket(){
+ const w=win(),mk=G.mk||(G.mk={sub:'renew',cat:'all',role:'all'});
+ const proj=projected();
+ const all=Object.values(G.riders);
+ let list;
+ const filt=r=>(mk.cat==='all'||(mk.cat==='u23'?(r.age<=22||r.junior):(r.age>22&&!r.junior)))&&(mk.role==='all'||r.arch===mk.role);
+ if(mk.sub==='renew')list=ME().riders.map(RID).filter(r=>r.cEnd===SEASON);
+ else if(mk.sub==='fa')list=all.filter(r=>r.team==='fa'&&!r.next);
+ else if(mk.sub==='jr')list=all.filter(r=>r.team==='jr'&&!r.next);
+ else list=all.filter(r=>G.teams.some(t=>t.id===r.team&&t.tier!=='me')&&!r.next);
+ list=list.filter(filt).sort((a,b)=>mk.sub==='jr'?(b.pot-a.pot)||(ovr(b)-ovr(a)):(ovr(b)-ovr(a)));
+ const total=list.length;list=list.slice(0,40);
+ const news=G.news.filter(n=>n.s===SEASON).slice(0,4);
+ const subs=[['renew','Rinnovi'],['fa','Svincolati'],['others','Altre squadre'],['jr','Juniores']];
+ const roles=[['all','Tutti i ruoli']].concat(Object.keys(ARCH).map(k=>[k,ARCH[k].lab]));
+ const hint={renew:`Corridori con contratto in scadenza nel ${SEASON}. Se non li rinnovi, a fine stagione se ne vanno; dal 1° agosto le altre squadre possono prenderli.`,
+  fa:'Senza squadra: si firmano subito, senza indennizzo, quando la finestra è aperta.',
+  others:'Acquisto con indennizzo alla squadra (solo Continental e Development, a finestra aperta). Chi ha il contratto in scadenza si firma a parametro zero per la prossima stagione dal 1° agosto.',
+  jr:`Diciottenni delle categorie giovanili: si firmano dal 1° agosto e arrivano nel ${SEASON+1} come Under 23 al primo anno.`}[mk.sub];
+ $('#view').innerHTML=`<div class="sec">
+  <div class="kv kv4"><div><small>Cassa</small><b>${eurk(G.cash)}</b></div><div><small>Saldo a fine stagione</small><b style="color:${proj<0?'var(--danger)':'var(--ink)'}">${eurk(proj)}</b></div><div><small>Monte ingaggi</small><b>${eurk(payroll())}</b></div><div><small>Rosa ${w.off?SEASON+1:SEASON}</small><b>${w.off?nextRoster():ME().riders.length}/${ROSTER_MAX}</b></div></div>
+  <div class="banner ${w.now||w.next?'':'closed'}"><span class="chip ${w.now||w.next?'u23':''}">${w.now||w.next?'Aperto':'Chiuso'}</span><span>${w.label}</span></div>
+  ${news.length?`<div class="card" style="padding:8px 12px"><div class="eyebrow">Notizie di mercato</div><ul class="note" style="margin:4px 0 0;padding-left:18px">${news.map(n=>`<li>${esc(n.t)}</li>`).join('')}</ul></div>`:''}
+  <div class="note">Budget ${SEASON} dallo sponsor ${eurk(G.budget)} · staff e trasferte ${eurk(STAFF)}/anno · premi: circa €100 per punto UCI.</div>
+ </div>
+ <div class="sec">
+  <div class="seg">${subs.map(([k,l])=>`<button data-act="mksub" data-v="${k}" aria-pressed="${mk.sub===k}">${l}</button>`).join('')}</div>
+  <div class="filters"><select id="mkcat" data-act="mkf" data-k="cat" aria-label="Categoria">${[['all','Tutte le categorie'],['u23','Under 23'],['elite','Elite']].map(([k,l])=>`<option value="${k}" ${mk.cat===k?'selected':''}>${l}</option>`).join('')}</select>
+   <select id="mkrole" data-act="mkf" data-k="role" aria-label="Ruolo">${roles.map(([k,l])=>`<option value="${k}" ${mk.role===k?'selected':''}>${l}</option>`).join('')}</select>
+   <span class="note">${total} corridori${total>40?' · primi 40 per valore':''}</span></div>
+  <div class="note">${hint}</div>
+  <div class="cols">${list.map(r=>mkRow(r)).join('')||'<div class="note full">Nessun corridore.</div>'}</div>
+ </div>`;
+}
+let NEG=null;
+function openNeg(id){
+ const r=RID(id),w=win();
+ if(r.negW!==w.id){r.negW=w.id;r.neg=0}
+ const mode=negMode(r),years=r.age<=24?3:r.age>=31?1:2;
+ NEG={id,mode,years,sal:0,fee:0,msg:null,done:false,feeHint:null};
+ if(mode){NEG.sal=Math.round(askSal(r,mode,years)*0.9/1000)*1000;if(mode==='buy')NEG.fee=Math.round(feeAsk(r)*0.85/1000)*1000}
+ renderNeg();
+}
+function negCostNow(){const m=NEG.mode;if(m!=='sign'&&m!=='buy')return 0;return NEG.sal*remWeeks()/(WEEK_END-5)+(m==='buy'?NEG.fee:0)}
+function endYear(y){return SEASON+y-((NEG.mode==='sign'||NEG.mode==='buy')&&!win().off?1:0)}
+function renderNeg(){
+ const r=RID(NEG.id),m=NEG.mode,s=stats(r),o=ovr(r),w=win();
+ const title={renew:'Rinnovo del contratto',sign:'Ingaggio di uno svincolato',buy:'Acquisto con indennizzo',pre:r.junior?`Contratto da neoprofessionista per il ${SEASON+1}`:`Firma per il ${SEASON+1} a parametro zero`}[m]||'Trattativa non disponibile';
+ const cost=negCostNow(),projA=projected(cost);
+ const rosterOk=m==='renew'?true:(m==='pre'||w.off)?nextRoster()<ROSTER_MAX:ME().riders.length<ROSTER_MAX;
+ const moneyOk=(m==='sign'||m==='buy')?projA>=0:true;
+ const blocked=!m||NEG.done||(r.neg||0)>=3||!rosterOk||!moneyOk;
+ const ask=m?Math.round(askSal(r,m,NEG.years)/1000)*1000:0;
+ const pot=r.age<=22||r.junior?'★'.repeat(1+Math.round(r.pot*4))+'☆'.repeat(4-Math.round(r.pot*4)):'—';
+ const cur=r.team!=='fa'&&r.team!=='jr'?`<div class="note">${r.team==='t0'?'Contratto attuale':'Contratto con '+esc(TEAM(r.team).name)}: ${eur(r.sal)} l'anno fino al ${r.cEnd}</div>`:'';
+ openSheet(`<div class="ph wrap"><div style="min-width:0"><div class="eyebrow">${title}</div><h2>${esc(r.name)}</h2><div class="note">${r.junior?'Juniores':catOf(r)} · ${ARCH[r.arch].lab} · ${r.age} anni · ${r.nat} · ${esc(TEAM(r.team).name)}</div></div><button class="x" data-act="close" aria-label="Chiudi">×</button></div>
+ <div class="pb wrap"><div class="negbox">
+  <div style="display:flex;flex-direction:column;gap:10px">
+   <div class="kv"><div><small>Valore</small><b>${o}</b></div><div><small>W/kg</small><b>${r.wkg.toFixed(2)}</b></div><div><small>Potenziale</small><b style="font-size:16px;color:var(--amber)">${pot}</b></div></div>
+   <div class="card statrow" style="padding:10px;margin:0">${[['SAL',s.sal],['PIA',s.pia],['CRO',s.cro],['VOL',s.vol],['RES',s.res],['REC',s.rec]].map(([k,v])=>`<div class="stat"><small>${k}</small><b>${v}</b><div class="bar"><i style="width:${v}%"></i></div></div>`).join('')}</div>
+   ${cur}${r.pts?`<div class="note">${SEASON}: ${r.pts} punti, ${r.wins} vittorie, ${r.days} giorni di corsa</div>`:''}
+  </div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+  ${m?`
+   <div><div class="eyebrow" style="margin-bottom:5px">Ingaggio annuo</div><div class="stepper"><button data-act="negstep" data-v="sal:-1000" aria-label="Meno">−</button><output>${eur(NEG.sal)}</output><button data-act="negstep" data-v="sal:1000" aria-label="Più">+</button></div>
+    <div class="note" style="margin-top:4px">Il procuratore chiede circa ${eur(ask)}${r.age<=24?' e preferisce un contratto lungo':r.age>=31?' e preferisce un anno solo':''}.</div></div>
+   <div><div class="eyebrow" style="margin-bottom:5px">Durata</div><div class="seg">${[1,2,3].map(y=>`<button data-act="negyears" data-v="${y}" aria-pressed="${NEG.years===y}">fino al ${endYear(y)}</button>`).join('')}</div></div>
+   ${m==='buy'?`<div><div class="eyebrow" style="margin-bottom:5px">Indennizzo a ${esc(TEAM(r.team).short)}</div><div class="stepper"><button data-act="negstep" data-v="fee:-5000" aria-label="Meno">−</button><output>${eur(NEG.fee)}</output><button data-act="negstep" data-v="fee:5000" aria-label="Più">+</button></div>${NEG.feeHint?`<div class="note" style="margin-top:4px">Chiedono circa ${eur(NEG.feeHint)}.</div>`:''}</div>`:''}
+   <div class="note">${m==='sign'||m==='buy'?(w.off?`Pesa sul bilancio dal ${SEASON+1}.`:`Costo su questa stagione: <b>${eur(cost)}</b> · saldo previsto dopo la firma: <b style="color:${projA<0?'var(--danger)':'var(--ink)'}">${eur(projA)}</b>`):`Il nuovo ingaggio pesa sul bilancio dal ${SEASON+1}.`}</div>
+   ${!rosterOk?`<div class="msg no">Rosa al completo (${ROSTER_MAX} corridori). Svincola qualcuno prima.</div>`:''}
+   ${!moneyOk?`<div class="msg no">Non ci sono i soldi: il saldo di fine stagione andrebbe sotto zero.</div>`:''}
+  `:`<div class="msg no">${esc(whyNot(r))}.</div>`}
+  ${NEG.msg?`<div class="msg ${NEG.msg.ok?'ok':'no'}">${esc(NEG.msg.t)}</div>`:''}
+  ${(r.neg||0)>0&&!NEG.done&&m?`<div class="note">Tentativi: ${r.neg}/3</div>`:''}
+  </div>
+ </div></div>
+ <div class="pf"><div class="wrap" style="display:flex;gap:8px;justify-content:flex-end;width:100%">
+  <button class="btn ghost" data-act="close">${NEG.done?'Fatto':'Chiudi'}</button>
+  ${m&&!NEG.done?`<button class="btn primary" data-act="negoffer" ${blocked?'disabled':''}>Fai l'offerta</button>`:''}
+ </div></div>`);
+}
+function negOffer(){
+ const r=RID(NEG.id),m=NEG.mode;
+ if(!m||NEG.done)return;
+ if(TEAM(r.team).tier==='pro'&&ovr(r)>=80){r.neg=3;NEG.msg={ok:false,t:`${r.name} non vuole scendere in una squadra Continental.`};return renderNeg()}
+ if(m==='buy'){
+  const fa=feeAsk(r),q=NEG.fee/fa;
+  if(q<0.85||(q<0.97&&R()<0.5)){r.neg=(r.neg||0)+1;NEG.feeHint=Math.round(fa*rnd(0.98,1.06)/1000)*1000;NEG.msg={ok:false,t:`${TEAM(r.team).name} rifiuta l'indennizzo.`};return renderNeg()}
+ }
+ const a=askSal(r,m,NEG.years),q=NEG.sal/a;
+ if(q>=1||(q>=0.93&&R()<0.4)){
+  const y=endYear(NEG.years);
+  if(m==='renew'){r.renewed=true;r.nextSal=NEG.sal;r.cEnd=y;NEG.msg={ok:true,t:`Accordo: ${r.name} rinnova fino al ${y}.`};addNews(`${r.name} rinnova fino al ${y}`)}
+  else if(m==='pre'){r.next={team:'t0',sal:NEG.sal,cEnd:y};NEG.msg={ok:true,t:`Accordo: ${r.name} arriva nel ${SEASON+1}, contratto fino al ${y}.`};addNews(`Firmato ${r.name} per il ${SEASON+1}`)}
+  else{if(m==='buy')G.cash-=NEG.fee;const from=TEAM(r.team).name;moveRider(r,'t0');r.sal=NEG.sal;r.cEnd=y;r.busy=0;r.junior=false;
+   NEG.msg={ok:true,t:`${r.name} è un tuo corridore, contratto fino al ${y}.`};addNews(m==='buy'?`${r.name} arriva da ${from} per ${eurk(NEG.fee)}`:`Ingaggiato lo svincolato ${r.name}`)}
+  NEG.done=true;save();renderTop();return renderNeg();
+ }
+ r.neg=(r.neg||0)+1;r.askMul*=1.02;
+ NEG.msg={ok:false,t:r.neg>=3?`${r.name} interrompe la trattativa fino alla prossima finestra.`:q<0.8?`Offerta lontana dalle richieste: ${r.name} non la prende nemmeno in considerazione.`:`${r.name} chiede di più.`};
+ renderNeg();
+}
+function releaseCost(r){return win().off?(r.cEnd>SEASON?r.sal*0.5:0):r.sal*remWeeks()/(WEEK_END-5)*0.5}
+function releaseSheet(id){
+ const r=RID(id),c=releaseCost(r),ok=ME().riders.length>ROSTER_MIN;
+ openSheet(`<div class="ph wrap"><div><div class="eyebrow">Svincolo</div><h2>Liberare ${esc(r.name)}?</h2><div class="note">Paghi metà dell'ingaggio che resta su questa stagione come buonuscita: ${eur(c)}. Da quel momento non pesa più sul monte ingaggi.</div>${ok?'':`<div class="msg no" style="margin-top:8px">Una Continental deve avere almeno ${ROSTER_MIN} corridori.</div>`}</div></div>
+  <div class="pf"><div class="wrap" style="display:flex;gap:8px;justify-content:flex-end;width:100%"><button class="btn ghost" data-act="close">Annulla</button><button class="btn primary" data-act="releaseok" data-v="${r.id}" ${ok?'':'disabled'}>Svincola</button></div></div>`);
+}
+function doRelease(id){
+ const r=RID(id);G.cash-=releaseCost(r);moveRider(r,'fa');r.cEnd=0;r.sal=0;r.renewed=false;r.leavingTo=null;delete r.nextSal;
+ addNews(`${r.name} svincolato`);save();closeSheet();render();
+}
+function aiFill(ns){
+ const target={pro:16,conti:13,dev:12};
+ for(const t of G.teams){
+  if(t.tier==='me')continue;const T=target[t.tier];
+  while(t.riders.length>T+1){const worst=t.riders.map(RID).sort((a,b)=>ovr(a)-ovr(b))[0];moveRider(worst,'fa');worst.cEnd=0}
+  let guard=0;
+  while(t.riders.length<T&&guard++<40){
+   let r=null;
+   const u=t.riders.map(RID).filter(x=>x.age<=22).length;
+   const needU23=t.tier==='dev'||u<(t.tier==='conti'?5:2);
+   if(needU23||R()<0.3){const jr=Object.values(G.riders).filter(x=>x.team==='jr'&&!x.next).sort((a,b)=>b.pot-a.pot);if(jr.length)r=jr[Math.floor(R()*Math.min(5,jr.length))]}
+   if(!r&&t.tier!=='dev'){const fa=Object.values(G.riders).filter(x=>x.team==='fa'&&!x.next).sort((a,b)=>ovr(b)-ovr(a));if(fa.length)r=fa[Math.floor(R()*Math.min(t.tier==='pro'?3:8,fa.length))]}
+   if(!r){r=genRider(t,pick(t.nats),pick(ARCH_MIX),19);G.riders[r.id]=r}
+   moveRider(r,t.id);r.junior=false;r.sal=Math.round(demand(r)*(t.tier==='pro'?2.4:1)/500)*500;r.cEnd=ns+rint(0,2);
+  }
+ }
+}
+function newSeason(){
+ const ns=SEASON+1,out=[];
+ const rk=myRank();
+ G.history.push({season:SEASON,rank:rk,pts:teamPoints(ME()),wins:ME().riders.reduce((a,id)=>a+RID(id).wins,0)});
+ // contratti
+ for(const r of Object.values(G.riders)){
+  if(r.team==='t0'){
+   if(r.leavingTo){out.push(`${r.name} passa a ${TEAM(r.leavingTo).name}`);const to=r.leavingTo;moveRider(r,to);r.sal=Math.round(demand(r)/500)*500;r.cEnd=ns+rint(0,1)}
+   else if(r.cEnd<ns){out.push(`${r.name} lascia la squadra: contratto scaduto`);moveRider(r,'fa');r.cEnd=0;r.sal=0}
+  }else if(G.teams.some(t=>t.id===r.team)&&r.cEnd<ns&&!r.next){
+   if(R()<0.72)r.cEnd=ns+rint(0,2);else{moveRider(r,'fa');r.cEnd=0}
+  }
+  if(r.next){const n=r.next;delete r.next;moveRider(r,n.team);r.sal=n.sal;r.cEnd=n.cEnd;r.junior=false;if(n.team==='t0')out.push(`Arriva ${r.name} (${ARCH[r.arch].lab}, ${r.age+1} anni)`)}
+  if(r.nextSal){r.sal=r.nextSal;delete r.nextSal}
+  r.renewed=false;r.leavingTo=null;
+ }
+ // età, crescita, declino
+ for(const r of Object.values(G.riders)){
+  r.age++;
+  const dev=r.age<=23?(0.03+0.12*r.pot)*rnd(0.6,1.3):r.age<=27?rnd(-0.01,0.04):r.age<=30?rnd(-0.03,0.02):-rnd(0.02,0.07)*(r.age-29)/2;
+  r.wkg=+(r.wkg+dev).toFixed(3);
+  if(r.age<=23){r.endu=Math.min(99,r.endu+rint(1,4));r.rec=Math.min(99,r.rec+rint(0,3));r.spr+=rint(0,30)}
+  if(r.age>=32)r.spr-=rint(5,25);
+  if(r.age>22)r.pot=0;
+  Object.assign(r,{days:0,fat:0,pts:0,wins:0,res:[],busy:0,neg:0,form:+rnd(0.95,0.99).toFixed(3),askMul:+rnd(0.92,1.1).toFixed(3),neo:r.age===19||r.age===23});
+  if(r.team==='t0'&&r.age===23)out.push(`${r.name} compie 23 anni: passa tra gli Elite e non può più correre le gare Under 23`);
+ }
+ // ritiri
+ for(const r of Object.values(G.riders)){
+  if(r.team==='jr')continue;
+  if(r.age>=37||(r.age>=34&&R()<0.35)||(r.team==='fa'&&r.age>=31&&R()<0.4)){if(r.team==='t0')out.push(`${r.name} si ritira`);moveRider(r,'x');delete G.riders[r.id]}
+ }
+ // rosa minima
+ while(ME().riders.length<ROSTER_MIN){
+  let r=Object.values(G.riders).filter(x=>x.team==='fa').sort((a,b)=>demand(a)-demand(b))[0];
+  if(!r){r=genRider({id:'fa',tier:'fa'},'ITA','gregario',24);G.riders[r.id]=r}
+  moveRider(r,'t0');r.sal=Math.round(demand(r)/500)*500;r.cEnd=ns;out.push(`Ingaggiato d'ufficio ${r.name} per arrivare a ${ROSTER_MIN} corridori`);
+ }
+ aiFill(ns);
+ for(const r of Object.values(G.riders))if(r.team==='jr'){if(r.pot>0.55){r.team='fa';r.junior=false}else delete G.riders[r.id]}
+ let fa=Object.values(G.riders).filter(x=>x.team==='fa').sort((a,b)=>ovr(b)-ovr(a));
+ for(const r of fa.slice(40))delete G.riders[r.id];
+ SEASON=ns;G.season=ns;
+ for(let i=fa.length;i<22;i++){const r=genRider({id:'fa',tier:'fa'},pick(Object.keys(NAMES)),pick(ARCH_MIX),rint(22,32));G.riders[r.id]=r}
+ genJuniors(16);
+ // sponsor e budget
+ const bud=Math.round((800000+G.sponsor*5000+Math.max(0,20-rk)*8000)/1000)*1000;
+ const lost=G.sponsor<30;
+ G.budget=lost?Math.round(bud*0.75/1000)*1000:bud;G.cash+=G.budget;
+ out.unshift(lost?`Lo sponsor principale non rinnova: con un marchio minore il budget scende a ${eur(G.budget)}`:`Lo sponsor rinnova: budget ${eur(G.budget)} (soddisfazione ${G.sponsor}%, ${rk}ª nella classifica a squadre)`);
+ G.sponsor=lost?50:clamp(55+Math.round((G.sponsor-55)/3),40,70);
+ G.week=5;G.kmFuga=0;G.cal=buildCal();
+ for(const t of out)addNews(t);
+ save();
+ return out;
+}
+
+/* ---------- Sheet ---------- */
+function openSheet(html){const s=$('#sheet');s.innerHTML=`<div class="panel" role="dialog" aria-modal="true">${html}</div>`;s.hidden=false}
+function closeSheet(){$('#sheet').hidden=true;$('#sheet').innerHTML=''}
+
+/* ---------- Convocazioni ---------- */
+let SEL=null;
+function openConvoca(evId){
+ const ev=G.cal.find(e=>e.id===evId);
+ advanceTo(ev.w);
+ SEL={ev,ids:new Set(),cap:null};
+ suggest();
+ renderConvoca();
+}
+function eligible(r,ev){
+ if(ev.u23&&r.age>22)return'Solo Under 23';
+ if(r.busy===ev.w)return'Impegnato nell\'altra corsa';
+ return'';
+}
+function suggest(){
+ const ev=SEL.ev;
+ const el=ME().riders.map(RID).filter(r=>!eligible(r,ev));
+ const sc=el.map(r=>({r,s:suitRace(r,ev)-r.fat*0.45-(r.days>55?12:0)})).sort((a,b)=>b.s-a.s);
+ SEL.ids=new Set(sc.slice(0,ev.perTeam).map(o=>o.r.id));
+ SEL.cap=sc[0]?sc[0].r.id:null;
+}
+function renderConvoca(){
+ const ev=SEL.ev,d=weekDate(ev.w);
+ const rs=ME().riders.map(RID).sort((a,b)=>suitRace(b,ev)-suitRace(a,ev));
+ const n=SEL.ids.size;
+ const stages=ev.stages.map((s,i)=>`<span class="chip">${ev.stages.length>1?(s.t==='prologo'?'P':i+(ev.stages[0].t==='prologo'?0:1))+' · ':''}${TYPE_LAB[s.t]}</span>`).join(' ');
+ const other=G.cal.find(e=>e.w===ev.w&&e.id!==ev.id&&e.status==='todo');
+ openSheet(`<div class="ph wrap"><div style="min-width:0"><div class="eyebrow">Convocazioni · ${d.getDate()} ${MESI[d.getMonth()]}</div><h2>${esc(ev.name)}</h2>
+   <div class="mt" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><span class="chip cls">${ev.cls}</span>${ev.u23?'<span class="chip u23">Under 23</span>':''}<span class="note">${CLS_DESC[ev.cls]} · max ${ev.perTeam} corridori</span></div>
+   <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">${stages}</div>
+   ${other?`<div class="note" style="margin-top:6px">Nella stessa settimana c'è anche <b>${esc(other.name)}</b>: chi convochi qui non potrà correre là.</div>`:''}</div>
+   <button class="x" data-act="close" aria-label="Chiudi">×</button></div>
+  <div class="pb"><div class="wrap"><div class="card pickgrid">${rs.map(r=>{
+   const why=eligible(r,ev),on=SEL.ids.has(r.id),c=condOf(r),fit=Math.round(suitRace(r,ev));
+   return `<div class="pick ${why?'off':''}">
+    <input type="checkbox" id="p_${r.id}" data-act="pick" data-v="${r.id}" ${on?'checked':''} ${why?'disabled':''} aria-label="Convoca ${esc(r.name)}">
+    <label for="p_${r.id}" style="min-width:0"><div class="nm">${esc(r.name)} <span class="chip ${r.age<=22?'u23':''}">${catOf(r)}</span></div>
+     <div class="sm"><span>${ARCH[r.arch].lab}</span><span class="cond" style="--c:${c.c}">${c.t}</span><span>fatica ${Math.round(r.fat)}</span><span${r.days>55?' style="color:var(--danger)"':''}>${r.days} gg</span>${why?`<span>· ${why}</span>`:''}</div>
+     <div class="sm" style="margin-top:4px"><span>Adatto</span><div class="bar fit"><i style="width:${fit}%"></i></div><span class="mono">${fit}</span></div></label>
+    <button class="star" data-act="cap" data-v="${r.id}" aria-pressed="${SEL.cap===r.id}" ${!on?'disabled':''} title="Capitano">C</button>
+   </div>`}).join('')}</div>
+   <div class="note" style="margin-top:8px">C = capitano. La squadra lavora per lui; puoi cambiare gli ordini in corsa.</div></div></div>
+  <div class="pf"><div class="wrap" style="display:flex;gap:8px;align-items:center;width:100%">
+   <div style="font-family:var(--f-display);font-weight:700;font-size:20px;${n>ev.perTeam||n<4?'color:var(--danger)':''}">${n}/${ev.perTeam}</div>
+   <button class="btn ghost" data-act="suggest">Proposta DS</button>
+   <span class="grow" style="flex:1"></span>
+   <button class="btn" data-act="go" data-v="sim" ${n<4||n>ev.perTeam||!SEL.cap?'disabled':''}>Simula</button>
+   <button class="btn primary" data-act="go" data-v="live" ${n<4||n>ev.perTeam||!SEL.cap?'disabled':''}>In corsa</button>
+  </div></div>`);
+}
+
+/* ============================================================
+   UI: LIVE RACE
+   ============================================================ */
+let LIVE=null;
+function launch(mode){
+ const ev=SEL.ev;
+ ev.sel=[...SEL.ids];ev.cap=SEL.cap;
+ for(const id of ev.sel)RID(id).busy=ev.w;
+ closeSheet();
+ const RC=newRC(ev);
+ if(mode==='sim'){simulateWholeRace(RC);render();showFinal(RC);return}
+ LIVE={RC,S:null,speed:25,playing:true,acc:0,last:0,lastUI:0,zoom:false,course:null};
+ startStageLive();
+}
+function startStageLive(){
+ const RC=LIVE.RC,ctx=stageCtx(RC);
+ LIVE.course=ctx.course;
+ const race=$('#race');race.hidden=false;document.body.style.overflow='hidden';
+ if(ctx.course.type==='crono'||ctx.course.type==='prologo'){
+  LIVE.S=null;LIVE.ctx=ctx;renderTTIntro();return;
+ }
+ LIVE.S=createSim(ctx);LIVE.playing=true;
+ // ordini di default: tutti in auto
+ renderRaceSkeleton();
+ LIVE.last=performance.now();
+ requestAnimationFrame(loop);
+}
+function stageTitle(){const RC=LIVE.RC,ev=RC.ev,st=ev.stages[RC.stage];const pro=ev.stages[0].t==='prologo';
+ return RC.stageRace?(st.t==='prologo'?'Prologo':`Tappa ${RC.stage+(pro?0:1)} di ${ev.stages.length-(pro?1:0)}`):'Corsa di un giorno'}
+function renderTTIntro(){
+ const c=LIVE.course;
+ $('#race').innerHTML=`<div class="race-h"><div class="wrap"><div class="eyebrow">${esc(LIVE.RC.ev.name)} · ${stageTitle()}</div>
+  <div class="rh1"><h2>${TYPE_LAB[c.type]} individuale · ${km1(c.len)} km</h2></div>
+  <div class="prof"><canvas id="pc"></canvas></div></div></div>
+  <div class="wrap" style="padding-block:16px;display:flex;flex-direction:column;gap:12px">
+   <div class="note">Nella cronometro ognuno parte da solo: niente scia, contano la soglia e l'aerodinamica (valore CRO). Gli ordini radio non servono.</div>
+   <button class="btn primary" data-act="tt">Via alla cronometro</button></div>`;
+ drawProfile();
+}
+function renderRaceSkeleton(){
+ const c=LIVE.course,RC=LIVE.RC;
+ $('#race').innerHTML=`<div class="race-grid"><section class="rcol rl"><div class="race-h"><div class="wrap">
+  <div class="eyebrow">${esc(RC.ev.name)} · ${stageTitle()} · ${TYPE_LAB[c.type]}</div>
+  <div class="kmbig"><div class="k" id="k2g">0<small>km all'arrivo</small></div>
+   <div class="o"><div>Tempo<b id="rt">0'00"</b></div><div>Media<b id="ravg">—</b></div><div>Pendenza<b id="rgr">0%</b></div></div></div>
+  <div class="prof"><canvas id="pc"></canvas><button class="chip zoom" data-act="zoom" id="zbtn">Zoom</button></div>
+ </div></div>
+ <div class="wrap rbody">
+  <div><div class="eyebrow" style="margin-bottom:6px">Situazione corsa</div><div class="card groups" id="grps"></div></div>
+  <div><div class="eyebrow" style="margin-bottom:6px">Radio corsa</div><div class="card radio" id="radio"></div></div>
+ </div></section>
+ <section class="rcol rr"><div class="wrap rbody">
+  <div><div class="eyebrow" style="margin-bottom:6px">I tuoi corridori · ordini radio</div><div class="card" id="mine"></div></div>
+ </div></section></div>
+ <div class="ctrl"><div class="wrap">
+  <button class="btn play" data-act="play" id="playb" aria-label="Pausa">❚❚</button>
+  <div class="sp" id="spd">${[[25,'1×'],[75,'3×'],[250,'10×']].map(([v,l])=>`<button data-act="speed" data-v="${v}" aria-pressed="${LIVE.speed===v}">${l}</button>`).join('')}</div>
+  <span class="grow"></span>
+  <button class="btn ghost" data-act="jump">Finale</button>
+  <button class="btn ghost" data-act="end">Fine</button>
+ </div></div>`;
+ renderMine(true);
+ updateRaceUI();
+}
+function loop(now){
+ if(!LIVE||!LIVE.S)return;
+ const S=LIVE.S;
+ const el=Math.min(0.1,(now-LIVE.last)/1000);LIVE.last=now;
+ if(LIVE.playing&&!S.done){
+  LIVE.acc+=el*LIVE.speed;
+  let n=0;while(LIVE.acc>=1&&!S.done&&n<400){tick(S);LIVE.acc-=1;n++}
+ }
+ drawProfile();
+ if(now-LIVE.lastUI>300){LIVE.lastUI=now;updateRaceUI()}
+ if(S.done){updateRaceUI();endStageLive();return}
+ requestAnimationFrame(loop);
+}
+function groupsDisplay(S){
+ // unisce gruppi distanti meno di 5"
+ const out=[];
+ for(const cl of S.clusters){
+  const g=gapSec(S,cl.front);
+  const last=out[out.length-1];
+  if(last&&g-last.gEnd<5){last.rs.push(...cl.rs);last.gEnd=g;if(cl===S.main)last.main=true}
+  else out.push({rs:cl.rs.slice(),g,gEnd:g,main:cl===S.main,front:cl.front});
+ }
+ const mi=out.findIndex(o=>o.main);
+ out.forEach((o,i)=>{
+  if(o.main)o.name=i===0?'Gruppo':'Gruppo';
+  else if(i<mi)o.name=i===0?(S.breakFormed?'Fuga':'Testa'):(o.rs.length<=2&&i===mi-1?'Inseguitori':'Contrattacco');
+  else o.name=(o.rs.length>=8&&i===out.length-1)?'Gruppetto':'Staccati';
+  if(i===0&&o.rs.length===1&&!o.main)o.name='In testa';
+ });
+ return out;
+}
+function updateRaceUI(){
+ const S=LIVE.S;if(!S)return;
+ const lead=S.clusters.length?S.clusters[0].front:S.len;
+ const k2g=Math.max(0,S.len-lead);
+ $('#k2g').innerHTML=`${km1(k2g)}<small>km all'arrivo</small>`;
+ $('#rt').textContent=fmtT(S.t);
+ $('#ravg').textContent=S.t>60?(lead/(S.t/3600)).toFixed(1).replace('.',',')+' km/h':'—';
+ const gr=S.course.g[gi(S,lead)];$('#rgr').textContent=(gr>0?'+':'')+gr.toFixed(1).replace('.',',')+'%';
+ // gruppi
+ const gd=S.clusters.length?groupsDisplay(S):[];
+ $('#grps').innerHTML=gd.slice(0,7).map(o=>{
+  const mine=o.rs.filter(x=>x.isMe);
+  const notable=o.rs.length<=6&&!o.main?o.rs.map(x=>`${rname(x)} <span class="muted">${tshort(x)}</span>`).join(', '):'';
+  return `<div class="grp"><span class="dot" style="background:${mine.length?'var(--accent)':o.main?'var(--muted)':'var(--amber)'}"></span>
+   <div style="min-width:0"><div class="gn">${o.name} <span class="gc">${o.rs.length} corridor${o.rs.length===1?'e':'i'}</span></div>${notable?`<div class="gc">${notable}</div>`:''}</div>
+   <div class="gg">${o===gd[0]?'—':fmtGap(o.g)}</div>
+   ${mine.length?`<div class="mine">${mine.map(x=>`<span class="chip u23">${esc(rname(x))}</span>`).join('')}</div>`:''}</div>`}).join('')+(gd.length>7?`<div class="grp"><span></span><div class="gc">+ altri ${gd.length-7} gruppetti</div><span></span></div>`:'')+(S.finish.length?`<div class="grp"><span class="dot" style="background:var(--ok)"></span><div class="gn">Arrivati <span class="gc">${S.finish.length}</span></div><span></span></div>`:'');
+ renderMine(false);
+ // radio
+ $('#radio').innerHTML=S.log.slice(-8).reverse().map(l=>`<div><span class="km">${km1(l.km)}</span><span class="${l.me?'me':''}">${esc(l.txt)}</span></div>`).join('')||'<div><span class="km">—</span><span class="muted">Partenza. Il gruppo è compatto.</span></div>';
+}
+const ORD=[['auto','Auto'],['ruota','Ruota'],['tira','Tira'],['scatta','Scatta'],['scorta','Scorta']];
+function renderMine(full){
+ const S=LIVE.S;if(!S)return;
+ const mine=S.byTeam['t0']||[];
+ const box=$('#mine');
+ const capId=S.plans['t0'].lead&&S.plans['t0'].lead.id;
+ if(full||box.children.length!==mine.length){
+  box.innerHTML=mine.map(x=>`<div class="mr" id="m_${x.id}"><div class="l1"><span class="nm">${esc(x.r.name)}</span>${x.id===capId?'<span class="chip amber">Capitano</span>':''}<span class="where" id="w_${x.id}"></span></div>
+   <div class="bars"><div><span>Energia</span><div class="bar e"><i id="be_${x.id}"></i></div></div><div><span>Riserva scatti</span><div class="bar w"><i id="bw_${x.id}"></i></div></div><div class="mono" id="pw_${x.id}" style="font-size:13px;color:var(--ink);text-align:right;min-width:52px"></div></div>
+   <div class="orders">${ORD.map(([k,l])=>`<button data-act="order" data-id="${x.id}" data-v="${k}" class="${k==='scatta'?'atk':''}" ${k==='scorta'&&x.id===capId?'disabled':''}>${l}</button>`).join('')}</div></div>`).join('');
+ }
+ const gd=S.clusters.length?groupsDisplay(S):[];
+ for(const x of mine){
+  const w=$('#w_'+x.id);if(!w)continue;
+  let where;
+  if(x.finished){const pos=S.finish.indexOf(x)+1;where=`Arrivato ${ord(pos)}`}
+  else if(x.stop>0)where='Foratura!';
+  else{const g=gd.find(o=>o.rs.includes(x));where=g?`${g.name}${g===gd[0]?'':' '+fmtGap(g.g)}`:''}
+  const it={attack:'scatto',follow:'in scia a uno scatto',pull:'in testa',ease:'si rialza',sprint:'volata'}[x.intent];
+  w.textContent=where+(it&&!x.finished?' · '+it:'');
+  $('#be_'+x.id).style.width=x.E+'%';
+  $('#bw_'+x.id).style.width=(x.W/x.Wmax*100)+'%';
+  $('#pw_'+x.id).textContent=x.finished?'':Math.round(x.P)+' W';
+  document.querySelectorAll(`#m_${x.id} .orders button`).forEach(b=>{b.setAttribute('aria-pressed',String(b.dataset.v===x.order||(b.dataset.v==='scatta'&&x.intent==='attack'&&x.isMe&&x.order==='scatta')));b.disabled=x.finished||(b.dataset.v==='scorta'&&x.id===capId)});
+ }
+}
+function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+function drawProfile(){
+ const cv=$('#pc');if(!cv||!LIVE)return;
+ const c=LIVE.course,S=LIVE.S;
+ const dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;
+ if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr)}
+ const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+ const lead=S&&S.clusters.length?S.clusters[0].front:0;
+ let a=0,b=c.len;
+ if(LIVE.zoom&&S){a=Math.max(0,lead-22);b=Math.min(c.len,a+32);a=Math.max(0,b-32)}
+ const ia=Math.floor(a*10),ib=Math.ceil(b*10);
+ let mn=Infinity,mx=-Infinity;for(let i=ia;i<=ib;i++){mn=Math.min(mn,c.alt[i]);mx=Math.max(mx,c.alt[i])}
+ if(mx-mn<120)mx=mn+120;
+ const top=26,bot=H-16;
+ const X=km=>(km-a)/(b-a)*W, Y=al=>bot-(al-mn)/(mx-mn)*(bot-top);
+ const col={t:cssVar('--terrain'),e:cssVar('--terrain-edge'),ink:cssVar('--ink'),mu:cssVar('--muted'),ac:cssVar('--accent'),am:cssVar('--amber'),k:cssVar('--kom'),bg:cssVar('--bg'),li:cssVar('--line')};
+ // terreno
+ g.beginPath();g.moveTo(X(a),bot);
+ const step=Math.max(1,Math.floor((ib-ia)/W));
+ for(let i=ia;i<=ib;i+=step)g.lineTo(X(i/10),Y(c.alt[i]));
+ g.lineTo(X(ib/10),Y(c.alt[Math.min(c.N,ib)]));g.lineTo(X(b),bot);g.closePath();
+ g.fillStyle=col.t;g.fill();g.strokeStyle=col.e;g.lineWidth=1.5;
+ g.beginPath();for(let i=ia;i<=ib;i+=step){const xx=X(i/10),yy=Y(c.alt[i]);i===ia?g.moveTo(xx,yy):g.lineTo(xx,yy)}g.stroke();
+ // percorso già fatto
+ if(S&&lead>a){g.save();g.beginPath();g.rect(0,0,X(Math.min(lead,b)),H);g.clip();g.globalAlpha=0.18;g.fillStyle=col.ink;g.fillRect(0,top-4,W,bot-top+4);g.restore()}
+ // asse km
+ g.fillStyle=col.mu;g.font='11px "IBM Plex Mono", monospace';g.textBaseline='alphabetic';
+ const tickKm=(b-a)>100?25:(b-a)>40?10:5;
+ for(let k=Math.ceil(a/tickKm)*tickKm;k<=b;k+=tickKm){const xx=X(k);g.fillRect(xx,bot,1,4);if(xx>12&&xx<W-24)g.fillText(String(k),xx-6,H-2)}
+ // GPM
+ g.font='600 11px "Barlow Condensed", sans-serif';
+ for(const cb of c.climbs){if(cb.top<a||cb.top>b)continue;const xx=X(cb.top),yy=Y(c.alt[Math.round(cb.top*10)]);
+  g.fillStyle=col.k;g.beginPath();g.moveTo(xx,yy-3);g.lineTo(xx-4,yy-10);g.lineTo(xx+4,yy-10);g.closePath();g.fill();
+  const lab=cb.cat==='HC'?'HC':cb.cat;g.fillText(lab,clamp(xx-3,0,W-14),yy-13)}
+ if(c.sprintKm&&c.sprintKm>=a&&c.sprintKm<=b){const xx=X(c.sprintKm);g.fillStyle=col.ac;g.fillRect(xx-0.5,top-6,1.5,bot-top+6);g.fillText('TV',clamp(xx+3,0,W-14),top+4)}
+ // arrivo
+ if(b>=c.len-0.01){const xx=W-1.5;g.fillStyle=col.ink;g.fillRect(xx-1,top-12,2,bot-top+12);g.fillText('ARRIVO',xx-38,top-4)}
+ // gruppi
+ if(S&&S.clusters.length){
+  const gd=groupsDisplay(S);
+  for(let i=gd.length-1;i>=0;i--){const o=gd[i];const p=o.rs[0].pos;if(p<a||p>b)continue;
+   const xx=X(p),yy=Y(c.alt[Math.min(c.N,Math.round(p*10))]);
+   const mine=o.rs.some(x=>x.isMe);const r=clamp(3+Math.sqrt(o.rs.length)*1.1,3.5,12);
+   g.beginPath();g.arc(xx,yy-r-1,r,0,Math.PI*2);g.fillStyle=mine?col.ac:o.main?col.mu:col.am;g.fill();g.lineWidth=1.5;g.strokeStyle=col.bg;g.stroke();
+  }
+ }
+}
+function endStageLive(){
+ const S=LIVE.S,RC=LIVE.RC;
+ const res=stageResults(S);
+ finishStage(RC,res,S,LIVE.course);
+ LIVE.S=null;
+ showStageResult();
+}
+function showStageResult(){
+ const RC=LIVE.RC,sr=RC.stages[RC.stages.length-1],last=RC.stage>=RC.ev.stages.length;
+ const t0=sr.res[0].time;
+ const isTT=sr.type==='crono'||sr.type==='prologo';
+ const rows=(list,timeOf,lim)=>{const top=list.slice(0,lim);const mine=list.map((x,i)=>({x,i})).filter(o=>RID(o.x.id).team==='t0'&&o.i>=lim);
+  const tr=(x,i)=>{const r=RID(x.id);const t=timeOf(x);return `<tr class="${r.team==='t0'?'me':''}"><td class="n">${i+1}</td><td>${esc(r.name)} <div class="tm">${esc(TEAM(r.team).name)}</div></td><td class="r">${i===0?fmtT(t):fmtGap(t-timeOf(list[0]))}</td></tr>`};
+  return top.map(tr).join('')+(mine.length?`<tr><td colspan="3" class="tm" style="text-align:center">…</td></tr>`+mine.map(o=>tr(o.x,o.i)).join(''):'')};
+ let gcHtml='';
+ if(RC.stageRace){const o=gcOrder(RC);const j=jerseys(RC);
+  gcHtml=`<div class="sec"><div class="sec-h"><h2>Classifica generale</h2></div><div class="card tbl"><table class="t">${rows(o,x=>x.t,10)}</table></div>
+  <div class="note" style="display:flex;flex-direction:column;gap:3px">${jerLine(j)}</div></div>`}
+ const koms=sr.koms.map((ids,j)=>ids.length?`<div>GPM ${esc(sr.climbs[j].name)} (${sr.climbs[j].cat}): ${ids.map(id=>esc(RID(id).name)).join(', ')}</div>`:'').join('');
+ openSheet(`<div class="ph wrap"><div><div class="eyebrow">${esc(RC.ev.name)} · ${RC.stageRace?'Ordine d\'arrivo':'Ordine d\'arrivo'}</div><h2>Vince ${esc(RID(sr.res[0].id).name)}</h2><div class="note">${esc(TEAM(sr.res[0].team).name)} · ${km1(sr.len)} km in ${fmtT(t0)} · media ${(sr.len/(t0/3600)).toFixed(1).replace('.',',')} km/h</div></div></div>
+  <div class="pb wrap"><div class="sec"><div class="card tbl"><table class="t">${rows(sr.res,x=>x.time,15)}</table></div>${koms?`<div class="note">${koms}</div>`:''}</div>${gcHtml}</div>
+  <div class="pf"><div class="wrap" style="display:flex;gap:8px;width:100%;justify-content:flex-end">
+   ${last?`<button class="btn primary" data-act="racedone">Bilancio della corsa</button>`:`<button class="btn" data-act="simrest">Simula il resto</button><button class="btn primary" data-act="nextstage">Tappa successiva</button>`}</div></div>`);
+}
+function jerLine(j){
+ const L=[];
+ if(j.gc)L.push(`<span><span class="jer" style="background:var(--amber)"></span> Leader: ${esc(RID(j.gc).name)}</span>`);
+ if(j.pts)L.push(`<span><span class="jer" style="background:var(--ok)"></span> Punti: ${esc(RID(j.pts).name)}</span>`);
+ if(j.kom)L.push(`<span><span class="jer" style="background:var(--kom)"></span> Scalatori: ${esc(RID(j.kom).name)}</span>`);
+ if(j.young)L.push(`<span><span class="jer" style="background:var(--surface);border:1px solid var(--line)"></span> Giovani: ${esc(RID(j.young).name)}</span>`);
+ return L.join('');
+}
+function showFinal(RC){
+ const ev=RC.ev,r=ev.result;
+ const final=RC.stageRace?gcOrder(RC):RC.stages[0].res.map(x=>({id:x.id,team:x.team,t:x.time}));
+ const t0=final[0].t;
+ const top=final.slice(0,10).map((x,i)=>`<tr class="${x.team==='t0'?'me':''}"><td class="n">${i+1}</td><td>${esc(RID(x.id).name)} <div class="tm">${esc(TEAM(x.team).name)}</div></td><td class="r">${i===0?fmtT(x.t):fmtGap(x.t-t0)}</td><td class="r">${r.award[x.id]||''}</td></tr>`).join('');
+ const mine=r.mine.map(m=>`<tr class="me"><td class="n">${m.pos}</td><td>${esc(RID(m.id).name)}<div class="tm">${Math.round(RC.kmFuga[m.id])} km in fuga</div></td><td class="r">${r.award[m.id]?r.award[m.id]+' pt':''}</td></tr>`).join('');
+ const stw=RC.stageRace?RC.stages.map((s,i)=>`<tr class="${RID(s.res[0].id).team==='t0'?'me':''}"><td class="n">${s.type==='prologo'?'P':i+(RC.stages[0].type==='prologo'?0:1)}</td><td>${esc(RID(s.res[0].id).name)}<div class="tm">${TYPE_LAB[s.type]} · ${km1(s.len)} km</div></td></tr>`).join(''):'';
+ openSheet(`<div class="ph wrap"><div><div class="eyebrow">Bilancio · ${ev.cls}</div><h2>${esc(ev.name)}</h2><div class="note">${RC.stageRace?'Vincitore finale':'Vincitore'}: <b>${esc(RID(final[0].id).name)}</b> (${esc(TEAM(final[0].team).name)})</div></div><button class="x" data-act="close" aria-label="Chiudi">×</button></div>
+  <div class="pb wrap">
+   <div class="sec kv"><div><small>Punti</small><b>${r.myPts}</b></div><div><small>Km in fuga</small><b>${r.kmF}</b></div><div><small>Sponsor</small><b style="color:${r.dS>=0?'var(--ok)':'var(--danger)'}">${r.dS>=0?'+':''}${r.dS}</b></div></div>
+   <div class="sec"><div class="sec-h"><h2>La tua squadra</h2></div><div class="card tbl"><table class="t">${mine}</table></div></div>
+   <div class="sec"><div class="sec-h"><h2>${RC.stageRace?'Classifica finale':'Ordine d\'arrivo'}</h2><span class="eyebrow">pt</span></div><div class="card tbl"><table class="t">${top}</table></div>${RC.stageRace?`<div class="note" style="display:flex;flex-direction:column;gap:3px">${jerLine(r.jer)}</div>`:''}</div>
+   ${stw?`<div class="sec"><div class="sec-h"><h2>Vincitori di tappa</h2></div><div class="card tbl"><table class="t">${stw}</table></div></div>`:''}
+  </div>
+  <div class="pf"><div class="wrap" style="display:flex;justify-content:flex-end;width:100%"><button class="btn primary" data-act="close">Torna al calendario</button></div></div>`);
+}
+
+/* ============================================================
+   EVENTS
+   ============================================================ */
+document.addEventListener('click',e=>{
+ const t=e.target.closest('[data-act]');if(!t)return;
+ const a=t.dataset.act,v=t.dataset.v;
+ switch(a){
+  case'start':{const n=($('#tname').value||'').trim()||'Ciclistica Valle Azzurra';newGame(n);render();break}
+  case'tab':G.tab=v;save();render();window.scrollTo(0,0);break;
+  case'rider':riderSheet(v);break;
+  case'close':closeSheet();render();break;
+  case'convoca':openConvoca(v);break;
+  case'skip':{const ev=G.cal.find(x=>x.id===v);openSheet(`<div class="ph wrap"><div><div class="eyebrow">Rinuncia</div><h2>Saltare ${esc(ev.name)}?</h2><div class="note">La squadra riposa ma lo sponsor perde visibilità (−4).</div></div></div><div class="pf"><div class="wrap" style="display:flex;gap:8px;justify-content:flex-end;width:100%"><button class="btn ghost" data-act="close">Annulla</button><button class="btn primary" data-act="skipok" data-v="${ev.id}">Rinuncia</button></div></div>`);break}
+  case'skipok':{const ev=G.cal.find(x=>x.id===v);advanceTo(ev.w);ev.status='skip';G.sponsor=clamp(G.sponsor-4,0,100);if(!G.cal.some(x=>x.w===ev.w&&x.status==='todo'))for(const id in G.riders)if(G.riders[id].busy===ev.w)G.riders[id].busy=0;save();closeSheet();render();break}
+  case'suggest':suggest();renderConvoca();break;
+  case'cap':if(SEL.ids.has(v)){SEL.cap=v;renderConvoca()}break;
+  case'go':launch(v);break;
+  case'newgame':openSheet(`<div class="ph wrap"><div><div class="eyebrow">Nuova stagione</div><h2>Ricominciare da capo?</h2><div class="note">Rosa, calendario e classifiche verranno generati di nuovo.</div></div></div><div class="pf"><div class="wrap" style="display:flex;gap:8px;justify-content:flex-end;width:100%"><button class="btn ghost" data-act="close">Annulla</button><button class="btn primary" data-act="reset">Ricomincia</button></div></div>`);break;
+  case'reset':try{localStorage.removeItem(SAVE_KEY)}catch(e){}G=null;SEASON=2027;closeSheet();render();break;
+  case'play':LIVE.playing=!LIVE.playing;t.textContent=LIVE.playing?'❚❚':'▶';t.setAttribute('aria-label',LIVE.playing?'Pausa':'Riprendi');break;
+  case'speed':LIVE.speed=+v;document.querySelectorAll('#spd button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v)));break;
+  case'zoom':LIVE.zoom=!LIVE.zoom;t.textContent=LIVE.zoom?'Tutto':'Zoom';drawProfile();break;
+  case'jump':{const S=LIVE.S;if(!S)break;const target=S.len-Math.max(25,Math.min(S.finaleKm+3,60));let n=0;while(!S.done&&S.clusters.length&&S.clusters[0].front<target&&n<20000){tick(S);n++}LIVE.zoom=true;$('#zbtn').textContent='Tutto';LIVE.speed=25;document.querySelectorAll('#spd button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v==='25')));updateRaceUI();break}
+  case'end':{const S=LIVE.S;if(!S)break;while(!S.done)tick(S);break}
+  case'order':{const S=LIVE.S;if(!S)break;const x=S.byId[t.dataset.id];if(!x||x.finished)break;
+   if(v==='scatta'){if(x.intent!=='attack'&&x.W>0.1*x.Wmax){x.order='scatta';startAttack(S,x,1.3,rnd(50,80))}}
+   else{x.order=v;if(x.intent==='attack'&&v!=='tira'){x.atkUntil=0}decide(S,x)}
+   renderMine(false);break}
+  case'neg':openNeg(v);break;
+  case'negyears':NEG.years=+v;renderNeg();break;
+  case'negstep':{const [k,d]=v.split(':');NEG[k]=Math.max(0,NEG[k]+(+d));renderNeg();break}
+  case'negoffer':negOffer();break;
+  case'release':releaseSheet(v);break;
+  case'releaseok':doRelease(v);break;
+  case'mksub':G.mk.sub=v;renderMarket();break;
+  case'nextseason':{const out=newSeason();render();window.scrollTo(0,0);openSheet(`<div class="ph wrap"><div><div class="eyebrow">Stagione ${SEASON}</div><h2>Si riparte</h2><div class="note">Budget ${eur(G.budget)} · cassa ${eur(G.cash)}</div></div><button class="x" data-act="close" aria-label="Chiudi">×</button></div><div class="pb wrap"><ul class="note" style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">${out.map(t=>`<li>${esc(t)}</li>`).join('')}</ul></div><div class="pf"><div class="wrap" style="display:flex;justify-content:flex-end;width:100%"><button class="btn primary" data-act="close">Al calendario</button></div></div>`);break}
+  case'rotok':try{localStorage.setItem('amm-rot','1')}catch(e){}document.querySelectorAll('.rotate').forEach(x=>x.remove());break;
+  case'tt':{const ctx=LIVE.ctx;const res=simTT(ctx);finishStage(LIVE.RC,res,null,ctx.course);showStageResult();break}
+  case'nextstage':closeSheet();startStageLive();break;
+  case'simrest':{closeSheet();const RC=LIVE.RC;$('#race').hidden=true;document.body.style.overflow='';LIVE=null;simulateWholeRace(RC);render();showFinal(RC);break}
+  case'racedone':{const RC=LIVE.RC;finishRace(RC);$('#race').hidden=true;$('#race').innerHTML='';document.body.style.overflow='';LIVE=null;render();showFinal(RC);break}
+ }
+});
+document.addEventListener('change',e=>{
+ const t=e.target;
+ if(t.dataset.act==='mkf'){G.mk[t.dataset.k]=t.value;renderMarket();return}
+ if(t.dataset.act!=='pick')return;
+ const id=t.dataset.v;
+ if(t.checked){if(SEL.ids.size>=SEL.ev.perTeam){t.checked=false;return}SEL.ids.add(id);if(!SEL.cap)SEL.cap=id}
+ else{SEL.ids.delete(id);if(SEL.cap===id)SEL.cap=[...SEL.ids][0]||null}
+ const sc=$('#sheet .pb').scrollTop;renderConvoca();$('#sheet .pb').scrollTop=sc;
+});
+window.addEventListener('resize',()=>{if(LIVE)drawProfile()});
+
+rotBanner();
+G=load();
+render();
+</script>

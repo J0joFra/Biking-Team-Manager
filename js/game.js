@@ -3,7 +3,7 @@
    STATO DI GIOCO, STAGIONE, ISCRIZIONI, MERCATO, STRUTTURE
    ============================================================ */
 let G=null,SEASON=2027;
-const SAVE_KEY='ammiraglia-save-v3';
+const SAVE_KEY='ammiraglia-save-v4';
 const USED=new Set();
 const PSEUDO={fa:{id:'fa',name:'Svincolato',short:'SV',tier:'none',nats:[]},jr:{id:'jr',name:'Juniores',short:'JR',tier:'none',nats:[]},acad:{id:'acad',name:'Scuola juniores',short:'SJ',tier:'none',nats:[]},x:{id:'x',name:'Ritirato',short:'—',tier:'none',nats:[]}};
 const ME=()=>G.teams[0];
@@ -20,7 +20,7 @@ const catOf=r=>r.junior||r.team==='acad'?'Juniores':r.age<=22?'U23':'Elite';
 const myCat=()=>CAT[G.cat];
 
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(G))}catch(e){}}
-function load(){try{const s=localStorage.getItem(SAVE_KEY);if(s){const g=JSON.parse(s);if(g&&g.v===3){SEASON=g.season;USED.clear();for(const id in g.riders)USED.add(g.riders[id].name);return g}}}catch(e){}return null}
+function load(){try{const s=localStorage.getItem(SAVE_KEY);if(s){const g=JSON.parse(s);if(g&&g.v===4){SEASON=g.season;USED.clear();for(const id in g.riders)USED.add(g.riders[id].name);return g}}}catch(e){}return null}
 
 /* ---------- corridori ---------- */
 function uniqueName(N){let n;for(let k=0;k<40;k++){n=pick(N.f)+' '+pick(N.l);if(!USED.has(n))break}USED.add(n);return n}
@@ -73,11 +73,11 @@ function buildRaces(){
 }
 
 /* ---------- nuova partita ---------- */
-function newGame(name,jersey){
+function newGame(name,jersey,sede){
  const seed=Math.floor(Math.random()*1e9);
  R=mulberry32(seed);SEASON=2027;USED.clear();
- G={v:3,season:SEASON,name,jersey,cat:'conti',seed,week:5,phase:'season',teams:[],riders:{},races:[],nextId:1,sponsor:60,rep:20,budget:1000000,cash:1000000,
-  news:[],inbox:[],objectives:[],camps:[],academy:{level:0,focus:'ITA',log:[]},history:[],offer:null,
+ G={v:4,season:SEASON,name,jersey,sede,cat:'conti',seed,week:5,phase:'season',teams:[],riders:{},races:[],nextId:1,sponsor:60,rep:20,cash:100000,
+  news:[],inbox:[],sponsors:[],contracts:[],offers:[],exp:{},camps:[],academy:{level:0,focus:'ITA',log:[]},history:[],
   mk:{sub:'renew',cat:'all',role:'all'},calf:'acc',tab:'home',rankf:'mine',st:{},kmFuga:0};
  const short=name.replace(/[^A-Za-zÀ-ÿ ]/g,'').split(/\s+/).filter(Boolean).map(w=>w[0]).join('').slice(0,3).toUpperCase()||'ME';
  G.teams.push({id:'t0',name,short,tier:'me',nats:['ITA'],color:'var(--accent)',riders:[]});
@@ -97,9 +97,10 @@ function newGame(name,jersey){
  for(let i=0;i<24;i++){const age=R()<0.25?rint(20,22):rint(23,33);const r=genRider({id:'fa',tier:'fa'},pick(Object.keys(NAMES)),pick(ARCH_MIX),age);G.riders[r.id]=r}
  genJuniors(16);
  G.races=buildRaces();
- newObjectives();
- mail('Sponsor','Benvenuto in ammiraglia',`La ${name} parte come squadra Continental con un budget di ${eur(G.budget)}.\n\nIscriviti alle corse dal Calendario: ogni gara ha una quota d'iscrizione e costi di trasferta. Le corse WorldTour e i Grandi Giri sono riservati alle squadre di categoria superiore: per arrivarci servono risultati, reputazione e uno sponsor più grande.`);
- mail('Sponsor','Gli obiettivi della stagione',G.objectives.map(o=>`• ${o.txt} → premio ${eur(o.reward)}`).join('\n'));
+ G.sponsors=genSponsors();
+ const main=initialSponsors();
+ mail('DS','Benvenuto in ammiraglia',`La ${name} nasce a ${sede.city} come squadra Continental. Il primo main sponsor è ${main.name}, un'azienda della tua regione: con i partner del territorio garantisce circa ${eur(incomeIn(SEASON))} per questa stagione, versati settimana per settimana.\n\nIscriviti alle corse dal Calendario: ogni gara ha una quota d'iscrizione e costi di trasferta. WorldTour e Grandi Giri sono riservati alle squadre di categoria superiore: per salire servono sponsor più grandi, che si conquistano partendo dal vicinato.`);
+ mail('Sponsor','Gli sponsor e i loro obiettivi',G.contracts.map(c=>`• ${SP(c.sid).name} (${SLOTS[c.slot].lab}): ${c.obj.txt} → bonus ${eur(c.bonus)}`).join('\n'));
  R=Math.random;save();
 }
 
@@ -109,7 +110,7 @@ function academyCost(){return G.academy.level*40000}
 function seasonWeeks(){return WEEK_END-4}
 function weeklyCost(){return(payroll()+myCat().staff+academyCost())/seasonWeeks()}
 function remWeeks(){return G.phase!=='season'?0:Math.max(0,WEEK_END-G.week+1)}
-function projected(extra=0){return G.cash-remWeeks()*weeklyCost()-extra}
+function projected(extra=0){return G.cash+remWeeks()*(weeklyIncome()-weeklyCost())-extra}
 function mail(from,title,body){G.inbox.unshift({id:'m'+(G.nextId++),w:G.week,s:SEASON,from,title,body,read:false});G.inbox=G.inbox.slice(0,60)}
 function addNews(t){G.news.unshift({s:SEASON,t});G.news=G.news.slice(0,40)}
 
@@ -267,9 +268,11 @@ function finishMyRace(RC){
  const dS=clamp(Math.round((Math.min(kmF,150)*0.02+rel*8+myWins*4-(bestPos>20?4:bestPos>10?1:0))*Math.sqrt(T.spf)),-8,15);
  const dR=clamp(rel*6*Math.pow(T.spf,0.7)+myWins*1.5-(bestPos>30?0.5:0),-2,10);
  const prize=Math.round(myPts*120+myWins*800*T.spf);
- G.sponsor=clamp(G.sponsor+dS,0,100);G.rep=clamp(G.rep+dR,0,100);G.cash+=prize;G.kmFuga+=kmF;
+ sponsorRaceUpdate(dS);G.rep=clamp(G.rep+dR,0,100);G.cash+=prize;G.kmFuga+=kmF;
  const st=G.st;st.wins=(st.wins||0)+myWins;st.fuga=(st.fuga||0)+kmF;
- if(race.ctry==='ITA')st.italy=(st.italy||0)+1;
+ if(race.ctry==='ITA')st.ita=(st.ita||0)+1;else G.exp[race.ctry]=(G.exp[race.ctry]||0)+1;
+ st['ctry_'+race.ctry]=(st['ctry_'+race.ctry]||0)+1;
+ if(RACE_REG[race.name])st['reg_'+RACE_REG[race.name]]=(st['reg_'+RACE_REG[race.name]]||0)+1;
  st.top10=(st.top10||0)+mine.filter(r=>pos(r.id)<=10).length;
  if(race.tier==='u23'&&bestPos<=3)st.u23pod=(st.u23pod||0)+1;
  if(race.tier==='pro')st.pro=(st.pro||0)+1;
@@ -277,7 +280,7 @@ function finishMyRace(RC){
  race.result.mine=mine.map(r=>({id:r.id,name:r.name,pos:pos(r.id),pts:award[r.id]||0,km:Math.round(RC.kmFuga[r.id])})).sort((a,b)=>a.pos-b.pos);
  Object.assign(race.result,{myPts,kmF:Math.round(kmF),dS,dR:+dR.toFixed(1),prize,myWins,bestPos,jer:RC.stageRace?jerseys(RC):null});
  if(myWins)mail('DS',`Vittoria a ${race.name}!`,`${wins.filter(id=>RID(id).team==='t0').map(id=>RID(id).name).join(', ')} porta a casa ${myWins>1?myWins+' vittorie':'la vittoria'}. Premi: ${eur(prize)}.`);
- checkObjectives();save();
+ checkSponsorObjectives();save();
  return race.result;
 }
 function quickRace(race){
@@ -323,11 +326,12 @@ function weekTick(w){
   if(r.team==='t0'&&inCamp(r,w,w)){r.fat=Math.max(0,r.fat-5);r.form=Math.min(1.045,r.form+0.004)}
   else{r.fat=Math.max(0,r.fat-(9+r.rec*0.08));r.form+=(0.972-r.form)*0.06}
  }
- if(w<=WEEK_END)G.cash-=weeklyCost();
+ if(w<=WEEK_END)G.cash+=weeklyIncome()-weeklyCost();
  for(const c of G.camps)if(c.to===w&&!c.done)finishCamp(c);
  academyWeek();
  if(w>=31)poach();
- checkObjectives();
+ checkSponsorObjectives();
+ weeklyOffers(false);
 }
 
 /* ---------- ritiri in altura ---------- */
@@ -396,30 +400,6 @@ function juniorRace(race){
 }
 function promoteJunior(r,sal,years){r.next={team:'t0',sal,cEnd:SEASON+years};save()}
 function releaseJunior(r){delete G.riders[r.id];save()}
-
-/* ---------- obiettivi dello sponsor ---------- */
-const OBJ_POOL=[
- {k:'wins',t:n=>`Vinci ${n} corse o tappe`,n:{conti:2,pro:4,wt:10}},
- {k:'italy',t:n=>`Disputa ${n} corse in Italia`,n:{conti:12,pro:10,wt:8}},
- {k:'fuga',t:n=>`Accumula ${n} km in fuga`,n:{conti:300,pro:500,wt:700}},
- {k:'top10',t:n=>`Ottieni ${n} piazzamenti nei primi 10`,n:{conti:8,pro:14,wt:25}},
- {k:'u23pod',t:n=>`Porta un Under 23 sul podio di una corsa U23 (${n} volte)`,n:{conti:2}},
- {k:'pro',t:n=>`Corri ${n} gare ProSeries`,n:{conti:3,pro:10}},
- {k:'wt',t:n=>`Corri ${n} gare WorldTour`,n:{pro:3,wt:20}}
-];
-function newObjectives(){
- const base={conti:30000,pro:120000,wt:400000}[G.cat];
- const pool=shuffle(OBJ_POOL.filter(o=>o.n[G.cat]));
- G.objectives=pool.slice(0,3).map(o=>({k:o.k,n:o.n[G.cat],txt:o.t(o.n[G.cat]),reward:Math.round(base*rnd(0.8,1.25)/1000)*1000,done:false}));
- G.st={};
-}
-function checkObjectives(){
- for(const o of G.objectives){
-  if(o.done)continue;
-  if((G.st[o.k]||0)>=o.n){o.done=true;G.cash+=o.reward;G.sponsor=clamp(G.sponsor+4,0,100);
-   mail('Sponsor','Obiettivo raggiunto',`${o.txt}: fatto. Bonus di ${eur(o.reward)} accreditato.`);NOTIFY(`Obiettivo raggiunto: +${eurk(o.reward)}`,'gold')}
- }
-}
 
 /* ---------- mercato ---------- */
 function myRoster(){return ME().riders.length}
@@ -496,18 +476,16 @@ function aiFill(ns){
 function endOfSeason(){
  G.phase='off';
  const rk=myCatRank();
- let offer=null;
- if(G.cat==='conti'&&rk<=3&&G.sponsor>=60&&G.rep>=40)offer={to:'pro',budget:4200000};
- else if(G.cat==='pro'&&rk<=2&&G.rep>=70)offer={to:'wt',budget:14000000};
- G.offer=offer;
- mail('Sponsor',`Fine stagione ${SEASON}`,`Chiudi ${rk}ª tra le ${myCat().lab}. Soddisfazione dello sponsor: ${G.sponsor}%. Reputazione: ${Math.round(G.rep)}.\n\n`+(offer?`C'è una proposta: un nuovo sponsor è pronto a finanziare la licenza ${CAT[offer.to].lab} con ${eur(offer.budget)} l'anno. Puoi accettarla dalla Home prima di passare alla nuova stagione.`:`Per salire di categoria serve chiudere tra le prime ${G.cat==='conti'?3:2} della tua categoria con sponsor e reputazione alti.`));
+ sponsorSeasonEnd();
+ const L=licenceCheck();
+ mail('DS',`Fine stagione ${SEASON}`,`Chiudi ${rk}ª tra le ${myCat().lab}. Soddisfazione media degli sponsor: ${sponsorSat()}%. Reputazione: ${Math.round(G.rep)}.\n\n`+(L?`Per la licenza ${CAT[L.to].lab} servono:\n${L.reqs.map(r=>(r.ok?'✓ ':'✗ ')+r.t).join('\n')}`:'Sei già al vertice: WorldTeam.')+`\n\nPrima di ripartire: rinnovi degli sponsor, mercato e promozioni dalla scuola juniores.`);
  NOTIFY('Stagione conclusa','gold');
 }
 function newSeason(acceptOffer){
  const ns=SEASON+1,out=[];
  const rk=myCatRank();
  G.history.push({season:SEASON,cat:G.cat,rank:rk,pts:teamPoints(ME()),wins:ME().riders.reduce((a,id)=>a+RID(id).wins,0)});
- const up=acceptOffer&&G.offer?G.offer:null;
+ const lc=licenceCheck(),up=acceptOffer&&lc&&lc.ok?{to:lc.to}:null;
  for(const r of Object.values(G.riders)){
   if(r.team==='t0'){
    if(r.leavingTo){out.push(`${r.name} passa a ${TEAM(r.leavingTo).name}`);moveRider(r,r.leavingTo);r.sal=Math.round(demand(r)/500)*500;r.cEnd=ns+rint(0,1)}
@@ -552,20 +530,16 @@ function newSeason(acceptOffer){
  for(let i=fa.length;i<22;i++){const r=genRider({id:'fa',tier:'fa'},pick(Object.keys(NAMES)),pick(ARCH_MIX),rint(22,32));G.riders[r.id]=r}
  genJuniors(16);
  if(lv){const got=intake();if(got.length)out.push(`Scuola juniores: entrano ${got.map(r=>r.name).join(', ')}`)}
- let bud;
- if(up)bud=up.budget;
- else if(G.cat==='conti')bud=800000+G.sponsor*5000+Math.max(0,20-rk)*8000;
- else if(G.cat==='pro')bud=3600000+G.sponsor*20000+Math.max(0,12-rk)*50000;
- else bud=12000000+G.sponsor*60000+Math.max(0,18-rk)*150000;
- const lost=!up&&G.sponsor<30;
- G.budget=Math.round((lost?bud*0.75:bud)/1000)*1000;G.cash+=G.budget;
- out.unshift(lost?`Lo sponsor principale non rinnova: budget ridotto a ${eur(G.budget)}`:`Budget ${ns}: ${eur(G.budget)}`);
- G.sponsor=lost?50:clamp(55+Math.round((G.sponsor-55)/3),40,70);
+ G.contracts=G.contracts.filter(c=>c.end>=ns);
+ for(const c of G.contracts){c.done=false;c.base=0}
+ G.offers=[];
+ const inc=incomeIn(ns),ms=G.contracts.find(c=>c.slot==='main'&&activeIn(c,ns));
+ out.unshift(`Sponsor ${ns}: ${eur(inc)}${ms?` · main sponsor ${SP(ms.sid).name}`:' · nessun main sponsor!'}`);
+ G.sponsor=sponsorSat();
  G.rep=Math.round(G.rep*0.8+8);
- G.week=5;G.phase='season';G.kmFuga=0;G.offer=null;G.camps=[];
+ G.week=5;G.phase='season';G.kmFuga=0;G.camps=[];G.st={};
  G.races=buildRaces();
- newObjectives();
- mail('Sponsor',`Stagione ${ns}: si riparte`,out.join('\n')+'\n\nObiettivi:\n'+G.objectives.map(o=>`• ${o.txt} → ${eur(o.reward)}`).join('\n'));
+ mail('DS',`Stagione ${ns}: si riparte`,out.join('\n')+'\n\nObiettivi degli sponsor:\n'+G.contracts.filter(c=>activeIn(c,ns)).map(c=>`• ${SP(c.sid).name}: ${c.obj.txt} → ${eur(c.bonus)}`).join('\n'));
  for(const t of out)addNews(t);
  save();return out;
 }

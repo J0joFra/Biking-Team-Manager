@@ -3,7 +3,8 @@
 Gestionale di una squadra di ciclismo giocabile nel browser, pensato per il telefono in orizzontale.
 
 ## Cosa c'è
-- **Carriera:** parti Continental e sali a ProTeam e WorldTeam con risultati, reputazione e uno sponsor più grande.
+- **Carriera:** parti Continental e sali a ProTeam e WorldTeam con risultati, reputazione e sponsor più grandi.
+- **Sponsor dal territorio:** scegli la sede (es. Torino). Gli sponsor sono distribuiti per regione su una mappa dell'Italia e all'estero; più sono vicini, più sono propensi. Locali, regionali, nazionali e internazionali, con ruoli main, co-sponsor e partner, obiettivi stagionali, bonus, soddisfazione e rinnovi. Le licenze ProTeam e WorldTeam richiedono sponsor garantiti.
 - **Calendario reale:** circa 130 corse d'Italia e d'Europa (Grandi Giri, Monumenti, WorldTour, ProSeries, classe 1 e 2, Under 23, campionati italiani, gare juniores).
 - **Iscrizioni:** ogni corsa ha quota d'iscrizione e trasferta. L'accesso dipende dalla categoria (le Continental non corrono il WorldTour) e dagli inviti degli organizzatori.
 - **Gara simulata:** fisica di watt, pendenza, scia, pavé e sterrato. Ordini radio: Auto, Ruota, Tira, Scatta, Scorta.
@@ -20,6 +21,7 @@ Apri `index.html` in un browser (oppure via GitHub Pages). Il salvataggio resta 
 - `js/data.js` — calendario, squadre, categorie, ritiri
 - `js/engine.js` — percorsi, fisica e simulazione di gara
 - `js/game.js` — stagione, iscrizioni, mercato, strutture
+- `js/sponsor.js` — sponsor, proposte, contratti e licenze
 - `js/ui.js` — interfaccia
 
 Squadre e corridori sono inventati. I nomi delle corse sono quelli reali e servono solo come riferimento in un progetto amatoriale.

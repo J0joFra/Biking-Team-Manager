@@ -11,6 +11,8 @@ const ICON={
  rank:'<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4.5v1A3.5 3.5 0 0 0 8 10.5M16 6h3.5v1a3.5 3.5 0 0 1-3.5 3.5M12 13v4M8.5 21h7M10 17h4v4h-4z"/>',
  full:'<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
  mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+ spon:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8.5 7V5.5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2V7M3 13h18M11 13v2h2v-2"/>',
+ pin:'<path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/>',
  lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
  check:'<path d="M5 12l5 5 9-10"/>'
 };
@@ -18,7 +20,7 @@ const ic=(n,s=20)=>`<svg class="ic" viewBox="0 0 24 24" width="${s}" height="${s
 function jersey(c1,c2,s=36){return`<svg viewBox="0 0 40 40" width="${s}" height="${s}" aria-hidden="true"><path d="M13 4l-9 6 4 8 4-2v20h16V16l4 2 4-8-9-6c-1 3-4 5-7 5s-6-2-7-5z" fill="${c1}" stroke="rgba(0,0,0,.28)" stroke-width="1"/><path d="M12 19h16v5H12z" fill="${c2}"/><path d="M16.5 4.6c1 2.3 2.2 3.4 3.5 3.4s2.5-1.1 3.5-3.4" fill="none" stroke="${c2}" stroke-width="2"/></svg>`}
 const myJersey=(s)=>jersey(G.jersey[0],G.jersey[1],s);
 const ord=n=>n+'°';
-function toast(t,kind=''){const box=$('#toasts');const d=document.createElement('div');d.className='toast '+kind;d.textContent=t;box.appendChild(d);setTimeout(()=>d.classList.add('out'),2600);setTimeout(()=>d.remove(),3100)}
+function toast(t,kind=''){const box=$('#toasts');while(box.children.length>=3)box.firstChild.remove();const d=document.createElement('div');d.className='toast '+kind;d.textContent=t;box.appendChild(d);setTimeout(()=>d.classList.add('out'),2600);setTimeout(()=>d.remove(),3100)}
 NOTIFY=toast;
 function openSheet(html,cls=''){const s=$('#sheet');s.innerHTML=`<div class="panel ${cls}" role="dialog" aria-modal="true">${html}</div>`;s.hidden=false}
 function closeSheet(){$('#sheet').hidden=true;$('#sheet').innerHTML=''}
@@ -29,22 +31,22 @@ let ROT='';
 function rotBanner(){let off=false;try{off=localStorage.getItem('amm-rot')==='1'}catch(e){}ROT=off?'':`<div class="banner rotate"><span style="flex:1">Ammiraglia è pensata in orizzontale: gira il telefono per avere corsa e ordini affiancati.</span><button class="chip" data-act="rotok">Ok</button></div>`}
 
 /* ---------- shell ---------- */
-const TABS=[['home','Home','home'],['cal','Calendario','cal'],['team','Squadra','team'],['market','Mercato','market'],['base','Strutture','base'],['rank','Classifiche','rank']];
+const TABS=[['home','Home','home'],['cal','Corse','cal'],['team','Squadra','team'],['market','Mercato','market'],['spon','Sponsor','spon'],['base','Strutture','base'],['rank','Classifica','rank']];
 function render(){
  if(!G){renderIntro();return}
  $('#top').hidden=false;$('#tabs').hidden=false;
  renderTop();
- const unread=G.inbox.filter(m=>!m.read).length;
- $('#tabs').innerHTML=`<div class="tabin">${TABS.map(([k,l,i])=>`<button data-act="tab" data-v="${k}" aria-current="${G.tab===k}">${ic(i,22)}<span>${l}</span>${k==='home'&&unread?`<b class="badge">${unread}</b>`:''}</button>`).join('')}</div>`;
+ const unread=G.inbox.filter(m=>!m.read).length,offs=G.offers.length;
+ $('#tabs').innerHTML=`<div class="tabin">${TABS.map(([k,l,i])=>`<button data-act="tab" data-v="${k}" aria-current="${G.tab===k}">${ic(i,22)}<span>${l}</span>${k==='home'&&unread?`<b class="badge">${unread}</b>`:''}${k==='spon'&&offs?`<b class="badge">${offs}</b>`:''}</button>`).join('')}</div>`;
  const v=$('#view');
- ({home:renderHome,cal:renderCal,team:renderTeam,market:renderMarket,base:renderBase,rank:renderRank})[G.tab]();
+ ({home:renderHome,cal:renderCal,team:renderTeam,market:renderMarket,spon:renderSponsor,base:renderBase,rank:renderRank})[G.tab]();
  v.classList.remove('enter');void v.offsetWidth;v.classList.add('enter');
 }
 function renderTop(){
  const d=weekDate(G.week);
  $('#top').innerHTML=`<div class="wrap topin"><div class="crest">${myJersey(34)}</div>
-  <div style="min-width:0"><div class="tn">${esc(G.name)}</div><div class="sub"><span class="chip cat">${myCat().lab}</span> ${G.phase==='season'?`Sett. ${G.week} · ${d.getDate()} ${MESI[d.getMonth()]} ${SEASON}`:`Fine stagione ${SEASON}`}</div></div>
-  <div class="hud"><div><small>Cassa</small><b class="${G.cash<0?'neg':''}">${eurk(G.cash)}</b></div><div><small>Reputazione</small><b>${Math.round(G.rep)}</b></div><div class="hide-s"><small>Sponsor</small><b>${G.sponsor}%</b></div></div>
+  <div style="min-width:0"><div class="tn">${esc(G.name)}</div><div class="sub"><span class="chip cat">${myCat().lab}</span> ${G.phase==='season'?`Sett. ${G.week} · ${d.getDate()} ${MESI[d.getMonth()]} ${SEASON}`:`Fine stagione ${SEASON}`}<span class="hide-s">· ${esc(G.sede.city)}${mainSponsor()?' · '+esc(mainSponsor().name):''}</span></div></div>
+  <div class="hud"><div><small>Cassa</small><b class="${G.cash<0?'neg':''}">${eurk(G.cash)}</b></div><div><small>Reputazione</small><b>${Math.round(G.rep)}</b></div><div class="hide-s"><small>Sponsor</small><b>${sponsorSat()}%</b></div></div>
   <button class="iconbtn" data-act="fullscreen" aria-label="Schermo intero">${ic('full',20)}</button></div>`;
 }
 function renderIntro(){
@@ -59,9 +61,10 @@ function renderIntro(){
   </div>
   <div class="card introR">
    <div class="field"><label for="tname" class="eyebrow">Nome della squadra</label><input id="tname" maxlength="34" value="Ciclistica Valle Azzurra"></div>
+   <div class="field"><label for="tsede" class="eyebrow">Sede della squadra</label><select id="tsede">${Object.keys(REGIONS).map(k=>`<optgroup label="${REGIONS[k].n}">${REGIONS[k].c.map(c=>`<option value="${k}|${c[0]}" ${c[0]==='Torino'?'selected':''}>${c[0]}</option>`).join('')}</optgroup>`).join('')}</select><span class="note">Gli sponsor vicini alla sede sono i più propensi a sostenerti.</span></div>
    <div class="field"><span class="eyebrow">Maglia</span><div class="jerseys">${JERSEYS.map((j,i)=>`<button class="jbtn" data-act="jer" data-v="${i}" aria-pressed="${i===sel}" aria-label="Maglia ${i+1}">${jersey(j[0],j[1],44)}</button>`).join('')}</div></div>
    <button class="btn primary big" data-act="start">Inizia la stagione 2027</button>
-   <ul class="note list"><li>Corse Continental ed Under 23 subito; le ProSeries su invito; WorldTour e Grandi Giri solo da ProTeam o WorldTeam.</li><li>Ogni corsa costa: quota d'iscrizione più trasferta per corridore e giorno.</li><li>Il gioco salva da solo nel browser.</li></ul>
+   <ul class="note list"><li>Corse Continental ed Under 23 subito; le ProSeries su invito; WorldTour e Grandi Giri solo da ProTeam o WorldTeam.</li><li>Ogni corsa costa: quota d'iscrizione più trasferta per corridore e giorno.</li><li>I primi sponsor arrivano dal territorio. Con risultati e reputazione arrivano offerte da tutta Italia e dall'estero, fino al main sponsor che porta al WorldTour.</li><li>Il gioco salva da solo nel browser.</li></ul>
   </div></div>`;
 }
 
@@ -70,12 +73,13 @@ function renderHome(){
  const pend=myPending(),nx=nextMyRace();
  let hero;
  if(G.phase!=='season'){
-  const o=G.offer;
+  const L=licenceCheck(),inc=incomeIn(SEASON+1),nextMain=G.contracts.some(c=>c.slot==='main'&&activeIn(c,SEASON+1));
   hero=`<div class="hero card"><div class="eyebrow">Stagione ${SEASON} conclusa</div><h2>${myCatRank()}ª tra le ${myCat().lab}</h2>
-   <div class="kv"><div><small>Punti</small><b>${teamPoints(ME())}</b></div><div><small>Vittorie</small><b>${ME().riders.reduce((a,id)=>a+RID(id).wins,0)}</b></div><div><small>Km in fuga</small><b>${Math.round(G.kmFuga)}</b></div></div>
-   ${o?`<div class="offer"><div class="eyebrow">Proposta di licenza</div><b>Diventa ${CAT[o.to].lab}</b><span class="note">Budget ${eur(o.budget)} · rosa da ${CAT[o.to].min} a ${CAT[o.to].max} corridori · ingaggio minimo ${eur(CAT[o.to].minSal)} · staff ${eurk(CAT[o.to].staff)}/anno</span></div>`:''}
-   <div class="note">Mercato aperto: rinnova, firma svincolati e promuovi i tuoi juniores prima di ripartire.</div>
-   <div class="row">${o?`<button class="btn primary big" data-act="nextseason" data-v="up">Accetta e passa al ${SEASON+1}</button><button class="btn ghost" data-act="nextseason" data-v="">Resta ${myCat().lab}</button>`:`<button class="btn primary big" data-act="nextseason" data-v="">Passa al ${SEASON+1}</button>`}<button class="btn ghost" data-act="tab" data-v="market">Mercato</button></div></div>`;
+   <div class="kv"><div><small>Punti</small><b>${teamPoints(ME())}</b></div><div><small>Vittorie</small><b>${ME().riders.reduce((a,id)=>a+RID(id).wins,0)}</b></div><div><small>Sponsor ${SEASON+1}</small><b>${eurk(inc)}</b></div></div>
+   ${L?`<div class="offer"><div class="eyebrow">Licenza ${CAT[L.to].lab}</div>${L.reqs.map(r=>`<span class="req ${r.ok?'ok':''}">${ic(r.ok?'check':'lock',14)} ${esc(r.t)}</span>`).join('')}<span class="note">${CAT[L.to].lab}: rosa da ${CAT[L.to].min} a ${CAT[L.to].max} corridori · ingaggio minimo ${eur(CAT[L.to].minSal)} · staff ${eurk(CAT[L.to].staff)}/anno</span></div>`:''}
+   ${!nextMain?`<div class="msg no">Non hai ancora un main sponsor per il ${SEASON+1}: cercalo nella sezione Sponsor.</div>`:''}
+   <div class="note">Prima di ripartire: rinnovi degli sponsor, mercato e promozioni dalla scuola juniores.</div>
+   <div class="row">${L&&L.ok?`<button class="btn primary big" data-act="nextseason" data-v="up">Diventa ${CAT[L.to].lab} e passa al ${SEASON+1}</button><button class="btn ghost" data-act="nextseason" data-v="">Resta ${myCat().lab}</button>`:`<button class="btn primary big" data-act="nextseason" data-v="">Passa al ${SEASON+1}</button>`}<button class="btn ghost" data-act="tab" data-v="spon">Sponsor${G.offers.length?` (${G.offers.length})`:''}</button></div></div>`;
  }else if(pend.length){
   hero=`<div class="hero card go"><div class="eyebrow">Questa settimana</div>${pend.map(r=>`<div class="herorace"><div style="min-width:0"><h2>${esc(r.name)}</h2><div class="mt">${raceChips(r)}</div></div><button class="btn primary big" data-act="convoca" data-v="${r.id}">Convocazioni</button></div>`).join('')}</div>`;
  }else{
@@ -84,14 +88,15 @@ function renderHome(){
    <div class="note">${nx?`Tra ${nx.w-G.week} settiman${nx.w-G.week===1?'a':'e'} (${weekLab(nx.w)}).`:'Apri il Calendario e iscriviti alle corse adatte alla tua squadra.'}</div>
    <div class="row"><button class="btn primary big" data-act="adv1">Avanza di una settimana</button>${nx?`<button class="btn big" data-act="advnext">Vai alla prossima corsa</button>`:`<button class="btn big" data-act="tab" data-v="cal">Calendario</button>`}</div></div>`;
  }
- const objs=G.objectives.map(o=>{const v=Math.min(o.n,Math.round(G.st[o.k]||0));return`<div class="obj ${o.done?'done':''}"><div class="ol"><span>${esc(o.txt)}</span><b>${o.done?ic('check',16):eurk(o.reward)}</b></div><div class="bar ${o.done?'e':''}"><i style="width:${v/o.n*100}%"></i></div><small>${v}/${o.n}</small></div>`}).join('');
+ const objs=G.contracts.filter(c=>activeIn(c,SEASON)).sort((a,b)=>b.amount-a.amount).slice(0,5).map(c=>{const v=Math.min(c.obj.n,Math.round(contractProg(c)));return`<div class="obj ${c.done?'done':''}"><div class="ol"><span><b class="sn">${esc(SP(c.sid).name)}</b> ${esc(c.obj.txt)}</span><b>${c.done?ic('check',16):eurk(c.bonus)}</b></div><div class="bar ${c.done?'e':''}"><i style="width:${v/c.obj.n*100}%"></i></div><small>${v}/${c.obj.n}</small></div>`}).join('')||'<div class="note">Nessuno sponsor attivo.</div>';
  const mails=G.inbox.slice(0,6).map(m=>`<button class="mail ${m.read?'':'unread'}" data-act="mail" data-v="${m.id}"><span class="from">${esc(m.from)}</span><span class="mt2">${esc(m.title)}</span><span class="wk">S${m.w}</span></button>`).join('')||'<div class="note">Nessun messaggio.</div>';
  const recent=G.races.filter(r=>r.status==='done'&&r.result&&r.result.winner&&r.tier!=='jun').sort((a,b)=>b.w-a.w||TIER_ORDER[a.tier]-TIER_ORDER[b.tier]).slice(0,5);
  const camps=G.camps.filter(c=>!c.done);
  const proj=projected();
  $('#view').innerHTML=`${ROT}<div class="homegrid">
   <div class="col">${hero}
-   <div class="card pad"><div class="sec-h"><h3>Obiettivi dello sponsor</h3><span class="eyebrow">${G.sponsor}% soddisfatto</span></div>${objs}</div>
+   ${G.offers.length?`<button class="banner" data-act="tab" data-v="spon">${ic('spon',18)}<span><b>${G.offers.length} propost${G.offers.length>1?'e':'a'} di sponsorizzazione</b> da valutare</span></button>`:''}
+   <div class="card pad"><div class="sec-h"><h3>Obiettivi degli sponsor</h3><span class="eyebrow">${sponsorSat()}% soddisfatti</span></div>${objs}</div>
    <div class="kv kv4"><div><small>Saldo a fine stagione</small><b class="${proj<0?'neg':''}">${eurk(proj)}</b></div><div><small>Classifica</small><b>${myCatRank()}ª</b></div><div><small>Punti</small><b>${teamPoints(ME())}</b></div><div><small>Rosa</small><b>${myRoster()}/${myCat().max}</b></div></div>
   </div>
   <div class="col">
@@ -633,13 +638,80 @@ function showFinal(RC){
  if(r.myWins)toast(`${r.myWins} vittori${r.myWins>1?'e':'a'}! +${eurk(r.prize)}`,'gold');
 }
 
+
+/* ---------- sponsor ---------- */
+let SPN=null;
+function spLogo(s,sz=40){const col=s.sector==='estero'?'#4B5563':SECTORS[s.sector].col;const ini=s.name.replace(/[^A-Za-zÀ-ÿ ]/g,' ').split(/\s+/).filter(w=>w.length>2&&!['di','del','della'].includes(w.toLowerCase())).slice(0,2).map(w=>w[0]).join('').toUpperCase();return`<span class="slogo" style="background:${col};width:${sz}px;height:${sz}px">${ini}</span>`}
+function sectorLab(s){return s.sector==='estero'?'Estero':SECTORS[s.sector].lab}
+function myContract(s){return G.contracts.find(c=>c.sid===s.id&&c.end>=SEASON)}
+function spRow(s){
+ const c=myContract(s),it=interest(s,'partner'),off=G.offers.find(o=>o.sid===s.id);
+ let right;
+ if(c)right=`<span class="pill reg">${SLOTS[c.slot].lab}</span>`;
+ else if(off)right=`<span class="pill inv">Proposta</span>`;
+ else if(it.p<=0)right=`<span class="lockt">${ic('lock',13)} rep. ${s.req}</span>`;
+ else right=`<div class="pr">fino a ${eurk(amountFor(s,'main'))}<div class="bar ib"><i style="width:${Math.round(it.p*100)}%"></i></div><small>propensione ${Math.round(it.p*100)}%</small></div>`;
+ return`<button class="card srow" data-act="sponsor" data-v="${s.id}">${spLogo(s)}<div style="min-width:0"><div class="nm">${esc(s.name)}</div><div class="tags"><span class="chip ${s.size==='internazionale'||s.size==='nazionale'?'amber':''}">${SPONSOR_SIZE[s.size].lab}</span><span>${sectorLab(s)} · ${esc(s.city)} · ${spDist(s)} km</span></div></div>${right}</button>`;
+}
+function areaHeat(code){const ss=G.sponsors.filter(s=>s.area===code&&!myContract(s));if(!ss.length)return 0;return Math.max(...ss.map(s=>interest(s,'partner').p))}
+function renderSponsor(){
+ G.spArea=G.spArea||G.sede.reg;G.spTab=G.spTab||'area';
+ const seasonView=G.phase==='season'?SEASON:SEASON+1;
+ const tiles=Object.keys(REGIONS).map(k=>{const Rg=REGIONS[k],h=areaHeat(k),n=G.sponsors.filter(s=>s.area===k).length,mine=G.sponsors.filter(s=>s.area===k&&myContract(s)).length;
+  return`<button class="tile ${G.spArea===k?'sel':''} ${G.sede.reg===k?'home':''}" style="grid-column:${Rg.x+1};grid-row:${Rg.y+1};--h:${Math.round(h*100)}%" data-act="sparea" data-v="${k}" aria-label="${Rg.n}"><b>${k}</b><small>${n}${mine?` · ${mine}${ic('check',10)}`:''}</small>${G.sede.reg===k?`<span class="pin">${ic('pin',14)}</span>`:''}</button>`}).join('');
+ const foreign=Object.keys(FOREIGN).map(k=>{const ss=G.sponsors.filter(s=>s.area===k),open=ss.some(s=>G.rep>=s.req),h=areaHeat(k);
+  return`<button class="ftile ${G.spArea===k?'sel':''} ${open?'':'locked'}" style="--h:${Math.round(h*100)}%" data-act="sparea" data-v="${k}">${open?'':ic('lock',12)}<span>${FOREIGN[k].n}</span></button>`}).join('');
+ const area=G.spArea,list=G.sponsors.filter(s=>s.area===area).sort((a,b)=>(myContract(b)?1:0)-(myContract(a)?1:0)||interest(b).p-interest(a).p||b.pot-a.pot);
+ const contracts=G.contracts.filter(c=>c.end>=SEASON).sort((a,b)=>['main','co','partner'].indexOf(a.slot)-['main','co','partner'].indexOf(b.slot)||b.amount-a.amount);
+ const tabs=[['area',areaName(area)],['mine',`Contratti (${contracts.length})`],['offers',`Proposte (${G.offers.length})`]];
+ let body='';
+ if(G.spTab==='area')body=`<div class="note">${isForeign(area)?`Gli sponsor esteri guardano reputazione e corse disputate nel loro paese (${(G.exp[area]||0)} finora).`:area===G.sede.reg?'La tua regione: qui ti conoscono, la propensione è più alta.':`A ${list.length?spDist(list[0]):'?'} km circa dalla sede: più sei lontano, più servono risultati.`}</div><div class="cols1">${list.map(spRow).join('')||'<div class="note">Nessuno sponsor.</div>'}</div>`;
+ else if(G.spTab==='mine')body=`<div class="cols1">${contracts.map(c=>{const sp=SP(c.sid),v=Math.min(c.obj.n,Math.round(contractProg(c)));return`<button class="card crow" data-act="sponsor" data-v="${sp.id}">${spLogo(sp)}<div style="min-width:0"><div class="nm">${esc(sp.name)} <span class="chip ${c.slot==='main'?'cat':''}">${SLOTS[c.slot].lab}</span></div>
+   <div class="tags"><span>${eur(c.amount)}/anno · ${c.from===c.end?c.from:c.from+'–'+c.end}${c.from>SEASON?' · inizia nel '+c.from:''}</span></div>
+   ${activeIn(c,SEASON)?`<div class="cobj"><span>${esc(c.obj.txt)} · bonus ${eurk(c.bonus)}</span><div class="bar ${c.done?'e':''}"><i style="width:${v/c.obj.n*100}%"></i></div><small>${c.done?'Raggiunto':v+'/'+c.obj.n}</small></div>`:''}</div>
+   <div class="sat"><small>Soddisfazione</small><b>${c.sat}%</b></div></button>`}).join('')||'<div class="note">Nessun contratto.</div>'}</div>`;
+ else body=`<div class="cols1">${G.offers.map(o=>{const sp=SP(o.sid),wk=Math.max(0,o.exp-absWeek());return`<div class="card orow">${spLogo(sp)}<div style="min-width:0"><div class="nm">${esc(sp.name)} ${o.renew?'<span class="chip u23">Rinnovo</span>':''}</div><div class="tags"><span>${SLOTS[o.slot].lab} · ${eur(o.amount)}/anno · ${o.years} ${o.years>1?'anni':'anno'} dal ${o.from}</span><span>· ${esc(sp.city)}, ${spDist(sp)} km</span>${G.phase==='season'?`<span>· scade tra ${wk} settiman${wk===1?'a':'e'}</span>`:''}</div></div>
+   <div class="row"><button class="btn ghost sm" data-act="offno" data-v="${o.id}">Rifiuta</button><button class="btn primary sm" data-act="offyes" data-v="${o.id}">Accetta</button></div></div>`}).join('')||'<div class="note">Nessuna proposta in arrivo. Più cresce la reputazione, più sponsor si fanno avanti da soli.</div>'}</div>`;
+ $('#view').innerHTML=`<div class="spgrid">
+ <div class="col"><div class="card pad"><div class="sec-h"><h3>${ic('pin',18)} ${esc(G.sede.city)}, ${REGIONS[G.sede.reg].n}</h3><span class="eyebrow">più scuro = più interessati</span></div>
+  <div class="itmap">${tiles}</div>
+  <div class="eyebrow" style="margin:12px 0 6px">Estero</div><div class="fmap">${foreign}</div></div></div>
+ <div class="col">
+  <div class="kv kv4"><div><small>Sponsor ${SEASON}</small><b>${eurk(incomeIn(SEASON))}</b></div><div><small>Garantiti ${SEASON+1}</small><b>${eurk(incomeIn(SEASON+1))}</b></div><div><small>Reputazione</small><b>${Math.round(G.rep)}</b></div><div><small>Ruoli ${seasonView}</small><b class="slots">${slotUsed('main',seasonView)}/1 · ${slotUsed('co',seasonView)}/2 · ${slotUsed('partner',seasonView)}/8</b></div></div>
+  <div class="seg">${tabs.map(([k,l])=>`<button data-act="sptab" data-v="${k}" aria-pressed="${G.spTab===k}">${esc(l)}</button>`).join('')}</div>
+  ${body}
+ </div></div>`;
+}
+function sponsorSheet(id){
+ const s=SP(id);if(!s)return;
+ if(!SPN||SPN.id!==id){const fs=['main','co','partner'].find(k=>slotStart(k)!==null&&interest(s,k).p>0)||'partner';SPN={id,slot:fs,years:2,msg:null}}
+ const c=myContract(s),off=G.offers.find(o=>o.sid===s.id);
+ const slots=['main','co','partner'].map(k=>{const st=slotStart(k),it=interest(s,k);return{k,st,it,am:amountFor(s,k)}});
+ const sel=slots.find(x=>x.k===SPN.slot);
+ const cooling=(s.cool||0)>absWeek();
+ let act='';
+ if(c)act=`<div class="msg ok">${SLOTS[c.slot].lab} dal ${c.from} al ${c.end}: ${eur(c.amount)} l'anno. Soddisfazione ${c.sat}%.</div>`;
+ else if(off)act=`<div class="msg">Ti ha fatto una proposta: ${SLOTS[off.slot].lab.toLowerCase()} a ${eur(off.amount)} l'anno. La trovi in Proposte.</div>`;
+ else act=`<div><div class="eyebrow">Ruolo nella squadra</div><div class="slotpick">${slots.map(x=>`<button data-act="spslot" data-v="${x.k}" aria-pressed="${SPN.slot===x.k}" ${x.st===null?'disabled':''}><b>${SLOTS[x.k].lab}</b><span>${eurk(x.am)}/anno</span><small>${x.st===null?'nessun posto':x.it.p>0?`propensione ${Math.round(x.it.p*100)}%`:'non interessato'}${x.st&&x.st>SEASON&&G.phase==='season'?` · dal ${x.st}`:''}</small></button>`).join('')}</div></div>
+  <div><div class="eyebrow">Durata</div><div class="seg">${[1,2,3].map(y=>`<button data-act="spyears" data-v="${y}" aria-pressed="${SPN.years===y}">${y} ${y>1?'anni':'anno'}</button>`).join('')}</div></div>
+  ${sel.it.p<=0?`<div class="msg no">${ic('lock',14)} ${esc(sel.it.why||'Non interessato')}.</div>`:''}
+  ${cooling?`<div class="msg no">Ti ha già detto di no: riprova tra ${s.cool-absWeek()} settimane.</div>`:''}`;
+ openSheet(sheetHead(`${SPONSOR_SIZE[s.size].lab} · ${sectorLab(s)}`,esc(s.name),`${esc(s.city)}, ${areaName(s.area)} · ${spDist(s)} km dalla sede`)+
+ `<div class="pb wrap"><div class="negbox"><div class="stack">
+   <div class="spbig">${spLogo(s,64)}<div><div class="eyebrow">Potenziale come main sponsor</div><div class="big2">${eur(amountFor(s,'main'))}</div><div class="note">Co-sponsor ${eurk(amountFor(s,'co'))} · partner ${eurk(amountFor(s,'partner'))} l'anno</div></div></div>
+   <div class="note">${s.size==='locale'?'Azienda del territorio: punta su chi le è vicino e chiede obiettivi semplici, come correre nella sua regione.':s.size==='regionale'?'Azienda importante nella sua regione: vuole visibilità e qualche risultato.':s.size==='nazionale'?'Marchio nazionale: chiede reputazione e risultati, la distanza conta poco.':'Grande gruppo internazionale: guarda solo reputazione, categoria e risultati.'}</div>
+   <div class="kv"><div><small>Reputazione richiesta</small><b>${s.req}</b></div><div><small>La tua</small><b>${Math.round(G.rep)}</b></div><div><small>Distanza</small><b>${spDist(s)}</b> km</div></div>
+  </div><div class="stack">${act}${SPN.msg?`<div class="msg ${SPN.msg.ok?'ok':'no'}">${esc(SPN.msg.t)}</div>`:''}</div></div></div>
+ <div class="pf"><div class="wrap fr"><button class="btn ghost" data-act="close">Chiudi</button>${!c&&!off?`<button class="btn primary" data-act="sppropose" ${sel.st===null||sel.it.p<=0||cooling?'disabled':''}>Proponi la sponsorizzazione</button>`:''}</div></div>`,'wide');
+}
+
 /* ---------- eventi ---------- */
 document.addEventListener('click',e=>{
  const t=e.target.closest('[data-act]');if(!t)return;
  const a=t.dataset.act,v=t.dataset.v;
  switch(a){
   case'jer':window._jer=+v;document.querySelectorAll('.jbtn').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v)));break;
-  case'start':{const n=($('#tname').value||'').trim()||'Ciclistica Valle Azzurra';busyOn('Si crea il mondo del ciclismo…');setTimeout(()=>{newGame(n,JERSEYS[window._jer||0]);busyOff();render()},30);break}
+  case'start':{const n=($('#tname').value||'').trim()||'Ciclistica Valle Azzurra';const[rg,ct]=$('#tsede').value.split('|');const cc=REGIONS[rg].c.find(c=>c[0]===ct);busyOn('Si crea il mondo del ciclismo…');setTimeout(()=>{newGame(n,JERSEYS[window._jer||0],{city:ct,reg:rg,lat:cc[1],lon:cc[2]});busyOff();render()},30);break}
   case'tab':G.tab=v;save();closeSheet();render();window.scrollTo(0,0);break;
   case'fullscreen':{const el=document.documentElement;const p=el.requestFullscreen?el.requestFullscreen():null;if(p&&p.then)p.then(()=>{try{screen.orientation.lock('landscape').catch(()=>{})}catch(err){}}).catch(()=>toast('Schermo intero non disponibile qui'));else toast('Schermo intero non disponibile qui');break}
   case'rotok':try{localStorage.setItem('amm-rot','1')}catch(err){}ROT='';document.querySelectorAll('.rotate').forEach(x=>x.remove());break;
@@ -658,7 +730,7 @@ document.addEventListener('click',e=>{
   case'cap':if(SEL.ids.has(v)){SEL.cap=v;renderConvoca()}break;
   case'forfeit':{SEL.race.status='open';G.rep=Math.max(0,G.rep-3);mail('Organizzatori',`Assenza a ${SEL.race.name}`,'La squadra non si è presentata al via. Quota persa e reputazione in calo.');closeSheet();save();render();break}
   case'go':launch(v);break;
-  case'nextseason':{busyOn('Si prepara la nuova stagione…');setTimeout(()=>{const out=newSeason(v==='up');busyOff();G.tab='home';render();openSheet(sheetHead(`Stagione ${SEASON}`,'Si riparte',`${myCat().lab} · budget ${eur(G.budget)}`)+`<div class="pb wrap"><ul class="note" style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">${out.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div><div class="pf"><div class="wrap fr"><button class="btn primary" data-act="close">Via!</button></div></div>`)},30);break}
+  case'nextseason':{busyOn('Si prepara la nuova stagione…');setTimeout(()=>{const out=newSeason(v==='up');busyOff();G.tab='home';render();openSheet(sheetHead(`Stagione ${SEASON}`,'Si riparte',`${myCat().lab} · sponsor ${eur(incomeIn(SEASON))}`)+`<div class="pb wrap"><ul class="note" style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">${out.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div><div class="pf"><div class="wrap fr"><button class="btn primary" data-act="close">Via!</button></div></div>`)},30);break}
   case'newgame':openSheet(sheetHead('Nuova partita','Ricominciare da capo?','Rosa, calendario e classifiche verranno generati di nuovo.')+`<div class="pf"><div class="wrap fr"><button class="btn ghost" data-act="close">Annulla</button><button class="btn primary" data-act="reset">Ricomincia</button></div></div>`);break;
   case'reset':try{localStorage.removeItem(SAVE_KEY)}catch(err){}G=null;closeSheet();render();break;
   case'play':LIVE.playing=!LIVE.playing;t.textContent=LIVE.playing?'❚❚':'▶';t.setAttribute('aria-label',LIVE.playing?'Pausa':'Riprendi');break;
@@ -670,6 +742,14 @@ document.addEventListener('click',e=>{
    if(v==='scatta'){if(x.intent!=='attack'&&x.W>0.1*x.Wmax){x.order='scatta';startAttack(S,x,1.3,rnd(50,80))}}
    else{x.order=v;if(x.intent==='attack')x.atkUntil=0;decide(S,x)}
    renderMine(false);break}
+  case'sparea':G.spArea=v;G.spTab='area';renderSponsor();break;
+  case'sptab':G.spTab=v;renderSponsor();break;
+  case'sponsor':SPN=null;sponsorSheet(v);break;
+  case'spslot':SPN.slot=v;SPN.msg=null;sponsorSheet(SPN.id);break;
+  case'spyears':SPN.years=+v;sponsorSheet(SPN.id);break;
+  case'sppropose':{const sp=SP(SPN.id);const res=propose(sp,SPN.slot,SPN.years);SPN.msg={ok:res.ok,t:res.msg};toast(res.msg,res.ok?'gold':'');sponsorSheet(SPN.id);renderTop();break}
+  case'offyes':{const o=G.offers.find(x=>x.id===v);if(o){const res=acceptOffer(o);toast(res.msg,res.ok?'gold':'bad')}render();break}
+  case'offno':{const o=G.offers.find(x=>x.id===v);if(o)declineOffer(o);render();break}
   case'tt':{const ctx=LIVE.ctx;finishStage(LIVE.RC,simTT(ctx),null,ctx.course);showStageResult();break}
   case'nextstage':closeSheet();startStageLive();break;
   case'simrest':{closeSheet();const RC=LIVE.RC;closeRace();simAsync(RC);break}

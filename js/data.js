@@ -235,3 +235,65 @@ const TYPE_LAB={piatta:'Pianeggiante',mossa:'Mossa',collinare:'Collinare',montag
 const TYPE_H={piatta:4,mossa:8,collinare:11,montagna:16,crono:9,prologo:5,pave:10,roubaix:7,sterrato:11};
 const HARD={piatta:7,mossa:9,collinare:10,montagna:13,crono:5,prologo:2,pave:11,roubaix:12,sterrato:11};
 const JERSEYS=[['#1D4ED1','#F2C14E'],['#C2362C','#F5F5F5'],['#0F7B5F','#F4E04D'],['#1F2937','#E5484D'],['#7C3AED','#F59E0B'],['#0E7490','#F97316'],['#DB2777','#111827'],['#F5F5F5','#1D4ED1']];
+
+/* ============================================================
+   SPONSOR: regioni, città, paesi esteri, settori
+   x,y = posizione della tessera nella mappa stilizzata
+   w = peso economico (quanti sponsor e quanto grandi)
+   ============================================================ */
+const REGIONS={
+ VDA:{n:"Valle d'Aosta",x:0,y:0,w:0.4,c:[['Aosta',45.74,7.32]]},
+ TAA:{n:'Trentino-Alto Adige',x:2,y:0,w:0.9,c:[['Trento',46.07,11.12],['Bolzano',46.50,11.35]]},
+ FVG:{n:'Friuli Venezia Giulia',x:3,y:0,w:0.8,c:[['Udine',46.06,13.24],['Trieste',45.65,13.78],['Pordenone',45.96,12.66]]},
+ PIE:{n:'Piemonte',x:0,y:1,w:1.2,c:[['Torino',45.07,7.69],['Cuneo',44.39,7.55],['Novara',45.45,8.62],['Alessandria',44.91,8.61]]},
+ LOM:{n:'Lombardia',x:1,y:1,w:1.8,c:[['Milano',45.46,9.19],['Bergamo',45.70,9.67],['Brescia',45.54,10.21],['Varese',45.82,8.83],['Mantova',45.16,10.79]]},
+ VEN:{n:'Veneto',x:2,y:1,w:1.4,c:[['Verona',45.44,10.99],['Padova',45.41,11.88],['Treviso',45.67,12.24],['Vicenza',45.55,11.55],['Venezia',45.44,12.33]]},
+ LIG:{n:'Liguria',x:0,y:2,w:0.7,c:[['Genova',44.41,8.93],['Savona',44.31,8.48],['La Spezia',44.10,9.82]]},
+ EMR:{n:'Emilia-Romagna',x:1,y:2,w:1.3,c:[['Bologna',44.49,11.34],['Modena',44.65,10.93],['Parma',44.80,10.33],['Forlì',44.22,12.04],['Rimini',44.06,12.57]]},
+ TOS:{n:'Toscana',x:1,y:3,w:1.1,c:[['Firenze',43.77,11.25],['Lucca',43.84,10.50],['Siena',43.32,11.33],['Arezzo',43.46,11.88],['Pisa',43.72,10.40]]},
+ UMB:{n:'Umbria',x:2,y:3,w:0.5,c:[['Perugia',43.11,12.39],['Terni',42.56,12.65]]},
+ MAR:{n:'Marche',x:3,y:3,w:0.7,c:[['Ancona',43.62,13.52],['Pesaro',43.91,12.91],['Macerata',43.30,13.45]]},
+ SAR:{n:'Sardegna',x:0,y:4,w:0.5,c:[['Cagliari',39.22,9.12],['Sassari',40.73,8.56]]},
+ LAZ:{n:'Lazio',x:2,y:4,w:1.2,c:[['Roma',41.90,12.50],['Latina',41.47,12.90],['Viterbo',42.42,12.11]]},
+ ABR:{n:'Abruzzo',x:3,y:4,w:0.6,c:[['Pescara',42.46,14.21],["L'Aquila",42.35,13.40]]},
+ MOL:{n:'Molise',x:4,y:4,w:0.3,c:[['Campobasso',41.56,14.66]]},
+ CAM:{n:'Campania',x:3,y:5,w:0.9,c:[['Napoli',40.85,14.27],['Salerno',40.68,14.77],['Avellino',40.91,14.79]]},
+ PUG:{n:'Puglia',x:4,y:5,w:0.8,c:[['Bari',41.12,16.87],['Lecce',40.35,18.17],['Foggia',41.46,15.55]]},
+ BAS:{n:'Basilicata',x:4,y:6,w:0.3,c:[['Potenza',40.64,15.80],['Matera',40.67,16.60]]},
+ CAL:{n:'Calabria',x:4,y:7,w:0.4,c:[['Cosenza',39.30,16.25],['Reggio Calabria',38.11,15.65]]},
+ SIC:{n:'Sicilia',x:3,y:8,w:0.7,c:[['Palermo',38.12,13.36],['Catania',37.50,15.09],['Ragusa',36.93,14.73]]}
+};
+const FOREIGN={
+ SUI:{n:'Svizzera',c:['Lugano',46.00,8.95],w:1},AUT:{n:'Austria',c:['Innsbruck',47.26,11.40],w:0.7},SLO:{n:'Slovenia',c:['Lubiana',46.05,14.51],w:0.5},
+ FRA:{n:'Francia',c:['Lione',45.76,4.84],w:1.2},GER:{n:'Germania',c:['Monaco di Baviera',48.14,11.58],w:1.4},ESP:{n:'Spagna',c:['Barcellona',41.39,2.17],w:1},
+ BEL:{n:'Belgio',c:['Bruxelles',50.85,4.35],w:1},NED:{n:'Paesi Bassi',c:['Amsterdam',52.37,4.90],w:1},DEN:{n:'Danimarca',c:['Copenaghen',55.68,12.57],w:0.7},
+ GBR:{n:'Regno Unito',c:['Londra',51.51,-0.13],w:1},UAE:{n:'Emirati Arabi',c:['Abu Dhabi',24.45,54.37],w:1.2},USA:{n:'Stati Uniti',c:['New York',40.71,-74.01],w:1.2}
+};
+const SECTORS={
+ alimentare:{lab:'Alimentare',t:['Pastificio {S}','Caseificio {S}','Salumificio {S}','Dolciaria {S}','Forno {S}'],col:'#C9772B'},
+ vino:{lab:'Vini',t:['Cantine {S}','Tenuta {S}','Vini {S}'],col:'#8E2C48'},
+ edilizia:{lab:'Edilizia',t:['Edil {S}','{S} Costruzioni','Cementi {S}'],col:'#7A7F86'},
+ meccanica:{lab:'Meccanica',t:['Meccanica {S}','Officine {S}','{S} Utensili'],col:'#3E6A8A'},
+ energia:{lab:'Energia',t:['{S} Energia','Solare {S}','{S} Gas'],col:'#D9A400'},
+ trasporti:{lab:'Trasporti',t:['Autotrasporti {S}','{S} Logistica','{S} Spedizioni'],col:'#2E7D6B'},
+ credito:{lab:'Banca',t:['Cassa Rurale di {P}','Banca di {P}','Credito {P}'],col:'#2A4D9B'},
+ bici:{lab:'Ciclismo',t:['Telai {S}','{S} Bike','Ruote {S}','Selle {S}'],col:'#C23B3B'},
+ moda:{lab:'Moda',t:['Maglificio {S}','{S} Tessuti','Calzaturificio {S}'],col:'#9B4FB0'},
+ tech:{lab:'Tecnologia',t:['{S} Digital','{S} Software','{S} Sistemi'],col:'#1F8FB8'},
+ arredo:{lab:'Arredamento',t:['Mobilificio {S}','{S} Cucine','{S} Arredi'],col:'#8A6A43'},
+ caffe:{lab:'Caffè',t:['Caffè {S}','Torrefazione {S}'],col:'#6B4430'},
+ acqua:{lab:'Bevande',t:['Fonti di {P}','Acqua {S}','Birrificio {S}'],col:'#2FA3A0'}
+};
+const FOREIGN_T={SUI:['{S} Uhren','Banque {S}','{S} Pharma'],AUT:['{S} Holz','{S} Seilbahnen','{S} Bau'],SLO:['{S} Energija','{S} Pohištvo'],FRA:['Groupe {S}','{S} Assurances','Crédit {S}'],GER:['{S} Werke','{S} Automobil','{S} Versicherung'],ESP:['Grupo {S}','{S} Energía','Banco {S}'],BEL:['{S} Bouw','{S} Brouwerij','{S} Verzekeringen'],NED:['{S} Logistiek','{S} Bank','{S} Energie'],DEN:['{S} Energi','{S} Shipping'],GBR:['{S} Holdings','{S} Telecom','{S} Capital'],UAE:['{S} Airways','{S} Investments','Emirates {S}'],USA:['{S} Technologies','{S} Capital','{S} Motors']};
+const BRAND=['Valtanaro','Brentella','Orsago','Monteluce','Carpenedo','Sorbara','Aurelio','Castelvetro','Pietrarossa','Fontebona','Rivalta','Selvanera','Valmorea','Bassanello','Corvara','Altamura','Belforte','Marzola','Ronchi','Santerno','Ferretti','Gualtieri','Moretti','Brivio','Zanardi','Colombo','Lattanzi','Bonfanti','Pozzi','Rigamonti','Carrara','Vescovi','Nardini','Ghirardi','Tosetti','Morassi'];
+const FOREIGN_BRAND=['Altmann','Bergström','Delacroix','Vandeberg','Kessler','Ortega','Lindqvist','Harrow','Novak','Rahimi','Kingsley','Brookfield','Meier','Arnaud','Van Dijck','Aldana','Holm','Whitmore','Al Nuaimi','Sterling'];
+const SPONSOR_SIZE={
+ locale:{lab:'Locale',pot:[60000,300000],req:0,range:120},
+ regionale:{lab:'Regionale',pot:[300000,900000],req:15,range:320},
+ nazionale:{lab:'Nazionale',pot:[1000000,4000000],req:40,range:1100},
+ internazionale:{lab:'Internazionale',pot:[4000000,15000000],req:70,range:0}
+};
+const SLOTS={main:{lab:'Main sponsor',share:1,cap:1},co:{lab:'Co-sponsor',share:0.45,cap:2},partner:{lab:'Partner',share:0.2,cap:8}};
+const LICENCE={pro:{income:3500000,rep:45,rank:6},wt:{income:12000000,rep:75,rank:3}};
+/* Regione delle corse italiane (per gli obiettivi degli sponsor locali) */
+const RACE_REG={'Trofeo Laigueglia':'LIG','Strade Bianche':'TOS','Gran Premio Industria e Artigianato':'TOS','Tirreno-Adriatico':'MAR','Milano-Torino':'PIE','Milano-Sanremo':'LIG','Per Sempre Alfredo':'TOS','Settimana Coppi e Bartali':'EMR','Trofeo Piva':'VEN','Giro del Belvedere':'VEN','Trofeo Emilio Paganessi':'LOM','GP Palio del Recioto':'VEN','Giro di Sicilia':'SIC',"Giro d'Abruzzo":'ABR','Trofeo Città di San Vendemiano':'VEN','Tour of the Alps':'TAA','Gran Premio della Liberazione':'LAZ',"Giro dell'Appennino":'LIG','GP Industrie del Marmo':'TOS','Trofeo Alcide Degasperi':'TAA','Adriatica Ionica Race':'PUG','Giro del Friuli Venezia Giulia':'FVG','Giro Next Gen':'LOM','Campionato Italiano a cronometro':'EMR','Campionato Italiano Under 23':'EMR','Campionato Italiano Elite':'EMR',"Giro della Valle d'Aosta":'VDA','Gran Premio Capodarco':'MAR','Coppa Città di San Daniele':'FVG','Giro della Lunigiana':'TOS','Giro della Toscana':'TOS','Coppa Sabatini':'TOS','Memorial Marco Pantani':'EMR','Trofeo Matteotti':'ABR','Gran Premio Sportivi di Poggiana':'VEN',"Ruota d'Oro":'TOS','Coppa Agostoni':'LOM','Coppa Bernocchi':'LOM','Tre Valli Varesine':'LOM',"Giro dell'Emilia":'EMR','Gran Piemonte':'PIE','Il Lombardia':'LOM','Piccolo Giro di Lombardia':'LOM','Veneto Classic':'VEN','Giro del Veneto':'VEN'};

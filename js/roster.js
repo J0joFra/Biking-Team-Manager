@@ -47,6 +47,8 @@ function rcard(r,opts={}){
  if(r.leavingTo)flags.push(`<span class="chip red">Va a ${esc(TEAM(r.leavingTo).short)}</span>`);
  if(r.listed)flags.push('<span class="chip amber">Sul mercato</span>');
  if(moodOf(r)<35)flags.push('<span class="chip red">Scontento</span>');
+ if(r.natB&&r.natB[1]>=G.week)flags.push('<span class="chip amber">In nazionale</span>');
+ if((r.titles||[]).length)flags.push(`<span class="chip amber">${esc(r.titles[r.titles.length-1].split(' ').slice(0,3).join(' '))}</span>`);
  return`<button class="card rc ${opts.big?'big':''}" data-act="rider" data-v="${r.id}">
   <div class="ovr ${ovr(r)>=75?'hi':''}">${ovr(r)}${tr.t&&opts.trend?`<small class="tr ${tr.c}">${tr.t}</small>`:''}</div>
   <div class="rcm"><div class="nm">${esc(r.name)}</div>

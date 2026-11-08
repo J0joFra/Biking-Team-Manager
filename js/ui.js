@@ -94,7 +94,7 @@ function renderHome(){
  const camps=G.camps.filter(c=>!c.done);
  const proj=projected();
  $('#view').innerHTML=`${ROT}<div class="homegrid">
-  <div class="col">${hero}
+  <div class="col">${callupBanner()}${hero}
    ${G.phase==='season'?trainCard():''}
    ${G.offers.length?`<button class="banner" data-act="tab" data-v="spon">${ic('spon',18)}<span><b>${G.offers.length} propost${G.offers.length>1?'e':'a'} di sponsorizzazione</b> da valutare</span></button>`:''}
    <div class="card pad"><div class="sec-h"><h3>Obiettivi degli sponsor</h3><span class="eyebrow">${sponsorSat()}% soddisfatti</span></div>${objs}</div>
@@ -114,10 +114,11 @@ function mailSheet(id){
 }
 
 /* ---------- calendario ---------- */
-const CALF=[['acc','Accessibili'],['reg','Iscritte'],['all','Tutte'],['ita','Italia'],['u23','Under 23'],['wt','WorldTour'],['done','Concluse']];
+const CALF=[['acc','Accessibili'],['reg','Iscritte'],['all','Tutte'],['ita','Italia'],['u23','Under 23'],['wt','WorldTour'],['naz','Nazionali'],['done','Concluse']];
 function raceState(r){
  if(r.status==='done')return r.result&&r.result.mine?{cls:'done me',t:`${ord(r.result.mine[0].pos)} ${esc(r.result.mine[0].name.split(' ').slice(-1)[0])}`}:r.result&&r.result.winner?{cls:'done',t:esc(r.result.winner)}:r.result&&r.result.junior?{cls:'done',t:`Scuola: ${ord(r.result.junior[0].pos)}`}:{cls:'done',t:'Conclusa'};
  if(r.status==='reg')return{cls:'reg',t:`${ic('check',14)} Iscritto`};
+ if(r.tier==='naz'){const n=(G.callups||[]).filter(c=>c.status==='accepted'&&c.keys.includes(r.key)).length;return{cls:n?'reg':'inv',t:n?`${n} convocat${n>1?'i':'o'}`:'Nazionali'}}
  if(r.status==='declined')return{cls:'no',t:'Invito rifiutato'};
  const a=access(r);
  if(!a.ok)return{cls:'lock',t:`${ic('lock',13)} ${r.tier==='jun'?'Juniores':'Chiusa'}`};
@@ -127,7 +128,7 @@ function raceState(r){
 function renderCal(){
  const f=G.calf||'acc';
  const past=r=>r.status==='done'||r.w<G.week||G.phase!=='season';
- const flt=r=>f==='done'?past(r)&&r.status==='done':past(r)?false:f==='all'?true:f==='reg'?r.status==='reg':f==='ita'?r.ctry==='ITA':f==='u23'?(r.tier==='u23'||r.flag==='u23'||r.tier==='jun'):f==='wt'?['gt','mon','uwt1','uwt2'].includes(r.tier):(access(r).ok||r.status==='reg');
+ const flt=r=>f==='done'?past(r)&&r.status==='done':past(r)?false:f==='all'?true:f==='reg'?r.status==='reg':f==='ita'?r.ctry==='ITA':f==='u23'?(r.tier==='u23'||r.flag==='u23'||r.tier==='jun'):f==='wt'?['gt','mon','uwt1','uwt2'].includes(r.tier):f==='naz'?r.tier==='naz':(access(r).ok||r.status==='reg'||r.tier==='naz');
  const list=G.races.filter(flt).sort((a,b)=>f==='done'?(b.w-a.w||TIER_ORDER[a.tier]-TIER_ORDER[b.tier]):(a.w-b.w||TIER_ORDER[a.tier]-TIER_ORDER[b.tier]));
  let html=`<div class="toolbar"><div class="chips">${CALF.map(([k,l])=>`<button class="fchip" data-act="calf" data-v="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div><span class="note">${list.length} corse${f==='done'?' concluse':''}</span></div>${!list.length?`<div class="note">${f==='done'?'Nessuna corsa conclusa finora.':G.phase!=='season'?'Stagione finita: il nuovo calendario arriva con la prossima stagione.':'Nessuna corsa in programma con questo filtro.'}</div>`:''}`;
  let lw=-1;html+='<div class="callist">';
@@ -156,13 +157,14 @@ function raceSheet(id){
  if(r.status==='done'&&r.result){
   const R=r.result;
   info=R.junior?`<div class="card tbl"><table class="t">${R.junior.map(j=>`<tr class="me"><td class="n">${j.pos}</td><td>${esc(j.name)}</td></tr>`).join('')}</table></div>`:
-  `${R.mine?`<div class="msg ok">La tua squadra: ${R.mine.slice(0,3).map(m=>`${esc(m.name)} ${ord(m.pos)}`).join(' · ')} · ${R.myPts} punti · ${eur(R.prize)} di premi</div>`:''}
+  `${R.mine?`<div class="msg ok">${R.nat?'I tuoi corridori in nazionale':'La tua squadra'}: ${R.mine.slice(0,3).map(m=>`${esc(m.name)} ${ord(m.pos)}`).join(' · ')}${R.nat?'':` · ${R.myPts} punti · ${eur(R.prize)} di premi`}</div>`:''}
    <div class="card tbl"><table class="t">${R.top.map((x,i)=>`<tr class="${R.mine&&R.mine.some(m=>m.id===x.id)?'me':''}"><td class="n">${i+1}</td><td>${esc(x.name)} <span class="tm">${esc(x.team)}</span></td><td class="r">${i===0?fmtT(x.t||0):fmtGap(x.t-R.top[0].t)}</td></tr>`).join('')}</table></div>
    ${R.stageW?`<div class="note">Vincitori di tappa: ${R.stageW.map((n,i)=>`${i+1}. ${esc(n)}`).join(' · ')}</div>`:''}`;
  }else if(r.status==='reg'){
   info=`<div class="msg ok">Iscritto. Quota pagata: ${eur(r.fee||fee)}. Le convocazioni si fanno nella settimana della corsa.</div>`;
   if(r.w>G.week)act=`<button class="btn ghost" data-act="withdraw" data-v="${r.id}">Ritira l'iscrizione (rimborso 50%)</button>`;
  }else if(r.status==='declined')info=`<div class="msg no">L'organizzazione non ti ha invitato quest'anno.</div>`;
+ else if(r.tier==='naz'){const cs=(G.callups||[]).filter(c=>c.keys.includes(r.key)&&RID(c.rid));info=`<div class="msg">Corsa per nazionali${r.cat?' · '+CAT_LAB[r.cat]:''}. I commissari tecnici convocano i corridori in forma e con buoni risultati, 3–4 settimane prima; la richiesta arriva nella tua posta e nella Home.</div>${cs.length?`<div class="note">${cs.map(c=>`${esc(RID(c.rid).name)}: ${c.status==='accepted'?'convocato':c.status==='declined'?'convocazione rifiutata':'in attesa di risposta'}`).join(' · ')}</div>`:''}`}
  else if(!a.ok)info=`<div class="msg no">${ic('lock',14)} ${esc(a.why)}.</div>`;
  else if(r.w<=G.week)info=`<div class="msg no">Iscrizioni chiuse: servono almeno 7 giorni di anticipo.</div>`;
  else{
@@ -201,6 +203,7 @@ function riderSheet(id){
  const camp=G.camps.find(cp=>!cp.done&&cp.riders.includes(r.id));
  openSheet(sheetHead(`${ARCH[r.arch].lab} · ${catOf(r)}${r.neo?' · 1° anno':''}`,esc(r.name),`${r.age} anni · ${r.nat} · ${esc(TEAM(r.team).name)}`)+
  `<div class="pb wrap"><div class="negbox"><div class="stack">
+  ${(r.titles||[]).length?`<div class="titles">${r.titles.map(t=>`<span class="chip amber">${esc(t)}</span>`).join('')}</div>`:''}${r.natB&&r.natB[1]>=G.week?`<div class="msg">In nazionale dal ${weekLab(r.natB[0])} al ${weekLab(r.natB[1]+1)}</div>`:''}
   <div class="kv"><div><small>Valore</small><b>${ovr(r)}</b></div><div><small>Soglia</small><b>${ftp}</b> W</div><div><small>W/kg</small><b>${r.wkg.toFixed(2)}</b></div>
   <div><small>Peso</small><b>${r.mass.toFixed(1)}</b> kg</div><div><small>Volata</small><b>${r.spr}</b> W</div><div><small>Potenziale</small><b style="font-size:16px;color:var(--amber)">${pot}</b></div></div>
   <div class="card pad">${statRow(r)}</div>
@@ -778,4 +781,5 @@ document.addEventListener('change',e=>{
 window.addEventListener('resize',()=>{if(LIVE)drawProfile()});
 rotBanner();
 G=load();
+if(G)natMigrate();
 render();

@@ -324,7 +324,7 @@ function advanceWeek(){
  if(G.phase!=='season')return false;
  if(myPending().length)return false;
  const w=G.week;
- for(const race of G.races.filter(r=>r.w===w&&r.status!=='done'&&r.tier!=='jun').sort((a,b)=>TIER_ORDER[a.tier]-TIER_ORDER[b.tier]))quickRace(race);
+ for(const race of G.races.filter(r=>r.w===w&&r.status!=='done'&&r.tier!=='jun'&&r.tier!=='naz').sort((a,b)=>TIER_ORDER[a.tier]-TIER_ORDER[b.tier]))quickRace(race);
  for(const race of G.races.filter(r=>r.w===w&&r.tier==='jun'))juniorRace(race);
  weekTick(w);
  if(typeof weeklyBids==='function')weeklyBids();

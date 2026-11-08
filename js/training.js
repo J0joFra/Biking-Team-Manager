@@ -18,7 +18,7 @@ function applySession(r,key){
 function weeklyTraining(w){
  const T=trainState();
  if(teamRacingWeek(w)){T.last={w,skip:true};return}
- const rs=ME().riders.map(RID).filter(r=>!injured(r,w)&&!inCamp(r,w,w)),before={},lines=[];
+ const rs=ME().riders.map(RID).filter(r=>!injured(r,w)&&!inCamp(r,w,w)&&!(r.natB&&r.natB[0]<=w&&r.natB[1]>=w)),before={},lines=[];
  for(const r of rs){before[r.id]=stats(r);applySession(r,T.s1);applySession(r,r.focus&&TRAIN[r.focus]?r.focus:T.s2)}
  for(const r of rs){const a=before[r.id],b=stats(r);const d=['sal','pia','cro','vol','res'].filter(k=>b[k]>a[k]).map(k=>`${k.toUpperCase()} +${b[k]-a[k]}`);if(d.length)lines.push(`${r.name}: ${d.join(', ')}`)}
  T.last={w,lines,s1:T.s1,s2:T.s2,n:rs.length};

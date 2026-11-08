@@ -51,7 +51,7 @@ function natEligible(r,cat){
  const young=r.team==='acad'||r.team==='jr'||r.junior;
  if(cat==='jun')return young&&r.age>=17&&r.age<=18;
  if(young)return false;
- return cat==='u23'?r.age<=22:r.age>=21;
+ return cat==='u23'?r.age<=22:r.age>=23;
 }
 function natScore(r,ev){
  const t=ev.stages.length>1?'montagna':ev.stages[0].t;
@@ -100,8 +100,7 @@ function answerCallup(c,yes){
  save();
 }
 function natExpire(w){for(const c of G.callups||[])if(c.status==='pending'&&c.exp<=w){c.status='declined';const r=RID(c.rid);if(r){r.mood=Math.max(0,(r.mood??65)-5);mail('Federazione',`Convocazione scaduta: ${r.name}`,'Non hai risposto in tempo: il commissario tecnico ha scelto un altro corridore.')}}}
-function natRun(w){
- for(const ev of G.races.filter(r=>r.tier==='naz'&&r.w===w&&r.status!=='done')){
+function natField(ev,w){
   const sel=new Set((G.natSel&&G.natSel[ev.key])||[]);
   const field=[];
   for(const nat of natList(ev)){
@@ -112,6 +111,11 @@ function natRun(w){
    const fill=need>0?natPick(ev,nat,new Set([...used,...declined])).filter(r=>r.team!=='t0'&&r.team!=='acad').slice(0,need):[];
    field.push(...mine,...fill);
   }
+  return field;
+}
+function natRun(w){
+ for(const ev of G.races.filter(r=>r.tier==='naz'&&r.w===w&&r.status==='open')){
+  const field=natField(ev,w);
   if(field.length<5){ev.status='done';ev.result=null;continue}
   const fat={},gc={};for(const r of field){fat[r.id]=0;gc[r.id]=0}
   const stagesRes=[];
@@ -149,7 +153,52 @@ function natEffects(ev,field,final){
   if(best.pos<=3)NOTIFY(`${medal[best.pos-1]} per ${best.name} a ${ev.name}!`,'gold');
  }
 }
-function natWeekly(w){natMigrate();natExpire(w);natSelections(w);natRun(w)}
+function natPrepare(w){
+ for(const ev of G.races.filter(r=>r.tier==='naz'&&r.w===w+1&&r.status==='open')){
+  if(!(G.callups||[]).some(c=>c.status==='accepted'&&c.keys.includes(ev.key)&&RID(c.rid)))continue;
+  const field=natField(ev,w+1);
+  if(field.length<5||!field.some(r=>r.team==='t0'||r.team==='acad'))continue;
+  ev.field=field.map(r=>r.id);ev.status='live';
+  mail('Federazione',`${ev.name}: si corre questa settimana`,`I tuoi corridori in gara: ${field.filter(r=>r.team==='t0'||r.team==='acad').map(r=>r.name).join(', ')}. Puoi seguire la corsa dal vivo dalla Home.`);
+ }
+}
+function natWeekly(w){natMigrate();natExpire(w);natSelections(w);natRun(w);natPrepare(w)}
+const _myPending=myPending;
+myPending=function(){return _myPending().concat(G.races.filter(r=>r.tier==='naz'&&r.status==='live'&&r.w===G.week))};
+const _TEAM=TEAM;
+TEAM=function(id){if(typeof id==='string'&&id.startsWith('n_')){const n=id.slice(2);return{id,name:'Nazionale '+(COUNTRY[n]||n),short:n,tier:'naz',nats:[n]}}return _TEAM(id)};
+const _stageCtx=stageCtx;
+stageCtx=function(RC){const c=_stageCtx(RC);if(RC.nat){c.entrants=c.entrants.map(e=>({r:e.r,team:'n_'+e.r.nat}));c.tactic=null;c.capId=null}return c};
+function natRC(ev){
+ const field=ev.field.map(RID).filter(Boolean);
+ const RC={race:ev,field,stage:0,fat:{},gc:{},stages:[],stageRace:ev.stages.length>1,kmFuga:{},out:new Set(),nat:true};
+ for(const r of field){RC.gc[r.id]={t:0,pts:0,kom:0};RC.fat[r.id]=0;RC.kmFuga[r.id]=0}
+ return RC;
+}
+function natGo(id,mode){
+ const ev=G.races.find(r=>r.id===id);if(!ev||ev.status!=='live')return;
+ const RC=natRC(ev);
+ if(mode==='sim'){simAsync(RC);return}
+ LIVE={RC,S:null,speed:25,playing:true,acc:0,last:0,lastUI:0,zoom:false,course:null};
+ startStageLive();
+}
+function natFinish(RC){
+ const final=RC.stageRace?gcOrder(RC).map(x=>({id:x.id,time:x.t})):RC.stages[0].res.map(x=>({id:x.id,time:x.time}));
+ natEffects(RC.race,RC.field,final);RC.race.field=null;save();
+}
+function natFinalSheet(RC){
+ const ev=RC.race,R=ev.result;if(!R){render();return}
+ const medal=['Oro','Argento','Bronzo'];
+ openSheet(sheetHead(`${CHAMP_LAB[ev.champ]} · ${CAT_LAB[ev.cat]}`,esc(ev.name),`Vince <b>${esc(R.winner)}</b> (${esc(R.winnerTeam)})`)+
+ `<div class="pb wrap"><div class="negbox"><div>${R.mine?`<div class="sec-h"><h3>I tuoi corridori</h3></div><div class="card tbl"><table class="t">${R.mine.map(m=>`<tr class="me"><td class="n">${m.pos}</td><td>${esc(m.name)}${m.pos<=3?` <span class="chip amber">${medal[m.pos-1]}</span>`:''}</td><td class="r">${COUNTRY[RID(m.id).nat]||''}</td></tr>`).join('')}</table></div><div class="note" style="margin-top:6px">Esperienza in nazionale: crescita, morale e reputazione per la squadra.</div>`:''}</div>
+ <div><div class="sec-h"><h3>Ordine d'arrivo</h3></div><div class="card tbl"><table class="t">${R.top.map((x,i)=>`<tr class="${R.mine&&R.mine.some(m=>m.id===x.id)?'me':''}"><td class="n">${i+1}</td><td>${esc(x.name)} <span class="tm">${x.team}</span></td><td class="r">${i===0?fmtT(x.t):fmtGap(x.t-R.top[0].t)}</td></tr>`).join('')}</table></div></div></div></div>
+ <div class="pf"><div class="wrap fr"><button class="btn primary" data-act="close">Continua</button></div></div>`,'wide');
+}
+function natHero(ev){
+ const mine=(ev.field||[]).map(RID).filter(r=>r&&(r.team==='t0'||r.team==='acad'));
+ return`<div class="herorace"><div style="min-width:0"><div class="eyebrow">${CHAMP_LAB[ev.champ]} · nazionali</div><h2>${esc(ev.name)}</h2><div class="mt">${raceChips(ev)}<span class="muted">In gara: ${mine.map(r=>esc(r.name)+' ('+r.nat+')').join(', ')}</span></div></div>
+  <div class="row"><button class="btn big" data-act="natgo" data-v="${ev.id}" data-m="sim">Simula</button><button class="btn primary big" data-act="natgo" data-v="${ev.id}" data-m="live">Segui dal vivo</button></div></div>`;
+}
 const _weekTick=weekTick;
 weekTick=function(w){natWeekly(w);_weekTick(w)};
 const _newSeason=newSeason;
@@ -173,6 +222,7 @@ function callupSheet(){
 document.addEventListener('click',e=>{
  const t=e.target.closest('[data-act]');if(!t)return;
  const a=t.dataset.act,v=t.dataset.v;
- if(a==='callups')callupSheet();
+ if(a==='natgo')natGo(v,t.dataset.m);
+ else if(a==='callups')callupSheet();
  else if(a==='cuyes'||a==='cuno'){const c=(G.callups||[]).find(x=>x.id===v);if(c){answerCallup(c,a==='cuyes');toast(a==='cuyes'?`${RID(c.rid).name} parte per la nazionale`:'Convocazione rifiutata',a==='cuyes'?'gold':'')}callupSheet()}
 });

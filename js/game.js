@@ -209,7 +209,7 @@ function newRC(race){
  for(const r of field){RC.gc[r.id]={t:0,pts:0,kom:0};RC.fat[r.id]=0;RC.kmFuga[r.id]=0}
  return RC;
 }
-function gcOrder(RC){return RC.field.filter(r=>!RC.out.has(r.id)).map(r=>({id:r.id,team:r.team,t:RC.gc[r.id].t})).sort((a,b)=>a.t-b.t)}
+function gcOrder(RC){return RC.field.filter(r=>!RC.out.has(r.id)).map(r=>({id:r.id,team:RC.nat?'n_'+r.nat:r.team,t:RC.gc[r.id].t})).sort((a,b)=>a.t-b.t)}
 function stageCtx(RC){
  const st=RC.race.stages[RC.stage];
  const course=genCourse(st.t,st.seed,st.km,TIERS[RC.race.tier].lf);

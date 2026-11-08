@@ -28,6 +28,7 @@ function defaultTactic(RC,c){
  return plan;
 }
 function openTactic(RC,mode){
+ if(RC.nat){proceedRace(RC,mode);return}
  const ctx=stageCtx(RC),c=ctx.course;
  if(!ROAD(c.type)){proceedRace(RC,mode);return}
  let plan;

@@ -134,7 +134,7 @@ function createSim(ctx){
  S.passT[0]=0;S.passIdx=0;
  for(const e of ctx.entrants){
   const r=e.r,fs=(ctx.fat&&ctx.fat[r.id])||0;
-  const x={id:r.id,r,team:r.team,isMe:r.team==='t0',pos:0,E:100,
+  const x={id:r.id,r,team:e.team||r.team,isMe:r.team==='t0'||(!!e.team&&r.team==='acad'),pos:0,E:100,
    ftp:dayFtp(r,fs,ctx.week)*(1+gauss()*0.012),
    m:r.mass,cda:0.30+(r.mass-60)*0.0025,Wmax:15000+(r.spr-900)*14,spr:r.spr,endF:1.25-r.endu*0.005,
    order:'auto',intent:'sit',I:0,easeI:0.4,v:0,P:0,stop:0,finished:false,ft:0,kmFuga:0,luck:gauss()*0.035,

@@ -81,7 +81,7 @@ function renderHome(){
    <div class="note">Prima di ripartire: rinnovi degli sponsor, mercato e promozioni dalla scuola juniores.</div>
    <div class="row">${L&&L.ok?`<button class="btn primary big" data-act="nextseason" data-v="up">Diventa ${CAT[L.to].lab} e passa al ${SEASON+1}</button><button class="btn ghost" data-act="nextseason" data-v="">Resta ${myCat().lab}</button>`:`<button class="btn primary big" data-act="nextseason" data-v="">Passa al ${SEASON+1}</button>`}<button class="btn ghost" data-act="tab" data-v="spon">Sponsor${G.offers.length?` (${G.offers.length})`:''}</button></div></div>`;
  }else if(pend.length){
-  hero=`<div class="hero card go"><div class="eyebrow">Questa settimana</div>${pend.map(r=>`<div class="herorace"><div style="min-width:0"><h2>${esc(r.name)}</h2><div class="mt">${raceChips(r)}</div></div><button class="btn primary big" data-act="convoca" data-v="${r.id}">Convocazioni</button></div>`).join('')}</div>`;
+  hero=`<div class="hero card go"><div class="eyebrow">Questa settimana</div>${pend.map(r=>r.tier==='naz'?natHero(r):`<div class="herorace"><div style="min-width:0"><h2>${esc(r.name)}</h2><div class="mt">${raceChips(r)}</div></div><button class="btn primary big" data-act="convoca" data-v="${r.id}">Convocazioni</button></div>`).join('')}</div>`;
  }else{
   hero=`<div class="hero card"><div class="eyebrow">Settimana ${G.week} · ${weekLab(G.week)}</div>
    <h2>${nx?`Prossima corsa: ${esc(nx.name)}`:'Nessuna corsa in programma'}</h2>
@@ -392,7 +392,7 @@ function launch(mode){
 function simAsync(RC){
  const n=RC.race.stages.length;busyOn(`Simulazione: ${RC.race.name}`);
  const step=()=>{
-  if(RC.stage>=n){finishMyRace(RC);busyOff();render();showFinal(RC);return}
+  if(RC.stage>=n){busyOff();if(RC.nat){natFinish(RC);render();natFinalSheet(RC);return}finishMyRace(RC);render();showFinal(RC);return}
   $('#busytxt').textContent=n>1?`${RC.race.name} · tappa ${RC.stage+1} di ${n}`:RC.race.name;
   setTimeout(()=>{const ctx=stageCtx(RC);
    if(!ROAD(ctx.course.type))finishStage(RC,simTT(ctx),null,ctx.course);
@@ -484,7 +484,7 @@ function updateRaceUI(){
 const ORD=[['auto','Piano'],['ruota','Ruota'],['copri','Copri'],['tira','Tira'],['scatta','Scatta'],['scorta','Scorta']];
 function renderMine(full){
  const S=LIVE.S;if(!S)return;
- const mine=S.byTeam['t0']||[],box=$('#mine'),capId=S.plans['t0']&&S.plans['t0'].lead&&S.plans['t0'].lead.id;
+ const mine=S.riders.filter(x=>x.isMe),box=$('#mine'),myPlan=mine.length?S.plans[mine[0].team]:null,capId=myPlan&&myPlan.lead&&myPlan.lead.id;
  if(full||box.children.length!==mine.length){
   box.innerHTML=mine.map(x=>`<div class="mr" id="m_${x.id}"><div class="l1"><span class="nm">${esc(x.r.name)}</span>${x.id===capId?'<span class="chip amber">Capitano</span>':''}<span class="where" id="w_${x.id}"></span></div>
    <div class="bars"><div><span>Energia</span><div class="bar e"><i id="be_${x.id}"></i></div></div><div><span>Riserva scatti</span><div class="bar w"><i id="bw_${x.id}"></i></div></div><div class="mono pwv" id="pw_${x.id}"></div></div>
@@ -544,7 +544,7 @@ function closeRace(){$('#race').hidden=true;$('#race').innerHTML='';document.bod
 function showStageResult(){
  const RC=LIVE.RC,sr=RC.stages[RC.stages.length-1],last=RC.stage>=RC.race.stages.length,t0=sr.res[0].time;
  const rows=(list,timeOf,lim)=>{const top=list.slice(0,lim),mine=list.map((x,i)=>({x,i})).filter(o=>RID(o.x.id).team==='t0'&&o.i>=lim);
-  const tr=(x,i)=>{const r=RID(x.id),t=timeOf(x);return`<tr class="${r.team==='t0'?'me':''}"><td class="n">${i+1}</td><td>${esc(r.name)} <span class="tm">${esc(TEAM(r.team).short)}</span></td><td class="r">${x.pts!==undefined?x.pts+' pt':i===0?fmtT(t):fmtGap(t-timeOf(list[0]))}</td></tr>`};
+  const tr=(x,i)=>{const r=RID(x.id),t=timeOf(x);return`<tr class="${r.team==='t0'||(RC.nat&&r.team==='acad')?'me':''}"><td class="n">${i+1}</td><td>${esc(r.name)} <span class="tm">${esc(TEAM(x.team||r.team).short)}</span></td><td class="r">${x.pts!==undefined?x.pts+' pt':i===0?fmtT(t):fmtGap(t-timeOf(list[0]))}</td></tr>`};
   return top.map(tr).join('')+(mine.length?`<tr><td colspan="3" class="tm" style="text-align:center">…</td></tr>`+mine.map(o=>tr(o.x,o.i)).join(''):'')};
  let gcHtml='';
  if(RC.stageRace){const o=gcOrder(RC);gcHtml=`<div><div class="sec-h"><h3>Classifica generale</h3></div><div class="card tbl"><table class="t">${rows(o,x=>x.t,10)}</table></div><div class="jl">${jerLine(jerseys(RC))}</div></div>`}
@@ -656,8 +656,8 @@ function nextPoint(S,pos){
  return out[0]?out[0].t:`Arrivo tra ${km1(S.len-pos)} km`;
 }
 function dsTips(S){
- const tips=[],me=(S.byTeam.t0||[]).filter(x=>!x.finished);if(!me.length||!S.clusters.length)return tips;
- const plan=S.plans.t0,cap=plan&&plan.lead,main=S.main,lead=S.clusters[0].front,k2g=S.len-lead;
+ const tips=[],me=S.riders.filter(x=>x.isMe&&!x.finished);if(!me.length||!S.clusters.length)return tips;
+ const plan=S.plans[me[0].team],cap=plan&&plan.lead,main=S.main,lead=S.clusters[0].front,k2g=S.len-lead;
  const nm=x=>x.r.name.split(' ').slice(-1)[0];
  const inBreak=me.filter(x=>x.cl&&x.cl.idx<main.idx);
  if(!S.breakFormed&&lead<45&&!inBreak.length)tips.push({k:'info',t:'Si lotta per la fuga. Un gregario con "Scatta" può entrarci: in fuga guadagni visibilità per gli sponsor e punti GPM, e il capitano risparmia energie in gruppo.'});
@@ -748,7 +748,7 @@ document.addEventListener('click',e=>{
   case'tt':{const ctx=LIVE.ctx;finishStage(LIVE.RC,simTT(ctx),null,ctx.course);showStageResult();break}
   case'nextstage':closeSheet();openTactic(LIVE.RC,'live');break;
   case'simrest':{closeSheet();const RC=LIVE.RC;closeRace();simAsync(RC);break}
-  case'racedone':{const RC=LIVE.RC;finishMyRace(RC);closeRace();render();showFinal(RC);break}
+  case'racedone':{const RC=LIVE.RC;if(RC.nat){natFinish(RC);closeRace();render();natFinalSheet(RC);break}finishMyRace(RC);closeRace();render();showFinal(RC);break}
   case'neg':openNeg(v);break;
   case'negyears':NEG.years=+v;renderNeg();break;
   case'negstep':{const[k,d]=v.split(':');NEG[k]=Math.max(0,NEG[k]+(+d));renderNeg();break}

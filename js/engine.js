@@ -135,7 +135,7 @@ function createSim(ctx){
  for(const e of ctx.entrants){
   const r=e.r,fs=(ctx.fat&&ctx.fat[r.id])||0;
   const x={id:r.id,r,team:e.team||r.team,isMe:r.team==='t0'||(!!e.team&&r.team==='acad'),pos:0,E:100,
-   ftp:dayFtp(r,fs,ctx.week)*(1+gauss()*0.012),
+   ftp:dayFtp(r,fs,ctx.week)*(1+clamp(gauss()*0.022,-0.06,0.05)),
    m:r.mass,cda:0.30+(r.mass-60)*0.0025,Wmax:15000+(r.spr-900)*14,spr:r.spr,endF:1.25-r.endu*0.005,
    order:'auto',intent:'sit',I:0,easeI:0.4,v:0,P:0,stop:0,finished:false,ft:0,kmFuga:0,luck:gauss()*0.035,
    atkUntil:0,followId:null,gcGap:(ctx.gcGap&&ctx.gcGap[r.id])||0,role:'dom',wasMain:true,lastDrop:-999,cl:null};
@@ -235,12 +235,12 @@ function updatePlans(S){
    if(k2g<2.6){k=4;I=1.12}
   }else if(p.goal==='gc'){
    if(S.gcLeaderTeam===t&&ahead&&!hasAhead&&gap>200){k=1;I=0.82}
-   if(onClimb&&k2g<S.finaleKm+20){k=2;I=0.96}
+   if(onClimb&&k2g<S.finaleKm+20){k=2;I=k2g<S.finaleKm?1.0:0.96}
    if(ahead&&!hasAhead&&k2g<S.finaleKm+25&&gap>50){k=Math.max(k,2);I=Math.max(I,0.93)}
   }else if(p.goal==='hill'){
    if(ahead&&!hasAhead){const allow=k2g>80?300:k2g*2.4+10;if(gap>allow){k=2;I=0.9}}
    if(k2g<S.finaleKm+5&&(!hasAhead||!ahead)){k=Math.max(k,1);I=Math.max(I,0.93)}
-   if(onClimb&&k2g<S.finaleKm){k=Math.max(k,2);I=0.97}
+   if(onClimb&&k2g<S.finaleKm){k=Math.max(k,2);I=1.0}
   }
   if(!k)continue;
   const doms=S.byTeam[t].filter(y=>y!==lead&&!y.finished&&y.cl===main&&y.E>12&&y.role!=='free'&&!(y.isMe&&y.order!=='auto')).sort((a,b)=>b.E-a.E);
@@ -303,6 +303,8 @@ function aiDecide(S,x){
  }
  if(inMain){
   if(plan.pullers.includes(x)){x.intent='pull';x.I=plan.I;return}
+  /* chi non ha compiti si rialza sulle salite dure: velocisti, gregari stanchi; si forma il gruppetto */
+  if(gr>4.5&&!plan.pullers.includes(x)&&x.role!=='lead'&&(x.r.arch==='velocista'&&S.type==='montagna'||(x.role==='dom'&&(x.E<50||x.W<0.35*x.Wmax)&&k2g<S.finaleKm+30))&&k2g>2){x.intent='ease';x.easeI=0.74;return}
   if(x.role==='dom'&&lead&&lead!==x&&!lead.finished&&lead.cl.idx>c.idx&&x.E>20){
    const gl=gapSec(S,lead.pos)-gapSec(S,x.pos);
    const helpers=S.byTeam[x.team].filter(y=>y.role==='dom'&&y.cl===main).slice(0,2);
@@ -414,13 +416,19 @@ function tick(S){
    for(const x of mem)x._req=ws.includes(x)?rot(x,v):null;
   }else{v=vC;for(const x of mem)x._req=null}
   cl.v=v;
+  const hard=gr>3||c.surf[i]>0||(S.W&&S.W.draft<1&&Math.abs(gr)<2&&ws.length>0);
+  const tense=hard&&ws.length>0;
+  mem.forEach((x,rank)=>{x._rk=rank});
   for(const x of mem){
-   let vv=v,req;const df=1-db*dScale(v);
+   let vv=v,req;let df=1-db*dScale(v);
+   /* coda del gruppo: quando si va forte su salita, pavé o col vento chi è dietro paga l'elastico e prende meno scia */
+   if(tense&&n>12){const back=x._rk/n;df=1-db*dScale(v)*(1-0.45*back);if(c.surf[i]&&back>0.4)df=Math.min(1,df+0.06)}
    if(x.intent==='follow'){const t=S.byId[x.followId];if(t&&!t.finished&&t.v>0)vv=t.v+clamp((t.pos-x.pos)*1000/dt*0.4,-1,1.5)}
    else if(x.intent==='ease')vv=Math.min(v,spd(x.easeI*ftpE(x),x.m,s,co,x.cda*df,cr));
    else vv=v+clamp((cl.front-x.pos)*1000/dt*0.3,0,1.2);
    req=x._req!==null&&x.intent==='pull'?x._req:Math.max(0,pw(vv,x.m,s,co,x.cda*(x.intent==='follow'?(1-0.3*dScale(vv)):df),cr));
-   const fe=ftpE(x),allow=x.W>300?fe*1.7:fe;
+   if(tense&&n>12&&x.intent!=='pull')req*=1+0.05*(x._rk/n);
+   const fe=ftpE(x),allow=x.W>1500?fe*1.5:fe;
    if(req>allow){x.P=allow;vv=spd(allow,x.m,s,co,x.cda*df,cr)}else x.P=req;
    x.v=vv;
   }

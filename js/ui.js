@@ -492,7 +492,7 @@ function renderMine(full){
  const S=LIVE.S;if(!S)return;
  const mine=S.riders.filter(x=>x.isMe),box=$('#mine'),myPlan=mine.length?S.plans[mine[0].team]:null,capId=myPlan&&myPlan.lead&&myPlan.lead.id;
  if(full||box.children.length!==mine.length){
-  box.innerHTML=mine.map(x=>`<div class="mr" id="m_${x.id}"><div class="l1"><span class="nm">${esc(x.r.name)}</span>${x.id===capId?'<span class="chip amber">Capitano</span>':''}<span class="where" id="w_${x.id}"></span></div>
+  box.innerHTML=mine.map(x=>`<div class="mr" id="m_${x.id}"><div class="l1"><span class="nm">${esc(x.r.name)}</span>${x.id===capId?`<span class="chip amber">${S.ctx&&S.ctx.capId&&LIVE&&LIVE.RC&&LIVE.RC.race.cap!==x.id?'Punta':'Capitano'}</span>`:''}${S.ctx&&S.ctx.lead2===x.id?'<span class="chip u23">Seconda punta</span>':''}<span class="where" id="w_${x.id}"></span></div>
    <div class="bars"><div><span>Energia</span><div class="bar e"><i id="be_${x.id}"></i></div></div><div><span>Riserva scatti</span><div class="bar w"><i id="bw_${x.id}"></i></div></div><div class="mono pwv" id="pw_${x.id}"></div></div>
    <div class="orders">${ORD.map(([k,l])=>`<button data-act="order" data-id="${x.id}" data-v="${k}" class="${k==='scatta'?'atk':''}">${l}</button>`).join('')}</div></div>`).join('');
  }

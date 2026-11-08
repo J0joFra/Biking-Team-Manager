@@ -81,7 +81,7 @@ function renderHome(){
    <div class="note">Prima di ripartire: rinnovi degli sponsor, mercato e promozioni dalla scuola juniores.</div>
    <div class="row">${L&&L.ok?`<button class="btn primary big" data-act="nextseason" data-v="up">Diventa ${CAT[L.to].lab} e passa al ${SEASON+1}</button><button class="btn ghost" data-act="nextseason" data-v="">Resta ${myCat().lab}</button>`:`<button class="btn primary big" data-act="nextseason" data-v="">Passa al ${SEASON+1}</button>`}<button class="btn ghost" data-act="tab" data-v="spon">Sponsor${G.offers.length?` (${G.offers.length})`:''}</button></div></div>`;
  }else if(pend.length){
-  hero=`<div class="hero card go"><div class="eyebrow">Questa settimana</div>${pend.map(r=>r.tier==='naz'?natHero(r):`<div class="herorace"><div style="min-width:0"><h2>${esc(r.name)}</h2><div class="mt">${raceChips(r)}</div></div><button class="btn primary big" data-act="convoca" data-v="${r.id}">Convocazioni</button></div>`).join('')}</div>`;
+  hero=`<div class="hero card go"><div class="eyebrow">Questa settimana</div>${pend.map(r=>r.tier==='jun'?jrHero(r):r.tier==='naz'?natHero(r):`<div class="herorace"><div style="min-width:0"><h2>${esc(r.name)}</h2><div class="mt">${raceChips(r)}</div></div><button class="btn primary big" data-act="convoca" data-v="${r.id}">Convocazioni</button></div>`).join('')}</div>`;
  }else{
   hero=`<div class="hero card"><div class="eyebrow">Settimana ${G.week} · ${weekLab(G.week)}</div>
    <h2>${nx?`Prossima corsa: ${esc(nx.name)}`:'Nessuna corsa in programma'}</h2>
@@ -164,11 +164,13 @@ function raceSheet(id){
   info=`<div class="msg ok">Iscritto. Quota pagata: ${eur(r.fee||fee)}. Le convocazioni si fanno nella settimana della corsa.</div>`;
   if(r.w>G.week)act=`<button class="btn ghost" data-act="withdraw" data-v="${r.id}">Ritira l'iscrizione (rimborso 50%)</button>`;
  }else if(r.status==='declined')info=`<div class="msg no">L'organizzazione non ti ha invitato quest'anno.</div>`;
+ else if(r.tier==='jun'){info=`<div class="msg">Gara juniores: corrono i ragazzi della tua scuola${G.academy.level?'':' (costruisci la scuola nelle Strutture)'}. Nella settimana della gara puoi seguirla dal vivo o saltarla.</div>`}
  else if(r.tier==='naz'){const cs=(G.callups||[]).filter(c=>c.keys.includes(r.key)&&RID(c.rid));info=`<div class="msg">Corsa per nazionali${r.cat?' · '+CAT_LAB[r.cat]:''}. I commissari tecnici convocano i corridori in forma e con buoni risultati, 3–4 settimane prima; la richiesta arriva nella tua posta e nella Home.</div>${cs.length?`<div class="note">${cs.map(c=>`${esc(RID(c.rid).name)}: ${c.status==='accepted'?'convocato':c.status==='declined'?'convocazione rifiutata':'in attesa di risposta'}`).join(' · ')}</div>`:''}`}
  else if(!a.ok)info=`<div class="msg no">${ic('lock',14)} ${esc(a.why)}.</div>`;
  else if(r.w<=G.week)info=`<div class="msg no">Iscrizioni chiuse: servono almeno 7 giorni di anticipo.</div>`;
  else{
   info=a.mode==='invite'?`<div class="msg">Serve un invito degli organizzatori. Probabilità ${chanceLab(a.chance)} (${Math.round(a.chance*100)}%): dipende da reputazione e nazionalità. Se ti invitano paghi la quota.</div>`:a.auto?`<div class="msg ok">Sei tra le prime due ProTeam: invito automatico.</div>`:'';
+  info+=`<div class="note">${r.stages.length>1?'Corsa a tappe: si corre solo come squadra (almeno 4 corridori), con classifica individuale e classifica a squadre.':indivOk(r)?`Iscrizione anche individuale: puoi schierare da 1 a ${selSize(r)} corridori; la trasferta dei posti vuoti ti viene rimborsata.`:'Si corre come squadra: almeno 4 corridori.'}</div>`;
   act=`<button class="btn primary big" data-act="register" data-v="${r.id}" ${G.cash<fee?'disabled':''}>${a.mode==='invite'?'Chiedi l\'invito':'Iscriviti'} · ${eur(fee)}</button>`;
  }
  const dl=r.dur>1?`${weekLab(r.w)} – ${weekLab(r.w+r.dur-1)}`:weekLab(r.w);
@@ -365,7 +367,7 @@ function suggest(){
  SEL.cap=capC?capC.id:null;
 }
 function renderConvoca(){
- const race=SEL.race,size=selSize(race),min=race.tier==='nc'?1:4;
+ const race=SEL.race,size=selSize(race),min=minRiders(race);
  const rs=ME().riders.map(RID).sort((a,b)=>avgSuit(b,race)-avgSuit(a,race));
  const n=SEL.ids.size,ok=n>=min&&n<=size&&SEL.cap;
  const pro=race.stages[0].t==='prologo';
@@ -386,13 +388,14 @@ function renderConvoca(){
 let LIVE=null;
 function launch(mode){
  const race=SEL.race;race.sel=[...SEL.ids];race.cap=SEL.cap;closeSheet();
+ if(indivOk(race)&&race.sel.length<selSize(race)&&race.tier!=='nc'){const T=TIERS[race.tier],ref=Math.round(T.prd*(selSize(race)-race.sel.length)*race.stages.length*(race.ctry==='ITA'?1:1.2));if(ref>0){G.cash+=ref;toast(`Partecipazione con ${race.sel.length} corridor${race.sel.length>1?'i':'e'}: rimborsati ${eurk(ref)} di trasferta`,'ok')}}
  const RC=newRC(race);LIVE=null;
  openTactic(RC,mode);
 }
 function simAsync(RC){
  const n=RC.race.stages.length;busyOn(`Simulazione: ${RC.race.name}`);
  const step=()=>{
-  if(RC.stage>=n){busyOff();if(RC.nat){natFinish(RC);render();natFinalSheet(RC);return}finishMyRace(RC);render();showFinal(RC);return}
+  if(RC.stage>=n){busyOff();if(RC.jr){jrFinish(RC);render();jrFinalSheet(RC);return}if(RC.nat){natFinish(RC);render();natFinalSheet(RC);return}finishMyRace(RC);render();showFinal(RC);return}
   $('#busytxt').textContent=n>1?`${RC.race.name} · tappa ${RC.stage+1} di ${n}`:RC.race.name;
   setTimeout(()=>{const ctx=stageCtx(RC);
    if(!ROAD(ctx.course.type))finishStage(RC,simTT(ctx),null,ctx.course);
@@ -547,7 +550,9 @@ function showStageResult(){
   const tr=(x,i)=>{const r=RID(x.id),t=timeOf(x);return`<tr class="${r.team==='t0'||(RC.nat&&r.team==='acad')?'me':''}"><td class="n">${i+1}</td><td>${esc(r.name)} <span class="tm">${esc(TEAM(x.team||r.team).short)}</span></td><td class="r">${x.pts!==undefined?x.pts+' pt':i===0?fmtT(t):fmtGap(t-timeOf(list[0]))}</td></tr>`};
   return top.map(tr).join('')+(mine.length?`<tr><td colspan="3" class="tm" style="text-align:center">…</td></tr>`+mine.map(o=>tr(o.x,o.i)).join(''):'')};
  let gcHtml='';
- if(RC.stageRace){const o=gcOrder(RC);gcHtml=`<div><div class="sec-h"><h3>Classifica generale</h3></div><div class="card tbl"><table class="t">${rows(o,x=>x.t,10)}</table></div><div class="jl">${jerLine(jerseys(RC))}</div></div>`}
+ if(RC.stageRace){const o=gcOrder(RC),tg=teamGcOrder(RC),myT=RC.nat?null:tg.findIndex(x=>x.k==='t0');
+  gcHtml=`<div><div class="sec-h"><h3>Classifica generale</h3></div><div class="card tbl"><table class="t">${rows(o,x=>x.t,10)}</table></div><div class="jl">${jerLine(jerseys(RC))}</div>
+  ${tg.length?`<div class="sec-h" style="margin-top:10px"><h3>Classifica a squadre</h3><span class="eyebrow">somma dei 3 migliori tempi</span></div><div class="card tbl"><table class="t">${tg.slice(0,5).map((x,i)=>`<tr class="${x.k==='t0'?'me':''}"><td class="n">${i+1}</td><td>${esc(TEAM(x.k).name)}</td><td class="r">${i===0?fmtT(x.t):fmtGap(x.t-tg[0].t)}</td></tr>`).join('')}${myT>=5?`<tr class="me"><td class="n">${myT+1}</td><td>${esc(G.name)}</td><td class="r">${fmtGap(tg[myT].t-tg[0].t)}</td></tr>`:''}</table></div>`:''}</div>`}
  const win=RID(sr.res[0].id);
  openSheet(sheetHead(`${esc(RC.race.name)} · ordine d'arrivo`,`Vince ${esc(win.name)}`,`${esc(TEAM(win.team).name)} · ${km1(sr.len)} km in ${fmtT(t0)} · media ${(sr.len/(t0/3600)).toFixed(1).replace('.',',')} km/h`,false)+
  `<div class="pb wrap"><div class="negbox"><div><div class="card tbl"><table class="t">${rows(sr.res,x=>x.time,15)}</table></div>${sr.otl&&sr.otl.length?`<div class="msg no" style="margin-top:8px">Fuori tempo massimo (${sr.otl.length}): ${sr.otl.map(id=>esc(RID(id).name)+(RID(id).team==='t0'?' ★':'')).join(', ')}</div>`:''}${sr.rescued?`<div class="note" style="margin-top:8px">${sr.rescued} corridori oltre il tempo massimo, ripescati dalla giuria perché troppi.</div>`:''}</div>${gcHtml}</div></div>
@@ -569,7 +574,7 @@ function showFinal(RC){
  openSheet(sheetHead(`Bilancio · ${race.lab}`,esc(race.name),`${RC.stageRace?'Vincitore finale':'Vincitore'}: <b>${esc(r.winner)}</b> (${esc(r.winnerTeam)})`)+
  `<div class="pb wrap"><div class="kv kv4"><div><small>Punti</small><b>${r.myPts}</b></div><div><small>Premi</small><b>${eurk(r.prize)}</b></div><div><small>Sponsor</small><b class="${r.dS>=0?'pos':'neg'}">${r.dS>=0?'+':''}${r.dS}</b></div><div><small>Reputazione</small><b class="${r.dR>=0?'pos':'neg'}">${r.dR>=0?'+':''}${r.dR}</b></div></div>
   <div class="negbox" style="margin-top:12px"><div><div class="sec-h"><h3>La tua squadra</h3></div><div class="card tbl"><table class="t">${mine}</table></div></div>
-  <div><div class="sec-h"><h3>${RC.stageRace?'Classifica finale':'Ordine d\'arrivo'}</h3></div><div class="card tbl"><table class="t">${top}</table></div>${r.jer?`<div class="jl">${jerLine(r.jer)}</div>`:''}</div></div></div>
+  <div><div class="sec-h"><h3>${RC.stageRace?'Classifica finale':'Ordine d\'arrivo'}</h3></div><div class="card tbl"><table class="t">${top}</table></div>${r.jer?`<div class="jl">${jerLine(r.jer)}</div>`:''}${r.teamTop?`<div class="sec-h" style="margin-top:10px"><h3>Classifica a squadre</h3><span class="eyebrow">${r.teamRank?'la tua squadra: '+r.teamRank+'ª':''}</span></div><div class="card tbl"><table class="t">${r.teamTop.map((x,i)=>`<tr class="${x.me?'me':''}"><td class="n">${i+1}</td><td>${esc(x.name)}</td><td class="r">${i===0?fmtT(x.t):fmtGap(x.t-r.teamTop[0].t)}</td></tr>`).join('')}</table></div>`:''}</div></div></div>
  <div class="pf"><div class="wrap fr"><button class="btn primary" data-act="close">Continua</button></div></div>`,'wide');
  if(r.myWins)toast(`${r.myWins} vittori${r.myWins>1?'e':'a'}! +${eurk(r.prize)}`,'gold');
 }
@@ -748,7 +753,7 @@ document.addEventListener('click',e=>{
   case'tt':{const ctx=LIVE.ctx;finishStage(LIVE.RC,simTT(ctx),null,ctx.course);showStageResult();break}
   case'nextstage':closeSheet();openTactic(LIVE.RC,'live');break;
   case'simrest':{closeSheet();const RC=LIVE.RC;closeRace();simAsync(RC);break}
-  case'racedone':{const RC=LIVE.RC;if(RC.nat){natFinish(RC);closeRace();render();natFinalSheet(RC);break}finishMyRace(RC);closeRace();render();showFinal(RC);break}
+  case'racedone':{const RC=LIVE.RC;if(RC.jr){jrFinish(RC);closeRace();render();jrFinalSheet(RC);break}if(RC.nat){natFinish(RC);closeRace();render();natFinalSheet(RC);break}finishMyRace(RC);closeRace();render();showFinal(RC);break}
   case'neg':openNeg(v);break;
   case'negyears':NEG.years=+v;renderNeg();break;
   case'negstep':{const[k,d]=v.split(':');NEG[k]=Math.max(0,NEG[k]+(+d));renderNeg();break}

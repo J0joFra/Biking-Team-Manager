@@ -16,6 +16,7 @@ Gestionale di una squadra di ciclismo giocabile nel browser, pensato per il tele
 - **Tattica pre-gara:** per ogni corridore movimento, zona e momento d'attacco.
 - **Trasferimenti:** offerte delle altre squadre, cessioni, controproposte, morale e ruolo promesso.
 - **Nazionali:** Europei, Mondiali (strada e cronometro, Elite, Under 23, Juniores) e Tour de l'Avenir; le federazioni convocano i corridori in forma, puoi accettare o rifiutare.
+- **Iscrizioni individuali e classifica a squadre:** nelle corse di un giorno minori si può schierare anche un solo corridore; le corse a tappe si corrono solo come squadra, con classifica individuale e a squadre.
 - **Stagioni multiple:** invecchiamento, crescita dei giovani, ritiri, obiettivi dello sponsor e budget.
 
 ## Come si gioca
@@ -32,6 +33,7 @@ Apri `index.html` in un browser (oppure via GitHub Pages). Il salvataggio resta 
 - `js/transfers.js` — trattative, offerte ricevute, cessioni e morale
 - `js/roster.js` — ruoli, gerarchie e prospetti della squadra
 - `js/national.js` — nazionali, convocazioni, Europei e Mondiali
+- `js/juniors.js` — gare juniores dal vivo per la scuola
 - `js/ui.js` — interfaccia
 
 Squadre e corridori sono inventati. I nomi delle corse sono quelli reali e servono solo come riferimento in un progetto amatoriale.

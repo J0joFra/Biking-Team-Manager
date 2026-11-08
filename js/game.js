@@ -209,6 +209,9 @@ function newRC(race){
  for(const r of field){RC.gc[r.id]={t:0,pts:0,kom:0};RC.fat[r.id]=0;RC.kmFuga[r.id]=0}
  return RC;
 }
+function teamGcOrder(RC){return Object.entries(RC.teamGc||{}).filter(([k,t])=>t!==null).map(([k,t])=>({k,t})).sort((a,b)=>a.t-b.t)}
+function indivOk(race){return race.stages.length===1&&['c2','u23','crit','nc','c1'].includes(race.tier)}
+function minRiders(race){return indivOk(race)?1:4}
 function gcOrder(RC){return RC.field.filter(r=>!RC.out.has(r.id)).map(r=>({id:r.id,team:RC.nat?'n_'+r.nat:r.team,t:RC.gc[r.id].t})).sort((a,b)=>a.t-b.t)}
 function stageCtx(RC){
  const st=RC.race.stages[RC.stage];
@@ -232,6 +235,9 @@ function finishStage(RC,res,S,course){
    const mine=otl.filter(x=>x.team==='t0');if(mine.length)NOTIFY(`Fuori tempo massimo: ${mine.map(x=>RID(x.id).name).join(', ')}`,'bad')}
  }
  for(const x of res)RC.gc[x.id].t+=x.time;
+ if(RC.stageRace){RC.teamGc=RC.teamGc||{};const by={};
+  for(const x of res){const k=RC.nat?'n_'+RID(x.id).nat:RID(x.id).team;(by[k]=by[k]||[]).push(x.time)}
+  for(const k of new Set(RC.field.map(r=>RC.nat?'n_'+r.nat:r.team))){const ts=(by[k]||[]).sort((a,b)=>a-b);RC.teamGc[k]=ts.length>=3&&RC.teamGc[k]!==null?(RC.teamGc[k]||0)+ts[0]+ts[1]+ts[2]:null}}
  if(RC.stageRace&&road)[10,6,4].forEach((b,i)=>{if(res[i])RC.gc[res[i].id].t-=b});
  if(S){
   if(RC.stageRace&&S.sprint.length){[3,2,1].forEach((b,i)=>{if(S.sprint[i])RC.gc[S.sprint[i].id].t-=b});[6,4,2].forEach((p,i)=>{if(S.sprint[i])RC.gc[S.sprint[i].id].pts+=p})}
@@ -296,7 +302,10 @@ function finishMyRace(RC){
  if(race.tier==='pro')st.pro=(st.pro||0)+1;
  if(['gt','mon','uwt1','uwt2'].includes(race.tier))st.wt=(st.wt||0)+1;
  race.result.mine=mine.map(r=>({id:r.id,name:r.name,pos:pos(r.id),pts:award[r.id]||0,km:Math.round(RC.kmFuga[r.id])})).sort((a,b)=>a.pos-b.pos);
- Object.assign(race.result,{myPts,kmF:Math.round(kmF),dS,dR:+dR.toFixed(1),prize,myWins,bestPos,jer:RC.stageRace?jerseys(RC):null});
+ let teamRank=null,teamTop=null;
+ if(RC.stageRace&&RC.teamGc){const tg=teamGcOrder(RC);teamTop=tg.slice(0,5).map(o=>({name:TEAM(o.k).name,t:o.t,me:o.k==='t0'}));const i=tg.findIndex(o=>o.k==='t0');teamRank=i<0?null:i+1;
+  if(teamRank===1){G.rep=clamp(G.rep+2,0,100);sponsorRaceUpdate(3);G.cash+=Math.round(2000*T.spf);mail('DS',`${race.name}: prima nella classifica a squadre`,'La squadra vince la classifica a squadre: reputazione e sponsor ne beneficiano.')}}
+ Object.assign(race.result,{teamRank,teamTop,myPts,kmF:Math.round(kmF),dS,dR:+dR.toFixed(1),prize,myWins,bestPos,jer:RC.stageRace?jerseys(RC):null});
  if(myWins)mail('DS',`Vittoria a ${race.name}!`,`${wins.filter(id=>RID(id).team==='t0').map(id=>RID(id).name).join(', ')} porta a casa ${myWins>1?myWins+' vittorie':'la vittoria'}. Premi: ${eur(prize)}.`);
  checkSponsorObjectives();save();
  return race.result;
@@ -325,7 +334,7 @@ function advanceWeek(){
  if(myPending().length)return false;
  const w=G.week;
  for(const race of G.races.filter(r=>r.w===w&&r.status!=='done'&&r.tier!=='jun'&&r.tier!=='naz').sort((a,b)=>TIER_ORDER[a.tier]-TIER_ORDER[b.tier]))quickRace(race);
- for(const race of G.races.filter(r=>r.w===w&&r.tier==='jun'))juniorRace(race);
+ for(const race of G.races.filter(r=>r.w===w&&r.tier==='jun'&&r.status==='open'))juniorRace(race);
  weekTick(w);
  if(typeof weeklyBids==='function')weeklyBids();
  G.week++;

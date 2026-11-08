@@ -421,7 +421,7 @@ function renderTTIntro(){
 function renderRaceSkeleton(){
  const c=LIVE.course,RC=LIVE.RC;
  $('#race').innerHTML=`<div class="race-grid"><section class="rcol rl"><div class="race-h"><div class="wrap">
-  <div class="eyebrow">${esc(RC.race.name)} · ${stageTitle()} · ${TYPE_LAB[c.type]}</div>
+  <div class="eyebrow">${esc(RC.race.name)} · ${stageTitle()} · ${TYPE_LAB[c.type]}${c.shortened?' · accorciata per maltempo':''} ${wxChip(LIVE.S&&LIVE.S.wx)}</div>
   <div class="kmbig"><div class="k" id="k2g">0<small>km all'arrivo</small></div>
    <div class="o"><div>Tempo<b id="rt">0'00"</b></div><div>Media<b id="ravg">—</b></div><div>Pendenza<b id="rgr">0%</b></div></div></div>
   <div class="nextp" id="nextp"></div>
@@ -555,7 +555,7 @@ function showStageResult(){
   ${tg.length?`<div class="sec-h" style="margin-top:10px"><h3>Classifica a squadre</h3><span class="eyebrow">somma dei 3 migliori tempi</span></div><div class="card tbl"><table class="t">${tg.slice(0,5).map((x,i)=>`<tr class="${x.k==='t0'?'me':''}"><td class="n">${i+1}</td><td>${esc(TEAM(x.k).name)}</td><td class="r">${i===0?fmtT(x.t):fmtGap(x.t-tg[0].t)}</td></tr>`).join('')}${myT>=5?`<tr class="me"><td class="n">${myT+1}</td><td>${esc(G.name)}</td><td class="r">${fmtGap(tg[myT].t-tg[0].t)}</td></tr>`:''}</table></div>`:''}</div>`}
  const win=RID(sr.res[0].id);
  openSheet(sheetHead(`${esc(RC.race.name)} · ordine d'arrivo`,`Vince ${esc(win.name)}`,`${esc(TEAM(win.team).name)} · ${km1(sr.len)} km in ${fmtT(t0)} · media ${(sr.len/(t0/3600)).toFixed(1).replace('.',',')} km/h`,false)+
- `<div class="pb wrap"><div class="negbox"><div><div class="card tbl"><table class="t">${rows(sr.res,x=>x.time,15)}</table></div>${sr.otl&&sr.otl.length?`<div class="msg no" style="margin-top:8px">Fuori tempo massimo (${sr.otl.length}): ${sr.otl.map(id=>esc(RID(id).name)+(RID(id).team==='t0'?' ★':'')).join(', ')}</div>`:''}${sr.rescued?`<div class="note" style="margin-top:8px">${sr.rescued} corridori oltre il tempo massimo, ripescati dalla giuria perché troppi.</div>`:''}</div>${gcHtml}</div></div>
+ `<div class="pb wrap"><div class="negbox"><div><div class="card tbl"><table class="t">${rows(sr.res,x=>x.time,15)}</table></div>${sr.wx||sr.dnf&&sr.dnf.length||sr.crashes?`<div class="note" style="margin-top:8px">${sr.wx?'Meteo: '+esc(wxText(sr.wx))+'. ':''}${sr.crashes?`${sr.crashes} cadut${sr.crashes>1?'e':'a'} di gruppo. `:''}${sr.dnf&&sr.dnf.length?`Ritirati: ${sr.dnf.length}${sr.dnf.some(id=>RID(id).team==='t0')?` (dei nostri: ${sr.dnf.filter(id=>RID(id).team==='t0').map(id=>esc(RID(id).name)).join(', ')})`:''}.`:''}</div>`:''}${sr.otl&&sr.otl.length?`<div class="msg no" style="margin-top:8px">Fuori tempo massimo (${sr.otl.length}): ${sr.otl.map(id=>esc(RID(id).name)+(RID(id).team==='t0'?' ★':'')).join(', ')}</div>`:''}${sr.rescued?`<div class="note" style="margin-top:8px">${sr.rescued} corridori oltre il tempo massimo, ripescati dalla giuria perché troppi.</div>`:''}</div>${gcHtml}</div></div>
  <div class="pf"><div class="wrap fr">${last?`<button class="btn primary" data-act="racedone">Bilancio della corsa</button>`:`<button class="btn" data-act="simrest">Simula il resto</button><button class="btn primary" data-act="nextstage">Tappa successiva</button>`}</div></div>`,'wide');
  if(win.team==='t0')toast(`Vittoria di ${win.name}!`,'gold');
 }
@@ -685,6 +685,7 @@ function dsTips(S){
     else tips.push({k:'info',t:`In salita con ${km1(left)} km alla cima: aspetta gli ultimi 2–3 km per attaccare, prima rischi di saltare.`});}
   }else if(S.course.surf[gi(S,cap.pos)]||['pave','roubaix','sterrato'].includes(S.type)&&k2g<S.finaleKm&&capOk)tips.push({k:'info',t:`Settori decisivi: sul pavé e sullo sterrato il gruppo si spezza. Stai davanti e prova "Scatta" su un settore o un muro se ${nm(cap)} ha energia.`});
  }
+ {const wt=wxTip(S);if(wt&&S.t<1800)tips.push(wt)}
  for(const x of me)if(x.E<22&&x.intent==='pull'){tips.push({k:'warn',t:`${nm(x)} è quasi senza energia (${Math.round(x.E)}%): toglilo dalla testa con "Ruota" o rischia la crisi.`});break}
  if(!tips.length)tips.push({k:'info',t:'Corsa tranquilla: i corridori seguono il piano. Tienili a "Piano" o "Ruota" per risparmiare: le energie servono nel finale.'});
  return tips.slice(0,3);

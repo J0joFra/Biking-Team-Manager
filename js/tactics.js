@@ -45,6 +45,7 @@ function renderTactic(){
  if(c.secN)keys.push(`<li><b>${c.secN} settori</b> di ${c.type==='sterrato'?'sterrato':'pavé'}, i decisivi negli ultimi 60 km</li>`);
  if(c.sprintKm)keys.push(`<li><b>km ${c.sprintKm}</b> traguardo volante (abbuoni e punti)</li>`);
  if(c.pts)keys.push(`<li><b>${c.laps} giri</b> da ${km1(c.len/c.laps)} km · ${c.pts.length} traguardi a punti (5-3-2-1) ogni 2 giri · arrivo doppio (10-6-4-2). Vince chi fa più punti.</li>`);
+ {const wx=makeWeather(RC.race,RC.stage);keys.unshift(`<li><b>Meteo</b>: ${esc(wxText(wx))}${wxEffects(wx).length?' — '+wxEffects(wx).join(', '):''}</li>`)}
  keys.push(`<li><b>Tempo massimo</b>: ${Math.round((TIME_CUT[c.type]||0.15)*100)}% sul tempo del vincitore</li>`);
  const ids=race.sel.filter(id=>!RC.out.has(id)).sort((a,b)=>(a===race.cap?-1:b===race.cap?1:0));
  const st=RC.stageRace?(race.stages[RC.stage].t==='prologo'?'Prologo':`Tappa ${RC.stage+(race.stages[0].t==='prologo'?0:1)}`):'';

@@ -242,6 +242,7 @@ function finishStage(RC,res,S,course){
  if(S){
   if(RC.stageRace&&S.sprint.length){[3,2,1].forEach((b,i)=>{if(S.sprint[i])RC.gc[S.sprint[i].id].t-=b});[6,4,2].forEach((p,i)=>{if(S.sprint[i])RC.gc[S.sprint[i].id].pts+=p})}
   course.climbs.forEach((cb,j)=>{const arr=S.kom[j]||[];(KOM_PTS[cb.cat]||[]).forEach((p,i)=>{if(arr[i])RC.gc[arr[i].id].kom+=p});sr.koms.push(arr.slice(0,3).map(x=>x.id))});
+  sr.dnf=S.riders.filter(x=>x.dnf).map(x=>x.id);sr.crashes=S.crashes||0;sr.wx=S.wx||null;
   for(const x of S.riders){RC.fat[x.id]+=(100-x.E)*0.2*(1.2-x.r.rec/200);RC.kmFuga[x.id]+=x.kmFuga;
    if(x.dnf)RC.out.add(x.id);if(x.inj)injure(x.r,x.inj,RC.race.w+RC.race.dur-1)}
  }else for(const x of res)RC.fat[x.id]+=5;

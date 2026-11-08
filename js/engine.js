@@ -396,7 +396,7 @@ function tick(S){
   const mem=cl.rs.filter(x=>x.stop<=0&&x.intent!=='attack'&&x.intent!=='sprint');
   if(!mem.length)continue;
   const i=gi(S,cl.front),s=c.sin[i],co=c.cos[i],gr=c.g[i],cr=c.crr[i];
-  const n=cl.rs.length,db=dBase(n)*(c.surf[i]?0.6:1);
+  const n=cl.rs.length,db=dBase(n)*(c.surf[i]?0.6:1)*(S.W&&Math.abs(gr)<2?S.W.draft:1);
   const ws=mem.filter(x=>x.intent==='pull');
   let v;const k2g=S.len-cl.front;
   let cI=cl===main?((!S.breakFormed&&k2g>40)?0.69:0.6):0.62;if(gr>3)cI+=0.12;if(c.surf[i])cI+=0.08;
@@ -431,6 +431,7 @@ function tick(S){
   if(x.P>fe)x.W-=(x.P-fe)*dt;else x.W=Math.min(x.Wmax,x.W+(fe-x.P)*dt*0.3);
   if(x.W<0)x.W=0;
   x.E=Math.max(0,x.E-dt*(0.0006+0.0075*Math.pow(Math.max(0,x.P/x.ftp),2.5))*x.endF);
+  if(S.W&&S.W.cap&&c.g[gi(S,x.pos)]<-2&&x.v>S.W.cap)x.v=S.W.cap;
   const prev=x.pos;x.pos+=x.v*dt/1000;
   if(x.cl&&x.cl.idx<main.idx)x.kmFuga+=x.pos-prev;
   c.climbs.forEach((cb,j)=>{if(prev<cb.top&&x.pos>=cb.top&&cb.top<S.len){S.kom[j].push(x);if(S.kom[j].length===1)slog(S,`GPM ${cb.cat==='HC'?'HC':cb.cat+'ª cat.'} ${cb.name}: primo ${x.r.name} (${tshort(x)})`,x.isMe)}});

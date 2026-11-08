@@ -78,7 +78,7 @@ function newGame(name,jersey,sede){
  R=mulberry32(seed);SEASON=2027;USED.clear();
  G={v:4,season:SEASON,name,jersey,sede,cat:'conti',seed,week:5,phase:'season',teams:[],riders:{},races:[],nextId:1,sponsor:60,rep:20,cash:100000,
   news:[],inbox:[],sponsors:[],contracts:[],offers:[],exp:{},camps:[],academy:{level:0,focus:'ITA',log:[]},history:[],
-  mk:{sub:'renew',cat:'all',role:'all'},calf:'acc',tab:'home',rankf:'mine',st:{},kmFuga:0};
+  mk:{sub:'renew',cat:'all',role:'all'},calf:'acc',tab:'home',rankf:'mine',st:{},kmFuga:0,bids:[],train:{s1:'fondo',s2:'soglia',last:null}};
  const short=name.replace(/[^A-Za-zÀ-ÿ ]/g,'').split(/\s+/).filter(Boolean).map(w=>w[0]).join('').slice(0,3).toUpperCase()||'ME';
  G.teams.push({id:'t0',name,short,tier:'me',nats:['ITA'],color:'var(--accent)',riders:[]});
  AI_TEAMS.forEach((d,i)=>G.teams.push({id:'t'+(i+1),name:d[0],short:d[1],tier:d[2],nats:d[3],color:teamColor(i+1),riders:[]}));
@@ -126,7 +126,7 @@ function feeOf(race){const T=TIERS[race.tier];return Math.round((T.fee+T.prd*Mat
 function access(race){
  const t=race.tier,c=G.cat;
  if(t==='jun')return{ok:false,why:'Gara juniores: ci corrono i ragazzi della tua scuola'};
- if(t==='nc')return{ok:true,mode:'fee'};
+ if(t==='nc'||t==='crit')return{ok:true,mode:'fee'};
  if(t==='u23')return c==='conti'?{ok:true,mode:'fee'}:{ok:false,why:'Riservata a Continental e squadre Under 23'};
  if(t==='c2')return c==='conti'?{ok:true,mode:'fee'}:{ok:false,why:'ProTeam e WorldTeam non corrono la classe 2'};
  if(t==='c1')return{ok:true,mode:'fee'};
@@ -179,6 +179,7 @@ function pickTeams(race,meIn){
   case'pro':return wsample(by('wt'),rint(6,9),wf).concat(wsample(by('pro'),8,wf)).concat(wsample(by('conti'),rint(3,5)-(meIn?1:0),wf));
   case'c1':return wsample(by('wt'),rint(1,3),wf).concat(wsample(by('pro'),6,wf)).concat(wsample(by('conti'),11-(meIn?1:0),wf));
   case'c2':case'u23':return wsample(by('conti').concat(by('dev')),21,wf);
+  case'crit':return wsample(by('conti').concat(by('dev')),11,wf).concat(wsample(by('pro'),4,wf)).concat(wsample(by('wt'),2,wf));
   case'nc':return ai.filter(t=>t.riders.some(id=>RID(id).nat==='ITA'));
  }
  return[];
@@ -214,13 +215,22 @@ function stageCtx(RC){
  const course=genCourse(st.t,st.seed,st.km,TIERS[RC.race.tier].lf);
  const gcGap={};
  if(RC.stageRace&&RC.stage>0){const o=gcOrder(RC);const t0=o[0].t;for(const x of o)gcGap[x.id]=x.t-t0}
- return{course,entrants:RC.field.filter(r=>!RC.out.has(r.id)).map(r=>({r})),fat:RC.fat,gcGap,stageRace:RC.stageRace,stageIdx:RC.stage,capId:RC.race.cap,week:RC.race.w};
+ let tactic=RC.tactic||null;
+ if(tactic&&RC.tacStage!==RC.stage){tactic=JSON.parse(JSON.stringify(tactic));for(const k in tactic)if(tactic[k].zone&&tactic[k].zone.startsWith('climb:'))tactic[k].zone='last'}
+ return{tactic,course,entrants:RC.field.filter(r=>!RC.out.has(r.id)).map(r=>({r})),fat:RC.fat,gcGap,stageRace:RC.stageRace,stageIdx:RC.stage,capId:RC.race.cap,week:RC.race.w};
 }
 const FIN_PTS_FLAT=[25,20,16,14,12,10,8,6,4,2],FIN_PTS_HILL=[20,16,12,10,8,6,4,3,2,1],FIN_PTS_TT=[10,8,6,4,2];
 const KOM_PTS={HC:[20,15,12,10,8,6,4,2],'1':[10,8,6,4,2,1],'2':[5,3,2,1],'3':[3,2,1],'4':[1]};
 function finishStage(RC,res,S,course){
  const road=ROAD(course.type);
- const sr={type:course.type,len:course.len,res,climbs:course.climbs,koms:[],sprint:[]};
+ const sr={type:course.type,len:course.len,res,climbs:course.climbs,koms:[],sprint:[],otl:[]};
+ if(road&&res.length>5){
+  const t0=Math.min(...res.map(x=>x.time)),lim=t0*(1+(TIME_CUT[course.type]||0.15));
+  const otl=res.filter(x=>x.time>lim);
+  if(otl.length>res.length*0.2)sr.rescued=otl.length;
+  else if(otl.length){res=res.filter(x=>x.time<=lim);sr.res=res;sr.otl=otl.map(x=>x.id);for(const x of otl)RC.out.add(x.id);
+   const mine=otl.filter(x=>x.team==='t0');if(mine.length)NOTIFY(`Fuori tempo massimo: ${mine.map(x=>RID(x.id).name).join(', ')}`,'bad')}
+ }
  for(const x of res)RC.gc[x.id].t+=x.time;
  if(RC.stageRace&&road)[10,6,4].forEach((b,i)=>{if(res[i])RC.gc[res[i].id].t-=b});
  if(S){
@@ -271,10 +281,11 @@ function finishMyRace(RC){
  const kmF=mine.reduce((a,r)=>a+RC.kmFuga[r.id],0);
  const bestPos=Math.min(...mine.map(r=>pos(r.id)));
  const myWins=wins.filter(id=>RID(id).team==='t0').length;
- const rel=myPts/T.win;
+ const rel=T.win?myPts/T.win:(bestPos<=3?0.6:bestPos<=10?0.25:0);
  const dS=clamp(Math.round((Math.min(kmF,150)*0.02+rel*8+myWins*4-(bestPos>20?4:bestPos>10?1:0))*Math.sqrt(T.spf)),-8,15);
  const dR=clamp(rel*6*Math.pow(T.spf,0.7)+myWins*1.5-(bestPos>30?0.5:0),-2,10);
- const prize=Math.round(myPts*120+myWins*800*T.spf);
+ const prize=T.prize?mine.reduce((a,r)=>a+(T.prize[pos(r.id)-1]||0),0):Math.round(myPts*120+myWins*800*T.spf);
+ for(const r of mine){r.myRaces=(r.myRaces||0)+1;if(race.cap===r.id)r.capN=(r.capN||0)+1;const p=pos(r.id);if(wins.includes(r.id))r.mood=Math.min(100,(r.mood??65)+5);else if(p<=3)r.mood=Math.min(100,(r.mood??65)+2)}
  sponsorRaceUpdate(dS);G.rep=clamp(G.rep+dR,0,100);G.cash+=prize;G.kmFuga+=kmF;
  const st=G.st;st.wins=(st.wins||0)+myWins;st.fuga=(st.fuga||0)+kmF;
  if(race.ctry==='ITA')st.ita=(st.ita||0)+1;else G.exp[race.ctry]=(G.exp[race.ctry]||0)+1;
@@ -316,6 +327,7 @@ function advanceWeek(){
  for(const race of G.races.filter(r=>r.w===w&&r.status!=='done'&&r.tier!=='jun').sort((a,b)=>TIER_ORDER[a.tier]-TIER_ORDER[b.tier]))quickRace(race);
  for(const race of G.races.filter(r=>r.w===w&&r.tier==='jun'))juniorRace(race);
  weekTick(w);
+ if(typeof weeklyBids==='function')weeklyBids();
  G.week++;
  if(G.week>WEEK_END)endOfSeason();
  save();return true;
@@ -329,6 +341,8 @@ function advanceToNext(){
  return n;
 }
 function weekTick(w){
+ if(typeof weeklyTraining==='function')weeklyTraining(w);
+ if(typeof weeklyMood==='function'&&w%6===0)weeklyMood(w);
  for(const id in G.riders){const r=G.riders[id];
   if(injured(r,w)){r.fat=Math.max(0,r.fat-recRate(r,w));r.form=Math.max(0.9,r.form-0.008)}
   else if(r.team==='t0'&&inCamp(r,w,w)){r.fat=Math.max(0,r.fat-recRate(r,w)*0.5);r.form=Math.min(1.045,r.form+0.004)}
@@ -512,7 +526,7 @@ function newSeason(acceptOffer){
   if(r.age<=23){r.endu=Math.min(99,r.endu+rint(1,4));r.rec=Math.min(99,r.rec+rint(0,3));r.spr+=rint(0,30)}
   if(r.age>=32)r.spr-=rint(5,25);
   if(r.age>22)r.pot=0;
-  Object.assign(r,{injUntil:0,injRec:0,days:0,fat:0,pts:0,wins:0,res:[],bF:0,bT:0,neg:0,alt:null,form:+rnd(0.95,0.99).toFixed(3),askMul:+rnd(0.92,1.1).toFixed(3),neo:r.age===19||r.age===23});
+  Object.assign(r,{listed:null,myRaces:0,capN:0,injUntil:0,injRec:0,days:0,fat:0,pts:0,wins:0,res:[],bF:0,bT:0,neg:0,alt:null,form:+rnd(0.95,0.99).toFixed(3),askMul:+rnd(0.92,1.1).toFixed(3),neo:r.age===19||r.age===23});
   if(r.team==='t0'&&r.age===23)out.push(`${r.name} compie 23 anni: passa tra gli Elite`);
  }
  // juniores della scuola: chi ha 19 anni e non è stato promosso se ne va
@@ -540,7 +554,7 @@ function newSeason(acceptOffer){
  if(lv){const got=intake();if(got.length)out.push(`Scuola juniores: entrano ${got.map(r=>r.name).join(', ')}`)}
  G.contracts=G.contracts.filter(c=>c.end>=ns);
  for(const c of G.contracts){c.done=false;c.base=0}
- G.offers=[];
+ G.offers=[];G.bids=[];
  const inc=incomeIn(ns),ms=G.contracts.find(c=>c.slot==='main'&&activeIn(c,ns));
  out.unshift(`Sponsor ${ns}: ${eur(inc)}${ms?` · main sponsor ${SP(ms.sid).name}`:' · nessun main sponsor!'}`);
  G.sponsor=sponsorSat();

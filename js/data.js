@@ -187,7 +187,13 @@ const RACES=[
  ['Paris-Tours','FRA',41,'1.Pro','sterrato:215'],
  ['Veneto Classic','ITA',42,'1.Pro','collinare:200'],
  ['Giro del Veneto','ITA',42,'1.1','mossa:180'],
- ['Chrono des Nations','FRA',42,'1.1','crono:45']
+ ['Chrono des Nations','FRA',42,'1.1','crono:45'],
+ ['Criterium a punti di Bergamo','ITA',30,'CRIT','circuito:96'],
+ ['Criterium a punti di Torino','ITA',32,'CRIT','circuito:100'],
+ ['Criterium a punti di Treviso','ITA',33,'CRIT','circuito:96'],
+ ['Criterium a punti di Lugano','SUI',35,'CRIT','circuito:90'],
+ ['Criterium a punti di Firenze','ITA',36,'CRIT','circuito:100'],
+ ['Criterium a punti di Rimini','ITA',37,'CRIT','circuito:96']
 ];
 const WEEK_END=42;
 
@@ -202,10 +208,11 @@ const TIERS={
  c2:{lab:'Classe 2',win:40,st:7,fee:1500,prd:300,size:6,lf:0.93,spf:1},
  u23:{lab:'Under 23',win:40,st:7,fee:1200,prd:280,size:6,lf:0.9,spf:1},
  nc:{lab:'Campionato nazionale',win:100,fee:800,prd:200,size:8,lf:1,spf:1.5},
- jun:{lab:'Juniores',win:0,fee:0,prd:0,size:0,lf:0.7,spf:0}
+ jun:{lab:'Juniores',win:0,fee:0,prd:0,size:0,lf:0.7,spf:0},
+ crit:{lab:'Corsa a punti',win:0,fee:1000,prd:220,size:6,lf:1,spf:1.2,prize:[6000,4000,3000,2000,1500,1000,800,600,500,400]}
 };
-const CLS_TIER={'GT':'gt','MON':'mon','1.UWT':'uwt1','2.UWT':'uwt2','1.Pro':'pro','2.Pro':'pro','1.1':'c1','2.1':'c1','1.2':'c2','2.2':'c2','1.2U':'u23','2.2U':'u23','CN':'nc','MJ':'jun'};
-const CLS_LAB={'GT':'2.UWT','MON':'1.UWT','CN':'CN','MJ':'MJ'};
+const CLS_TIER={'GT':'gt','MON':'mon','1.UWT':'uwt1','2.UWT':'uwt2','1.Pro':'pro','2.Pro':'pro','1.1':'c1','2.1':'c1','1.2':'c2','2.2':'c2','1.2U':'u23','2.2U':'u23','CN':'nc','MJ':'jun','CRIT':'crit'};
+const CLS_LAB={'GT':'2.UWT','MON':'1.UWT','CN':'CN','MJ':'MJ','CRIT':'Punti'};
 const POINTS_D=[1,0.8,0.68,0.56,0.48,0.42,0.36,0.3,0.25,0.21,0.17,0.14,0.11,0.09,0.07];
 
 /* Categorie della tua squadra */
@@ -231,9 +238,9 @@ const ACAD_FOCUS={ITA:['ITA'],NORD:['BEL','NED','DEN','NOR'],IBE:['ESP','COL','P
 const ACAD_FOCUS_LAB={ITA:'Italia',NORD:'Belgio, Olanda e Scandinavia',IBE:'Spagna, Portogallo e Colombia',EST:'Slovenia, Polonia e Austria'};
 
 const COUNTRY={ITA:'Italia',FRA:'Francia',BEL:'Belgio',ESP:'Spagna',NED:'Paesi Bassi',GER:'Germania',SUI:'Svizzera',POL:'Polonia',POR:'Portogallo',GBR:'Gran Bretagna',NOR:'Norvegia',DEN:'Danimarca',SLO:'Slovenia',AUT:'Austria',HUN:'Ungheria',CRO:'Croazia',ROU:'Romania',LUX:'Lussemburgo',COL:'Colombia'};
-const TYPE_LAB={piatta:'Pianeggiante',mossa:'Mossa',collinare:'Collinare',montagna:'Montagna',crono:'Cronometro',prologo:'Prologo',pave:'Pavé e muri',roubaix:'Pavé',sterrato:'Sterrato'};
-const TYPE_H={piatta:4,mossa:8,collinare:11,montagna:16,crono:9,prologo:5,pave:10,roubaix:7,sterrato:11};
-const HARD={piatta:7,mossa:9,collinare:10,montagna:13,crono:5,prologo:2,pave:11,roubaix:12,sterrato:11};
+const TYPE_LAB={circuito:'Circuito a punti',piatta:'Pianeggiante',mossa:'Mossa',collinare:'Collinare',montagna:'Montagna',crono:'Cronometro',prologo:'Prologo',pave:'Pavé e muri',roubaix:'Pavé',sterrato:'Sterrato'};
+const TYPE_H={circuito:5,piatta:4,mossa:8,collinare:11,montagna:16,crono:9,prologo:5,pave:10,roubaix:7,sterrato:11};
+const HARD={circuito:6,piatta:7,mossa:9,collinare:10,montagna:13,crono:5,prologo:2,pave:11,roubaix:12,sterrato:11};
 const JERSEYS=[['#1D4ED1','#F2C14E'],['#C2362C','#F5F5F5'],['#0F7B5F','#F4E04D'],['#1F2937','#E5484D'],['#7C3AED','#F59E0B'],['#0E7490','#F97316'],['#DB2777','#111827'],['#F5F5F5','#1D4ED1']];
 
 /* ============================================================
@@ -296,4 +303,22 @@ const SPONSOR_SIZE={
 const SLOTS={main:{lab:'Main sponsor',share:1,cap:1},co:{lab:'Co-sponsor',share:0.45,cap:2},partner:{lab:'Partner',share:0.2,cap:8}};
 const LICENCE={pro:{income:3500000,rep:45,rank:6},wt:{income:12000000,rep:75,rank:3}};
 /* Regione delle corse italiane (per gli obiettivi degli sponsor locali) */
-const RACE_REG={'Trofeo Laigueglia':'LIG','Strade Bianche':'TOS','Gran Premio Industria e Artigianato':'TOS','Tirreno-Adriatico':'MAR','Milano-Torino':'PIE','Milano-Sanremo':'LIG','Per Sempre Alfredo':'TOS','Settimana Coppi e Bartali':'EMR','Trofeo Piva':'VEN','Giro del Belvedere':'VEN','Trofeo Emilio Paganessi':'LOM','GP Palio del Recioto':'VEN','Giro di Sicilia':'SIC',"Giro d'Abruzzo":'ABR','Trofeo Città di San Vendemiano':'VEN','Tour of the Alps':'TAA','Gran Premio della Liberazione':'LAZ',"Giro dell'Appennino":'LIG','GP Industrie del Marmo':'TOS','Trofeo Alcide Degasperi':'TAA','Adriatica Ionica Race':'PUG','Giro del Friuli Venezia Giulia':'FVG','Giro Next Gen':'LOM','Campionato Italiano a cronometro':'EMR','Campionato Italiano Under 23':'EMR','Campionato Italiano Elite':'EMR',"Giro della Valle d'Aosta":'VDA','Gran Premio Capodarco':'MAR','Coppa Città di San Daniele':'FVG','Giro della Lunigiana':'TOS','Giro della Toscana':'TOS','Coppa Sabatini':'TOS','Memorial Marco Pantani':'EMR','Trofeo Matteotti':'ABR','Gran Premio Sportivi di Poggiana':'VEN',"Ruota d'Oro":'TOS','Coppa Agostoni':'LOM','Coppa Bernocchi':'LOM','Tre Valli Varesine':'LOM',"Giro dell'Emilia":'EMR','Gran Piemonte':'PIE','Il Lombardia':'LOM','Piccolo Giro di Lombardia':'LOM','Veneto Classic':'VEN','Giro del Veneto':'VEN'};
+const RACE_REG={'Trofeo Laigueglia':'LIG','Strade Bianche':'TOS','Gran Premio Industria e Artigianato':'TOS','Tirreno-Adriatico':'MAR','Milano-Torino':'PIE','Milano-Sanremo':'LIG','Per Sempre Alfredo':'TOS','Settimana Coppi e Bartali':'EMR','Trofeo Piva':'VEN','Giro del Belvedere':'VEN','Trofeo Emilio Paganessi':'LOM','GP Palio del Recioto':'VEN','Giro di Sicilia':'SIC',"Giro d'Abruzzo":'ABR','Trofeo Città di San Vendemiano':'VEN','Tour of the Alps':'TAA','Gran Premio della Liberazione':'LAZ',"Giro dell'Appennino":'LIG','GP Industrie del Marmo':'TOS','Trofeo Alcide Degasperi':'TAA','Adriatica Ionica Race':'PUG','Giro del Friuli Venezia Giulia':'FVG','Giro Next Gen':'LOM','Campionato Italiano a cronometro':'EMR','Campionato Italiano Under 23':'EMR','Campionato Italiano Elite':'EMR',"Giro della Valle d'Aosta":'VDA','Gran Premio Capodarco':'MAR','Coppa Città di San Daniele':'FVG','Giro della Lunigiana':'TOS','Giro della Toscana':'TOS','Coppa Sabatini':'TOS','Memorial Marco Pantani':'EMR','Trofeo Matteotti':'ABR','Gran Premio Sportivi di Poggiana':'VEN',"Ruota d'Oro":'TOS','Coppa Agostoni':'LOM','Coppa Bernocchi':'LOM','Tre Valli Varesine':'LOM',"Giro dell'Emilia":'EMR','Gran Piemonte':'PIE','Il Lombardia':'LOM','Piccolo Giro di Lombardia':'LOM','Veneto Classic':'VEN','Giro del Veneto':'VEN','Criterium a punti di Bergamo':'LOM','Criterium a punti di Torino':'PIE','Criterium a punti di Treviso':'VEN','Criterium a punti di Firenze':'TOS','Criterium a punti di Rimini':'EMR'};
+
+/* Tempo massimo: margine sul tempo del vincitore per tipo di tappa */
+const TIME_CUT={circuito:0.12,piatta:0.12,mossa:0.14,collinare:0.17,montagna:0.25,pave:0.18,roubaix:0.18,sterrato:0.17,crono:0.25,prologo:0.3};
+/* Punti nelle corse a punti: traguardi intermedi e arrivo (doppio) */
+const PR_PTS=[5,3,2,1],PR_FIN=[10,6,4,2];
+/* Allenamenti: due sessioni a settimana nelle settimane senza gare */
+const TRAIN={
+ fondo:{lab:'Fondo lungo',desc:'5 ore a ritmo medio: resistenza (RES) e un po\' di soglia',fat:6,eff:{endu:0.35,wkg:0.0015}},
+ soglia:{lab:'Lavori di soglia',desc:'Intervalli al limite: alza la soglia (SAL e PIA)',fat:8,eff:{wkg:0.0045}},
+ salita:{lab:'Ripetute in salita',desc:'Salite al massimo: W/kg in salita (SAL)',fat:9,eff:{wkg:0.004,mass:-0.06}},
+ volata:{lab:'Volate',desc:'Sprint e partenze da fermo: potenza massima (VOL)',fat:5,eff:{spr:4}},
+ crono:{lab:'Bici da crono',desc:'Posizione aerodinamica e ritmo (CRO)',fat:6,eff:{tt:-0.0007,wkg:0.0012}},
+ recupero:{lab:'Recupero attivo',desc:'Uscita facile: smaltisce la fatica',fat:-10,eff:{}},
+ riposo:{lab:'Riposo',desc:'Giornata libera',fat:-6,eff:{}}
+};
+/* Tattica pre-gara */
+const MOVES={auto:'Decide l\'ammiraglia',gruppo:'Resta nel gruppo',vicino:'Resta entro 1\' dalla testa',maglia:'Resta con la maglia di leader',fuga:'Vai in fuga',scorta:'Proteggi il capitano',tira:'Tira per il capitano nel finale',copri:'Marca gli attacchi'};
+const WHENS={start:'All\'inizio',mid:'A metà',end:'Nel finale'};

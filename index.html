@@ -369,6 +369,18 @@ table.t{width:100%;border-collapse:collapse;font-size:14px}
 .orders{grid-template-columns:repeat(6,1fr)!important}
 .orders button{font-size:13px!important}
 
+.tgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tacgrid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+.tacrow{padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.tn2{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-weight:700}
+.tsel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.tsel label{display:flex;flex-direction:column;gap:3px;min-width:0}
+.tsel select,.field select{font:inherit;font-size:14px;padding:7px 8px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:0;width:100%}
+.keys{margin:6px 0 0;padding-left:18px;font-size:13.5px;display:flex;flex-direction:column;gap:3px}
+.bidrow{display:grid;grid-template-columns:44px minmax(0,1fr);gap:8px 10px;align-items:center;padding:10px 12px}
+.bidrow .row{grid-column:1/-1;justify-content:flex-end}
+.bidrow .nm{font-weight:700}
+
 @media (min-width:560px){.hide-s{display:inline}.hud .hide-s{display:block}}
 
 /* ORIZZONTALE: barra laterale, due colonne */
@@ -404,6 +416,7 @@ table.t{width:100%;border-collapse:collapse;font-size:14px}
  .negbox{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
  .rsgrid{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);align-items:start}
  .guide{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .tacgrid{grid-template-columns:minmax(0,0.8fr) minmax(0,1.2fr);align-items:start}
  .race{overflow:hidden;display:flex;flex-direction:column;padding-bottom:0}
  .race-grid{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr)}
  .rcol{overflow-y:auto;min-height:0}
@@ -439,4 +452,7 @@ table.t{width:100%;border-collapse:collapse;font-size:14px}
 <script src="js/engine.js"></script>
 <script src="js/game.js"></script>
 <script src="js/sponsor.js"></script>
+<script src="js/training.js"></script>
+<script src="js/tactics.js"></script>
+<script src="js/transfers.js"></script>
 <script src="js/ui.js"></script>

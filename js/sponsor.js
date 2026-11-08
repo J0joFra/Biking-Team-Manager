@@ -57,8 +57,9 @@ function sponsorSat(){const a=G.contracts.filter(c=>activeIn(c,SEASON));if(!a.le
 
 /* ---------- obiettivi dei contratti ---------- */
 function objTxt(k,n){
- if(k.startsWith('reg_'))return`Corri ${n} corse in ${REGIONS[k.slice(4)].n}`;
- if(k.startsWith('ctry_'))return`Corri ${n} corse in ${FOREIGN[k.slice(5)]?FOREIGN[k.slice(5)].n:COUNTRY[k.slice(5)]}`;
+ const c=n===1?'1 corsa':`${n} corse`;
+ if(k.startsWith('reg_'))return`Corri ${c} in ${REGIONS[k.slice(4)].n}`;
+ if(k.startsWith('ctry_'))return`Corri ${c} in ${FOREIGN[k.slice(5)]?FOREIGN[k.slice(5)].n:COUNTRY[k.slice(5)]}`;
  return{wins:`Vinci ${n} corse o tappe`,top10:`Ottieni ${n} piazzamenti nei primi 10`,fuga:`Accumula ${n} km in fuga`,ita:`Corri ${n} corse in Italia`,wt:`Corri ${n} corse WorldTour`}[k];
 }
 function regRaces(code){return G.races.filter(r=>RACE_REG[r.name]===code&&r.tier!=='jun'&&r.status!=='done'&&r.w>G.week&&(()=>{const a=access(r);return a.ok&&(a.mode==='fee'||a.chance>=0.5)})()).length}

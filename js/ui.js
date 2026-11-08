@@ -95,6 +95,7 @@ function renderHome(){
  const proj=projected();
  $('#view').innerHTML=`${ROT}<div class="homegrid">
   <div class="col">${hero}
+   ${G.phase==='season'?trainCard():''}
    ${G.offers.length?`<button class="banner" data-act="tab" data-v="spon">${ic('spon',18)}<span><b>${G.offers.length} propost${G.offers.length>1?'e':'a'} di sponsorizzazione</b> da valutare</span></button>`:''}
    <div class="card pad"><div class="sec-h"><h3>Obiettivi degli sponsor</h3><span class="eyebrow">${sponsorSat()}% soddisfatti</span></div>${objs}</div>
    <div class="kv kv4"><div><small>Saldo a fine stagione</small><b class="${proj<0?'neg':''}">${eurk(proj)}</b></div><div><small>Classifica</small><b>${myCatRank()}ª</b></div><div><small>Punti</small><b>${teamPoints(ME())}</b></div><div><small>Rosa</small><b>${myRoster()}/${myCat().max}</b></div></div>
@@ -229,7 +230,8 @@ function riderSheet(id){
    <div><div class="eyebrow">Fatica · giorni</div><div class="bar f" style="margin-top:6px"><i style="width:${r.fat}%"></i></div><div class="note">${Math.round(r.fat)}/100 · ${recDays(r)?`recupero completo in ~${recDays(r)} giorni`:'riposato'} · ${r.days} giorni di corsa</div>${injured(r)?`<div class="msg no" style="margin-top:6px">Infortunato fino al ${weekLab(r.injUntil)}</div>`:r.injRec&&G.week<=r.injRec?'<div class="note">Appena rientrato da un infortunio: recupera la fatica più lentamente.</div>':''}</div></div>
  </div><div class="stack">
   ${r.team==='t0'?`<div class="card pad stack"><div class="eyebrow">Contratto</div><div>${eur(r.sal)} l'anno · fino al ${r.cEnd}${r.nextSal?` · dal ${SEASON+1}: ${eur(r.nextSal)}`:''}</div>${r.leavingTo?`<div class="note">Ha firmato con ${esc(TEAM(r.leavingTo).name)} per il ${SEASON+1}.</div>`:''}
-   <div class="row">${negMode(r)==='renew'?`<button class="btn primary" data-act="neg" data-v="${r.id}">Rinnova</button>`:''}<button class="btn ghost" data-act="release" data-v="${r.id}">Svincola</button></div></div>`:''}
+   <div class="note"><span class="cond" style="--c:${moodLab(moodOf(r)).c}">${moodLab(moodOf(r)).t}</span>${r.promise?` · ruolo promesso: ${PROMISE[r.promise].toLowerCase()} (capitano ${r.capN||0} su ${r.myRaces||0} corse)`:''}${r.listed?` · sul mercato a ${eurk(r.listed)}`:''}</div>
+   <div class="row">${negMode(r)==='renew'?`<button class="btn primary" data-act="neg" data-v="${r.id}">Rinnova</button>`:''}<button class="btn" data-act="sell" data-v="${r.id}">${r.listed?'Prezzo di vendita':'Metti sul mercato'}</button><button class="btn ghost" data-act="release" data-v="${r.id}">Svincola</button></div></div>${focusBlock(r)}`:''}
   <div><div class="eyebrow" style="margin-bottom:4px">Risultati ${SEASON}</div>${res?`<div class="card tbl"><table class="t">${res}</table></div>`:'<div class="note">Nessuna corsa disputata.</div>'}</div>
  </div></div></div>`,'wide');
 }
@@ -309,18 +311,21 @@ function renderMarket(){
  const proj=projected(),all=Object.values(G.riders);
  const filt=r=>(mk.cat==='all'||(mk.cat==='u23'?(r.age<=22||r.junior):(r.age>22&&!r.junior)))&&(mk.role==='all'||r.arch===mk.role);
  let list;
- if(mk.sub==='renew')list=ME().riders.map(RID).filter(r=>r.cEnd===SEASON);
+ if(mk.sub==='bids')list=[];
+ else if(mk.sub==='renew')list=ME().riders.map(RID).filter(r=>r.cEnd===SEASON);
  else if(mk.sub==='fa')list=all.filter(r=>r.team==='fa'&&!r.next);
  else if(mk.sub==='jr')list=all.filter(r=>r.team==='jr'&&!r.next);
  else list=all.filter(r=>G.teams.some(t=>t.id===r.team&&t.tier!=='me')&&!r.next);
  list=list.filter(filt).sort((a,b)=>mk.sub==='jr'?(b.pot-a.pot)||(ovr(b)-ovr(a)):(ovr(b)-ovr(a)));
  const total=list.length;list=list.slice(0,40);
  const news=G.news.filter(n=>n.s===SEASON).slice(0,4);
- const subs=[['renew','Rinnovi'],['fa','Svincolati'],['others','Altre squadre'],['jr','Juniores']];
+ const nb=(G.bids||[]).length;
+ const subs=[['bids',`Offerte ricevute${nb?' ('+nb+')':''}`],['renew','Rinnovi'],['fa','Svincolati'],['others','Altre squadre'],['jr','Juniores']];
  const roles=[['all','Tutti i ruoli']].concat(Object.keys(ARCH).map(k=>[k,ARCH[k].lab]));
  const hint={renew:`Contratti in scadenza nel ${SEASON}. Se non li rinnovi, a fine stagione se ne vanno; dal 1° agosto le altre squadre possono prenderli.`,
   fa:'Senza squadra: si firmano subito, senza indennizzo, a finestra aperta.',
   others:`Acquisto con indennizzo da squadre di categoria pari o inferiore (a finestra aperta). Chi ha il contratto in scadenza si firma a parametro zero dal 1° agosto.${myCat().minSal?` Ingaggio minimo ${myCat().lab}: ${eur(myCat().minSal)} (${eur(myCat().neoSal)} per gli Under 23).`:''}`,
+  bids:'Offerte delle altre squadre per i tuoi corridori. Puoi accettare, rifiutare o chiedere di più. Se rifiuti il salto in una squadra più grande, il corridore si scontenta.',
   jr:`Diciottenni di altre società: si firmano dal 1° agosto e arrivano nel ${SEASON+1} come Under 23 al primo anno.`}[mk.sub];
  $('#view').innerHTML=`<div class="sec">
   <div class="kv kv4"><div><small>Cassa</small><b>${eurk(G.cash)}</b></div><div><small>Saldo a fine stagione</small><b class="${proj<0?'neg':''}">${eurk(proj)}</b></div><div><small>Monte ingaggi</small><b>${eurk(payroll())}</b></div><div><small>Rosa ${w.off?SEASON+1:SEASON}</small><b>${w.off?nextRoster():myRoster()}/${myCat().max}</b></div></div>
@@ -334,69 +339,8 @@ function renderMarket(){
    <select id="mkrole" data-act="mkf" data-k="role" aria-label="Ruolo">${roles.map(([k,l])=>`<option value="${k}" ${mk.role===k?'selected':''}>${l}</option>`).join('')}</select>
    <span class="note">${total} corridori${total>40?' · primi 40 per valore':''}</span></div>
   <div class="note">${hint}</div>
-  <div class="cols">${list.map(r=>mkRow(r)).join('')||'<div class="note">Nessun corridore.</div>'}</div>
+  ${mk.sub==='bids'?`<div class="cols1">${bidsList()}</div>`:`<div class="cols">${list.map(r=>mkRow(r)).join('')||'<div class="note">Nessun corridore.</div>'}</div>`}
  </div>`;
-}
-let NEG=null;
-function openNeg(id){
- const r=RID(id),w=win();
- if(r.team==='acad'){riderSheet(id);return}
- if(r.negW!==w.id){r.negW=w.id;r.neg=0}
- const mode=negMode(r),years=r.age<=24?3:r.age>=31?1:2;
- NEG={id,mode,years,sal:0,fee:0,msg:null,done:false,feeHint:null};
- if(mode){NEG.sal=Math.max(minSalFor(r),Math.round(askSal(r,mode,years)*0.9/1000)*1000);if(mode==='buy')NEG.fee=Math.round(feeAsk(r)*0.85/1000)*1000}
- renderNeg();
-}
-function negCostNow(){const m=NEG.mode;if(m!=='sign'&&m!=='buy')return 0;return NEG.sal*remWeeks()/seasonWeeks()+(m==='buy'?NEG.fee:0)}
-function endYear(y){return SEASON+y-((NEG.mode==='sign'||NEG.mode==='buy')&&!win().off?1:0)}
-function renderNeg(){
- const r=RID(NEG.id),m=NEG.mode,o=ovr(r),w=win(),C=myCat();
- const title={renew:'Rinnovo del contratto',sign:'Ingaggio di uno svincolato',buy:'Acquisto con indennizzo',pre:r.junior?`Contratto da neoprofessionista per il ${SEASON+1}`:`Firma per il ${SEASON+1} a parametro zero`}[m]||'Trattativa non disponibile';
- const cost=negCostNow(),projA=projected(cost);
- const rosterOk=m==='renew'?true:(m==='pre'||w.off)?nextRoster()<C.max:myRoster()<C.max;
- const moneyOk=(m==='sign'||m==='buy')?projA>=0:true;
- const minOk=NEG.sal>=minSalFor(r);
- const blocked=!m||NEG.done||(r.neg||0)>=3||!rosterOk||!moneyOk||!minOk;
- const ask=m?Math.round(askSal(r,m,NEG.years)/1000)*1000:0;
- const pot=r.age<=22||r.junior?'★'.repeat(1+Math.round(r.pot*4))+'☆'.repeat(4-Math.round(r.pot*4)):'—';
- const cur=r.team!=='fa'&&r.team!=='jr'?`<div class="note">${r.team==='t0'?'Contratto attuale':'Contratto con '+esc(TEAM(r.team).name)}: ${eur(r.sal)} l'anno fino al ${r.cEnd}</div>`:'';
- openSheet(sheetHead(title,esc(r.name),`${catOf(r)} · ${ARCH[r.arch].lab} · ${r.age} anni · ${r.nat} · ${esc(TEAM(r.team).name)}`)+
- `<div class="pb wrap"><div class="negbox"><div class="stack">
-   <div class="kv"><div><small>Valore</small><b>${o}</b></div><div><small>W/kg</small><b>${r.wkg.toFixed(2)}</b></div><div><small>Potenziale</small><b style="font-size:16px;color:var(--amber)">${pot}</b></div></div>
-   <div class="card pad">${statRow(r)}</div>${cur}${r.pts?`<div class="note">${SEASON}: ${r.pts} punti, ${r.wins} vittorie, ${r.days} giorni di corsa</div>`:''}
-  </div><div class="stack">
-  ${m?`
-   <div><div class="eyebrow">Ingaggio annuo</div><div class="stepper"><button data-act="negstep" data-v="sal:-1000" aria-label="Meno">−</button><output>${eur(NEG.sal)}</output><button data-act="negstep" data-v="sal:1000" aria-label="Più">+</button></div>
-    <div class="note">Il procuratore chiede circa ${eur(ask)}${r.age<=24?' e preferisce un contratto lungo':r.age>=31?' e preferisce un anno solo':''}.${minSalFor(r)?` Minimo ${C.lab}: ${eur(minSalFor(r))}.`:''}</div></div>
-   <div><div class="eyebrow">Durata</div><div class="seg">${[1,2,3].map(y=>`<button data-act="negyears" data-v="${y}" aria-pressed="${NEG.years===y}">fino al ${endYear(y)}</button>`).join('')}</div></div>
-   ${m==='buy'?`<div><div class="eyebrow">Indennizzo a ${esc(TEAM(r.team).short)}</div><div class="stepper"><button data-act="negstep" data-v="fee:-5000" aria-label="Meno">−</button><output>${eur(NEG.fee)}</output><button data-act="negstep" data-v="fee:5000" aria-label="Più">+</button></div>${NEG.feeHint?`<div class="note">Chiedono circa ${eur(NEG.feeHint)}.</div>`:''}</div>`:''}
-   <div class="note">${m==='sign'||m==='buy'?(w.off?`Pesa sul bilancio dal ${SEASON+1}.`:`Costo su questa stagione: <b>${eur(cost)}</b> · saldo previsto dopo: <b class="${projA<0?'neg':''}">${eur(projA)}</b>`):`Il nuovo ingaggio pesa sul bilancio dal ${SEASON+1}.`}</div>
-   ${!rosterOk?`<div class="msg no">Rosa al completo (${C.max} corridori).</div>`:''}
-   ${!moneyOk?`<div class="msg no">Non ci sono i soldi: il saldo di fine stagione andrebbe sotto zero.</div>`:''}
-  `:`<div class="msg no">${esc(whyNot(r))}.</div>`}
-  ${NEG.msg?`<div class="msg ${NEG.msg.ok?'ok':'no'}">${esc(NEG.msg.t)}</div>`:''}
-  ${(r.neg||0)>0&&!NEG.done&&m?`<div class="note">Tentativi: ${r.neg}/3</div>`:''}
- </div></div></div>
- <div class="pf"><div class="wrap fr"><button class="btn ghost" data-act="close">${NEG.done?'Fatto':'Chiudi'}</button>${m&&!NEG.done?`<button class="btn primary" data-act="negoffer" ${blocked?'disabled':''}>Fai l'offerta</button>`:''}</div></div>`,'wide');
-}
-function negOffer(){
- const r=RID(NEG.id),m=NEG.mode;if(!m||NEG.done)return;
- const tr=TIER_RANK[TEAM(r.team).tier];
- if(tr!==undefined&&tr>myCat().rank&&ovr(r)>=70&&m!=='renew'){r.neg=3;NEG.msg={ok:false,t:`${r.name} non vuole scendere di categoria.`};return renderNeg()}
- if(m==='buy'){const fa=feeAsk(r),q=NEG.fee/fa;
-  if(q<0.85||(q<0.97&&R()<0.5)){r.neg=(r.neg||0)+1;NEG.feeHint=Math.round(fa*rnd(0.98,1.06)/1000)*1000;NEG.msg={ok:false,t:`${TEAM(r.team).name} rifiuta l'indennizzo.`};return renderNeg()}}
- const a=askSal(r,m,NEG.years),q=NEG.sal/a;
- if(q>=1||(q>=0.93&&R()<0.4)){
-  const y=endYear(NEG.years);
-  if(m==='renew'){r.renewed=true;r.nextSal=NEG.sal;r.cEnd=y;NEG.msg={ok:true,t:`Accordo: ${r.name} rinnova fino al ${y}.`};addNews(`${r.name} rinnova fino al ${y}`)}
-  else if(m==='pre'){r.next={team:'t0',sal:NEG.sal,cEnd:y};NEG.msg={ok:true,t:`Accordo: ${r.name} arriva nel ${SEASON+1}, contratto fino al ${y}.`};addNews(`Firmato ${r.name} per il ${SEASON+1}`)}
-  else{if(m==='buy')G.cash-=NEG.fee;const from=TEAM(r.team).name;moveRider(r,'t0');r.sal=NEG.sal;r.cEnd=y;r.bF=0;r.bT=0;r.junior=false;
-   NEG.msg={ok:true,t:`${r.name} è un tuo corridore, contratto fino al ${y}.`};addNews(m==='buy'?`${r.name} arriva da ${from} per ${eurk(NEG.fee)}`:`Ingaggiato lo svincolato ${r.name}`)}
-  NEG.done=true;save();renderTop();toast('Accordo raggiunto','ok');return renderNeg();
- }
- r.neg=(r.neg||0)+1;r.askMul*=1.02;
- NEG.msg={ok:false,t:r.neg>=3?`${r.name} interrompe la trattativa fino alla prossima finestra.`:q<0.8?`Offerta lontana dalle richieste: ${r.name} non la considera.`:`${r.name} chiede di più.`};
- renderNeg();
 }
 function releaseSheet(id){
  const r=RID(id),c=releaseCost(r),ok=myRoster()>myCat().min;
@@ -457,10 +401,8 @@ function renderConvoca(){
 let LIVE=null;
 function launch(mode){
  const race=SEL.race;race.sel=[...SEL.ids];race.cap=SEL.cap;closeSheet();
- const RC=newRC(race);
- if(mode==='sim'){simAsync(RC);return}
- LIVE={RC,S:null,speed:25,playing:true,acc:0,last:0,lastUI:0,zoom:false,course:null};
- startStageLive();
+ const RC=newRC(race);LIVE=null;
+ openTactic(RC,mode);
 }
 function simAsync(RC){
  const n=RC.race.stages.length;busyOn(`Simulazione: ${RC.race.name}`);
@@ -547,11 +489,14 @@ function updateRaceUI(){
    <div style="min-width:0"><div class="gn">${o.name} <span class="gc">${o.rs.length} corridor${o.rs.length===1?'e':'i'}</span></div>${notable?`<div class="gc">${notable}</div>`:''}</div>
    <div class="gg">${o===gd[0]?'—':fmtGap(o.g)}</div>${mine.length?`<div class="mine">${mine.map(x=>`<span class="chip u23">${esc(rname(x))}</span>`).join('')}</div>`:''}</div>`}).join('')+(gd.length>7?`<div class="grp"><span></span><div class="gc">+ altri ${gd.length-7} gruppetti</div><span></span></div>`:'')+(S.finish.length?`<div class="grp"><span class="dot" style="background:var(--ok)"></span><div class="gn">Arrivati <span class="gc">${S.finish.length}</span></div><span></span></div>`:'');
  renderMine(false);
- $('#nextp').textContent=nextPoint(S,lead);
+ let np=nextPoint(S,lead);
+ if(S.ptsLines.length){const j=S.ptsLines.findIndex(k=>k>lead);const top=Object.entries(S.prPts).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([id,p])=>`${rname(S.byId[id])} ${p}`).join(', ');np=(j>=0?`Traguardo a punti ${j+1}/${S.ptsLines.length} tra ${km1(S.ptsLines[j]-lead)} km`:'Ultimo giro: volata finale a punti doppi')+(top?` · Punti: ${top}`:'')}
+ if(S.allow&&S.clusters.length>1){np+=` · Tempo massimo ≈ +${Math.round(S.allow/60)}'`;const late=(S.byTeam.t0||[]).filter(x=>!x.finished&&gapSec(S,x.pos)>S.allow*0.7);if(late.length)np+=` · ${late.map(rname).join(', ')} a rischio!`}
+ $('#nextp').textContent=np;
  $('#tips').innerHTML=dsTips(S).map(t=>`<div class="tip ${t.k}">${esc(t.t)}</div>`).join('');
  $('#radio').innerHTML=S.log.slice(-8).reverse().map(l=>`<div><span class="km">${km1(l.km)}</span><span class="${l.me?'me':''}">${esc(l.txt)}</span></div>`).join('')||'<div><span class="km">—</span><span class="muted">Partenza. Il gruppo è compatto.</span></div>';
 }
-const ORD=[['auto','Auto'],['ruota','Ruota'],['copri','Copri'],['tira','Tira'],['scatta','Scatta'],['scorta','Scorta']];
+const ORD=[['auto','Piano'],['ruota','Ruota'],['copri','Copri'],['tira','Tira'],['scatta','Scatta'],['scorta','Scorta']];
 function renderMine(full){
  const S=LIVE.S;if(!S)return;
  const mine=S.byTeam['t0']||[],box=$('#mine'),capId=S.plans['t0']&&S.plans['t0'].lead&&S.plans['t0'].lead.id;
@@ -614,13 +559,13 @@ function closeRace(){$('#race').hidden=true;$('#race').innerHTML='';document.bod
 function showStageResult(){
  const RC=LIVE.RC,sr=RC.stages[RC.stages.length-1],last=RC.stage>=RC.race.stages.length,t0=sr.res[0].time;
  const rows=(list,timeOf,lim)=>{const top=list.slice(0,lim),mine=list.map((x,i)=>({x,i})).filter(o=>RID(o.x.id).team==='t0'&&o.i>=lim);
-  const tr=(x,i)=>{const r=RID(x.id),t=timeOf(x);return`<tr class="${r.team==='t0'?'me':''}"><td class="n">${i+1}</td><td>${esc(r.name)} <span class="tm">${esc(TEAM(r.team).short)}</span></td><td class="r">${i===0?fmtT(t):fmtGap(t-timeOf(list[0]))}</td></tr>`};
+  const tr=(x,i)=>{const r=RID(x.id),t=timeOf(x);return`<tr class="${r.team==='t0'?'me':''}"><td class="n">${i+1}</td><td>${esc(r.name)} <span class="tm">${esc(TEAM(r.team).short)}</span></td><td class="r">${x.pts!==undefined?x.pts+' pt':i===0?fmtT(t):fmtGap(t-timeOf(list[0]))}</td></tr>`};
   return top.map(tr).join('')+(mine.length?`<tr><td colspan="3" class="tm" style="text-align:center">…</td></tr>`+mine.map(o=>tr(o.x,o.i)).join(''):'')};
  let gcHtml='';
  if(RC.stageRace){const o=gcOrder(RC);gcHtml=`<div><div class="sec-h"><h3>Classifica generale</h3></div><div class="card tbl"><table class="t">${rows(o,x=>x.t,10)}</table></div><div class="jl">${jerLine(jerseys(RC))}</div></div>`}
  const win=RID(sr.res[0].id);
  openSheet(sheetHead(`${esc(RC.race.name)} · ordine d'arrivo`,`Vince ${esc(win.name)}`,`${esc(TEAM(win.team).name)} · ${km1(sr.len)} km in ${fmtT(t0)} · media ${(sr.len/(t0/3600)).toFixed(1).replace('.',',')} km/h`,false)+
- `<div class="pb wrap"><div class="negbox"><div><div class="card tbl"><table class="t">${rows(sr.res,x=>x.time,15)}</table></div></div>${gcHtml}</div></div>
+ `<div class="pb wrap"><div class="negbox"><div><div class="card tbl"><table class="t">${rows(sr.res,x=>x.time,15)}</table></div>${sr.otl&&sr.otl.length?`<div class="msg no" style="margin-top:8px">Fuori tempo massimo (${sr.otl.length}): ${sr.otl.map(id=>esc(RID(id).name)+(RID(id).team==='t0'?' ★':'')).join(', ')}</div>`:''}${sr.rescued?`<div class="note" style="margin-top:8px">${sr.rescued} corridori oltre il tempo massimo, ripescati dalla giuria perché troppi.</div>`:''}</div>${gcHtml}</div></div>
  <div class="pf"><div class="wrap fr">${last?`<button class="btn primary" data-act="racedone">Bilancio della corsa</button>`:`<button class="btn" data-act="simrest">Simula il resto</button><button class="btn primary" data-act="nextstage">Tappa successiva</button>`}</div></div>`,'wide');
  if(win.team==='t0')toast(`Vittoria di ${win.name}!`,'gold');
 }
@@ -751,7 +696,7 @@ function dsTips(S){
   }else if(S.course.surf[gi(S,cap.pos)]||['pave','roubaix','sterrato'].includes(S.type)&&k2g<S.finaleKm&&capOk)tips.push({k:'info',t:`Settori decisivi: sul pavé e sullo sterrato il gruppo si spezza. Stai davanti e prova "Scatta" su un settore o un muro se ${nm(cap)} ha energia.`});
  }
  for(const x of me)if(x.E<22&&x.intent==='pull'){tips.push({k:'warn',t:`${nm(x)} è quasi senza energia (${Math.round(x.E)}%): toglilo dalla testa con "Ruota" o rischia la crisi.`});break}
- if(!tips.length)tips.push({k:'info',t:'Corsa tranquilla: tieni tutti a "Ruota" o "Auto" per risparmiare. Le energie servono nel finale.'});
+ if(!tips.length)tips.push({k:'info',t:'Corsa tranquilla: i corridori seguono il piano. Tienili a "Piano" o "Ruota" per risparmiare: le energie servono nel finale.'});
  return tips.slice(0,3);
 }
 function guideSheet(){
@@ -759,7 +704,7 @@ function guideSheet(){
  const sec=(h,b)=>`<div class="card pad"><h3>${h}</h3><div class="note gtx">${b}</div></div>`;
  openSheet(sheetHead('Guida tattica','Come si legge la corsa','La gara è in pausa. Riprendila con il pulsante play.')+`<div class="pb wrap"><div class="guide">
  ${sec('Le due barre','<b>Energia</b> (verde) è il serbatoio della giornata: cala sempre, di più se tiri o attacchi. Sotto il 30% il corridore va in crisi e perde molti watt.<br><b>Riserva scatti</b> (gialla) è la benzina per andare oltre la soglia: si svuota in pochi minuti di scatto o di salita al limite e si ricarica pedalando tranquillo. Senza riserva non si risponde agli attacchi.')}
- ${sec('Gli ordini','<b>Auto</b>: decide l\'ammiraglia (gregari che tirano per il capitano, capitano che attacca nel finale).<br><b>Ruota</b>: resta coperto in scia, consuma fino al 40% in meno.<br><b>Copri</b>: resta coperto ma risponde subito agli scatti dei rivali nel suo gruppo.<br><b>Tira</b>: va in testa a fare il ritmo; consuma molto ma tiene chiusa la corsa o allunga la fuga.<br><b>Scatta</b>: attacco secco di 1–2 minuti, poi continua a tirare.<br><b>Scorta</b>: il gregario resta con il capitano, lo aspetta se è staccato e lo riporta sotto.')}
+ ${sec('Gli ordini','<b>Piano</b>: segue la tattica decisa prima del via (movimento, zona e momento d\'attacco); se non c\'è un piano decide l\'ammiraglia.<br><b>Ruota</b>: resta coperto in scia, consuma fino al 40% in meno.<br><b>Copri</b>: resta coperto ma risponde subito agli scatti dei rivali nel suo gruppo.<br><b>Tira</b>: va in testa a fare il ritmo; consuma molto ma tiene chiusa la corsa o allunga la fuga.<br><b>Scatta</b>: attacco secco di 1–2 minuti, poi continua a tirare.<br><b>Scorta</b>: il gregario resta con il capitano, lo aspetta se è staccato e lo riporta sotto.')}
  ${sec('Quando attaccare','In <b>salita</b>, negli ultimi 2–3 km prima della cima o dell\'arrivo: in salita la scia conta poco e contano i W/kg.<br>Sui <b>muri e sul pavé</b>: il gruppo si spezza e chi è dietro fatica a rientrare.<br>Dalla <b>fuga</b>, negli ultimi 10 km, per staccare i compagni.<br>In <b>pianura</b> un attacco lontano dall\'arrivo di solito viene ripreso: il gruppo in scia va più veloce di un corridore da solo.<br>Prima di attaccare guarda la riserva scatti: sopra il 60%.')}
  ${sec('Quando coprire','Usa <b>Copri</b> quando scatta un rivale pericoloso: un uomo di classifica vicino in generale o uno scalatore forte nel finale. Non serve coprire chi è lontano in classifica o scatta a 100 km dall\'arrivo: costa riserva e il gruppo lo riprenderà.')}
  ${sec('La fuga','Va via nei primi chilometri: manda un gregario con <b>Scatta</b>. In fuga guadagni visibilità per gli sponsor e punti GPM. Le squadre dei velocisti la tengono a qualche minuto e la chiudono nel finale; nelle tappe dure può arrivare.')}
@@ -816,7 +761,7 @@ document.addEventListener('click',e=>{
   case'guide':guideSheet();break;
   case'close-guide':closeSheet();break;
   case'tt':{const ctx=LIVE.ctx;finishStage(LIVE.RC,simTT(ctx),null,ctx.course);showStageResult();break}
-  case'nextstage':closeSheet();startStageLive();break;
+  case'nextstage':closeSheet();openTactic(LIVE.RC,'live');break;
   case'simrest':{closeSheet();const RC=LIVE.RC;closeRace();simAsync(RC);break}
   case'racedone':{const RC=LIVE.RC;finishMyRace(RC);closeRace();render();showFinal(RC);break}
   case'neg':openNeg(v);break;

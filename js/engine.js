@@ -31,6 +31,7 @@ function suitType(r,t){
  const s=stats(r);
  switch(t){
   case'piatta':return 0.7*s.vol+0.3*s.pia;
+  case'circuito':return 0.6*s.vol+0.4*s.pia;
   case'mossa':return 0.35*s.sal+0.35*s.vol+0.3*s.pia;
   case'collinare':return 0.65*s.sal+0.25*s.vol+0.1*s.res;
   case'montagna':return 0.85*s.sal+0.15*s.res;
@@ -47,7 +48,7 @@ const CLIMB_NAMES=['Colle della Croce','Passo del Lupo','Salita di Montebello','
 const ROAD=t=>t!=='crono'&&t!=='prologo';
 function genCourse(type,seed,km,lf=1){
  const r=mulberry32(seed),ra=(a,b)=>a+(b-a)*r();
- const def={prologo:ra(4.5,7.5),crono:ra(18,36),piatta:ra(168,202),mossa:ra(160,190),collinare:ra(150,178),montagna:ra(138,170),pave:ra(185,215),roubaix:ra(230,258),sterrato:ra(170,200)}[type];
+ const def={circuito:ra(90,110),prologo:ra(4.5,7.5),crono:ra(18,36),piatta:ra(168,202),mossa:ra(160,190),collinare:ra(150,178),montagna:ra(138,170),pave:ra(185,215),roubaix:ra(230,258),sterrato:ra(170,200)}[type];
  let len=km||def*lf;len=type==='prologo'?+len.toFixed(1):Math.round(len);
  const N=Math.round(len*10),g=new Float32Array(N),surf=new Uint8Array(N);
  const amp=['piatta','prologo','roubaix'].includes(type)?0.7:type==='crono'?1.2:type==='pave'?1.0:1.6;
@@ -61,7 +62,11 @@ function genCourse(type,seed,km,lf=1){
  };
  const flat=(from,to)=>{for(let k=Math.max(0,Math.round(from*10));k<Math.min(N,Math.round(to*10));k++)g[k]=ra(-0.4,0.5)};
  const sector=(from,L,kind)=>{for(let k=Math.max(0,Math.round(from*10));k<Math.min(N,Math.round((from+L)*10));k++)surf[k]=kind};
- if(type==='piatta'){if(r()<0.65)put(len*ra(0.3,0.55),ra(2,4),ra(3,4.5));flat(len-30,len)}
+ let pts=null,laps=0;
+ if(type==='circuito'){laps=Math.max(6,Math.round(len/ra(8,12)));const lap=len/laps,NL=Math.round(lap*10),one=new Float32Array(NL),hs=Math.round(NL*ra(0.3,0.6)),hl=Math.round(ra(4,8)),hg=ra(2.5,5);
+  for(let k=0;k<NL;k++)one[k]=ra(-0.5,0.5);for(let k=hs;k<hs+hl&&k<NL;k++)one[k]=hg;for(let k=hs+hl;k<hs+2*hl&&k<NL;k++)one[k]=-hg;
+  for(let i=0;i<N;i++)g[i]=one[i%NL];pts=[];for(let k=2;k<laps;k+=2)pts.push(+(k*lap).toFixed(1))}
+ else if(type==='piatta'){if(r()<0.65)put(len*ra(0.3,0.55),ra(2,4),ra(3,4.5));flat(len-30,len)}
  else if(type==='mossa'){const n=r()<0.5?3:4,last=len-ra(8,22);
   for(let i=0;i<n;i++){const top=i===n-1?last:len*0.22+(last-len*0.22-18)*i/(n-1);put(top,ra(2.5,6),ra(4.5,7))}
   flat(len-3,len)}
@@ -97,9 +102,9 @@ function genCourse(type,seed,km,lf=1){
  const sin=new Float32Array(N),cos=new Float32Array(N),crr=new Float32Array(N);
  for(let i=0;i<N;i++){const th=Math.atan(g[i]/100);sin[i]=Math.sin(th);cos[i]=Math.cos(th);crr[i]=surf[i]===1?0.011:surf[i]===2?0.0085:0.0045}
  let sprintKm=null;
- if(ROAD(type)){sprintKm=Math.round(len*ra(0.52,0.66));for(const c of climbs)if(sprintKm>c.start-1&&sprintKm<c.top+2)sprintKm=Math.round(c.start-3)}
+ if(ROAD(type)&&type!=='circuito'){sprintKm=Math.round(len*ra(0.52,0.66));for(const c of climbs)if(sprintKm>c.start-1&&sprintKm<c.top+2)sprintKm=Math.round(c.start-3)}
  let secN=0;for(let i=1;i<N;i++)if(surf[i]&&!surf[i-1])secN++;
- return{type,len,N,g,alt,sin,cos,crr,surf,secN,climbs,sprintKm,mn,mx};
+ return{type,len,N,g,alt,sin,cos,crr,surf,secN,climbs,sprintKm,mn,mx,pts,laps};
 }
 
 /* ---------- fisica ---------- */
@@ -162,7 +167,42 @@ function createSim(ctx){
   for(const o of sc)o.x.role=o.x===lead?'lead':(o.s>=ls-4||(ctx.stageRace&&o.x.gcGap<90))?'free':'dom';
   S.plans[t]={lead,goal,pullers:[],I:0.85};
  }
+ S.gcLeader=gcLeader&&ctx.stageIdx>0?gcLeader:null;
+ S.ptsLines=c.pts?c.pts.slice():[];S.prPts={};S.prCross=S.ptsLines.map(()=>[]);
+ for(const x of S.riders){x.prElig=x.role!=='dom'||x.r.spr>1350;const t=ctx.tactic&&ctx.tactic[x.id];if(t){x.tac=t;x.win=tacWindow(c,t.zone,t.when);if(x.isMe)x.prElig=t.zone==='sprint'||x.role==='lead'||t.move==='fuga'}}
  return S;
+}
+function tacWindow(c,zone,when){
+ if(!zone||zone==='none'||zone==='sprint')return null;
+ const len=c.len,w3=(a,b)=>{const L=Math.max(0.5,b-a);return when==='start'?[a,a+L*0.35]:when==='mid'?[a+L*0.4,a+L*0.7]:[Math.max(a,b-2.2),b-0.1]};
+ if(zone==='last'||zone.startsWith('climb:')){let cb=zone==='last'?c.climbs[c.climbs.length-1]:c.climbs[+zone.slice(6)];if(!cb)cb=c.climbs[c.climbs.length-1];if(!cb)return w3(len-10,len-0.6);return w3(cb.start,Math.min(cb.top,len-0.2))}
+ if(zone==='k10')return w3(len-10,len-0.6);
+ if(zone==='k25')return w3(len-25,len-0.6);
+ if(zone==='pave'){const secs=[];for(let i=1;i<c.N;i++)if(c.surf[i]&&!c.surf[i-1]&&i/10>len-80)secs.push(i/10);if(!secs.length)return w3(len-25,len-0.6);const s=when==='start'?secs[0]:when==='mid'?secs[Math.floor(secs.length/2)]:secs[secs.length-1];return[s,s+1.5]}
+ return null;
+}
+function planDecide(S,x){
+ const t=x.tac,c=x.cl,main=S.main,k2g=S.len-x.pos;
+ if(x.win&&x.pos>=x.win[0]&&x.pos<=x.win[1]&&(x.tacAtk||0)<2&&x.W>(x.tacAtk?0.35:0.5)*x.Wmax&&x.E>15){x.tacAtk=(x.tacAtk||0)+1;startAttack(S,x,1.3,rnd(45,80));return true}
+ switch(t.move){
+  case'fuga':
+   if(c.idx<main.idx){x.intent='pull';x.I=0.86;return true}
+   if(!S.breakFormed&&x.pos>1&&k2g>40&&x.E>55&&R()<0.07){startAttack(S,x,1.3,rnd(50,90));return true}
+   if(S.breakFormed&&!S.breakCaught&&main.idx>0&&gapSec(S,main.front)<50&&k2g>40&&x.E>55&&R()<0.04){startAttack(S,x,1.3,rnd(50,80));return true}
+   x.intent='sit';return true;
+  case'scorta':escort(S,x);return true;
+  case'tira':{const cap=S.plans[x.team].lead;
+   if(cap&&cap!==x&&!cap.finished){if(cap.cl===c){if(k2g<S.finaleKm+15&&x.E>12){x.intent='pull';x.I=0.93}else x.intent='sit'}else escort(S,x);return true}
+   x.intent='sit';return true}
+  case'copri':coverCheck(S,x);return true;
+  case'vicino':if(gapSec(S,x.pos)>60&&x.E>10){x.intent='pull';x.I=0.95}else x.intent='sit';return true;
+  case'maglia':{const L=S.gcLeader;
+   if(L&&!L.finished&&L!==x&&L.cl.idx<c.idx&&x.E>10){x.intent='pull';x.I=0.95}
+   else if(L&&L.cl===c&&L.intent==='attack'&&x.W>0.2*x.Wmax){x.intent='follow';x.followId=L.id}
+   else x.intent='sit';return true}
+  case'gruppo':if(c.idx>main.idx&&x.E>10){x.intent='pull';x.I=0.93}else x.intent='sit';return true;
+ }
+ return false;
 }
 const gi=(S,pos)=>Math.min(S.course.N-1,Math.max(0,Math.floor(pos*10)));
 function gapSec(S,pos){const i=Math.min(S.passIdx,Math.max(0,Math.floor(pos*10)));const t=S.passT[i];return t<0?0:Math.max(0,S.t-t)}
@@ -233,6 +273,7 @@ function decide(S,x){
  if(x.intent==='attack'){if(S.t<x.atkUntil&&x.W>0.15*x.Wmax)return;x.intent='pull';x.I=0.9;if(x.isMe&&x.order==='scatta')x.order='tira'}
  if(x.intent==='follow'){const t=S.byId[x.followId];if(t&&t.intent==='attack'&&!t.finished)return;x.intent='sit'}
  if(x.isMe&&x.order!=='auto'){applyOrder(S,x);return}
+ if(x.tac&&planDecide(S,x))return;
  aiDecide(S,x);
 }
 function aiDecide(S,x){
@@ -325,6 +366,11 @@ function tick(S){
    else if(x.intent!=='ease'){x.intent='ease';x.easeI=0.5}
   }
  }
+ if(S.ptsLines.length)for(const x of act){
+  const j=S.ptsLines.findIndex(k=>k>x.pos);
+  if(x.prLine!=null&&x.pos>=x.prLine){if(x.intent==='sprint')x.intent='sit';x.prLine=null}
+  if(j>=0&&x.prElig&&S.ptsLines[j]-x.pos<0.25&&x.intent!=='attack'&&x.intent!=='sprint'&&x.W>0.4*x.Wmax&&x.stop<=0&&!(x.isMe&&(x.order==='tira'||x.order==='scorta'))){x.intent='sprint';x.prLine=S.ptsLines[j]}
+ }
  for(const x of act){
   if(x.stop>0||x.finished)continue;
   const i=gi(S,x.pos);let pc=1.2e-6;
@@ -354,6 +400,7 @@ function tick(S){
   const ws=mem.filter(x=>x.intent==='pull');
   let v;const k2g=S.len-cl.front;
   let cI=cl===main?((!S.breakFormed&&k2g>40)?0.69:0.6):0.62;if(gr>3)cI+=0.12;if(c.surf[i])cI+=0.08;
+  if(cl.idx>main.idx&&S.allow){const gp=gapSec(S,cl.front);if(gp>S.allow*0.4)cI+=0.12;if(gp>S.allow*0.7)cI+=0.08}
   let fs=0,ms=0;for(const x of mem){fs+=ftpE(x);ms+=x.m}
   const vC=spd(cI*fs/mem.length,ms/mem.length,s,co,0.32,cr);
   if(ws.length){
@@ -387,6 +434,7 @@ function tick(S){
   const prev=x.pos;x.pos+=x.v*dt/1000;
   if(x.cl&&x.cl.idx<main.idx)x.kmFuga+=x.pos-prev;
   c.climbs.forEach((cb,j)=>{if(prev<cb.top&&x.pos>=cb.top&&cb.top<S.len){S.kom[j].push(x);if(S.kom[j].length===1)slog(S,`GPM ${cb.cat==='HC'?'HC':cb.cat+'ª cat.'} ${cb.name}: primo ${x.r.name} (${tshort(x)})`,x.isMe)}});
+  S.ptsLines.forEach((k,j)=>{if(prev<k&&x.pos>=k){const arr=S.prCross[j];arr.push(x);if(arr.length<=PR_PTS.length){S.prPts[x.id]=(S.prPts[x.id]||0)+PR_PTS[arr.length-1];if(arr.length===1)slog(S,`Traguardo a punti ${j+1}/${S.ptsLines.length}: primo ${x.r.name} (${tshort(x)})`,x.isMe)}}});
   if(c.sprintKm&&prev<c.sprintKm&&x.pos>=c.sprintKm){S.sprint.push(x);if(S.sprint.length===1)slog(S,`Traguardo volante: primo ${x.r.name} (${tshort(x)})`,x.isMe)}
   const ix=Math.min(c.N,Math.floor(Math.min(x.pos,S.len)*10));
   while(S.passIdx<ix){S.passIdx++;const f=x.v>0?clamp((S.passIdx/10-prev)/(x.pos-prev),0,1):1;S.passT[S.passIdx]=S.t+f*dt}
@@ -400,13 +448,19 @@ function tick(S){
    x.wasMain=inM}
  }
  S.t+=dt;S.tick++;
+ if(S.clusters.length&&S.clusters[0].front>15)S.allow=(TIME_CUT[S.type]||0.15)*S.t*S.len/S.clusters[0].front;
  if(S.riders.every(x=>x.finished))S.done=true;
  if(S.t>10*3600){for(const x of S.riders)if(!x.finished){x.finished=true;x.ft=S.t+(S.len-x.pos)*90;S.finish.push(x)}S.done=true}
 }
 function stageResults(S){
  const fin=S.finish.slice().sort((a,b)=>a.ft-b.ft);
  let gt=0,prev=-1e9;
- return fin.map(x=>{if(x.ft-prev>1.0)gt=x.ft;prev=x.ft;return{id:x.id,team:x.team,time:Math.round(gt)}});
+ const res=fin.map(x=>{if(x.ft-prev>1.0)gt=x.ft;prev=x.ft;return{id:x.id,team:x.team,time:Math.round(gt)}});
+ if(S.type==='circuito'){
+  res.forEach((x,i)=>{x.pts=(S.prPts[x.id]||0)+(PR_FIN[i]||0);x.fo=i});
+  res.sort((a,b)=>b.pts-a.pts||a.fo-b.fo);
+ }
+ return res;
 }
 function simTT(ctx){
  const c=ctx.course;
@@ -417,8 +471,8 @@ function simTT(ctx){
  }).sort((a,b)=>a.time-b.time);
 }
 /* Simulazione rapida (statistica) per le corse a cui non partecipi */
-const QN={piatta:7,mossa:6,collinare:4.5,montagna:4,pave:6,roubaix:6.5,sterrato:5,crono:2.5,prologo:3};
-const QS={piatta:0,mossa:2.5,collinare:3.5,montagna:10,pave:8,roubaix:9,sterrato:6,crono:4.5,prologo:1};
+const QN={circuito:7,piatta:7,mossa:6,collinare:4.5,montagna:4,pave:6,roubaix:6.5,sterrato:5,crono:2.5,prologo:3};
+const QS={circuito:0,piatta:0,mossa:2.5,collinare:3.5,montagna:10,pave:8,roubaix:9,sterrato:6,crono:4.5,prologo:1};
 function quickStage(field,type,fat,week){
  const sc=field.map(r=>({r,s:suitType(r,type)*r.form*(1-r.fat/260)*(1-(fat[r.id]||0)/220)*(1+altEff(r,week))+gauss()*QN[type]})).sort((a,b)=>b.s-a.s);
  const top=sc[0].s;let prev=0;

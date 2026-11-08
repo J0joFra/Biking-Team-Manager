@@ -43,6 +43,7 @@ function jrFinish(RC){
  const race=RC.race,res=RC.stages[0].res,pos=id=>res.findIndex(x=>x.id===id)+1;
  const js=RC.field.filter(r=>r.team==='acad').map(r=>({r,p:pos(r.id)||res.length+1})).sort((a,b)=>a.p-b.p);
  for(const{r,p}of js){
+  palmRec(r,p,race.name,'MJ');
   r.res.push({name:race.name,cls:'MJ',pos:p,n:res.length,w:p===1?1:0});
   r.wkg=+(r.wkg+(RC.watched?0.012:0.006)*(p<=10?1.5:1)).toFixed(4);
   r.days=(r.days||0)+1;

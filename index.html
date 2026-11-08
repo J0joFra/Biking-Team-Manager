@@ -382,6 +382,22 @@ table.t{width:100%;border-collapse:collapse;font-size:14px}
 .bidrow .nm{font-weight:700}
 
 .teamseg{margin:12px 0}
+.menu{display:flex;flex-direction:column;gap:18px;padding-block:28px}
+.menuL{display:flex;flex-direction:column;gap:10px}
+.menuL h1{font-size:60px;font-weight:800;line-height:.9}
+.menuL p{margin:0;max-width:52ch;font-size:16px}
+.menuR{display:flex;flex-direction:column;gap:10px}
+.mbtn{display:flex;gap:12px;align-items:center;padding:14px 16px;text-align:left;width:100%;transition:transform .08s}
+.mbtn:active{transform:scale(.99)}
+.mbtn b{display:block;font-family:var(--f-display);font-size:22px;font-weight:800;letter-spacing:.02em;text-transform:uppercase}
+.mbtn small{display:block;color:var(--muted);font-size:13.5px}
+.mbtn.hi{border:2px solid var(--accent);background:var(--accent-soft)}
+.clpick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:5px}
+.clpick button{display:flex;flex-direction:column;gap:1px;text-align:left;padding:8px 10px;border-radius:10px;background:var(--sunk);border:2px solid transparent}
+.clpick button b{font-family:var(--f-display);font-size:14px;text-transform:uppercase;letter-spacing:.03em}
+.clpick button small{font-size:11.5px;color:var(--muted)}
+.clpick button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+
 .banner.nat{background:var(--amber-soft)}
 .titles{display:flex;gap:5px;flex-wrap:wrap}
 .pb select{font:inherit;font-size:14px;padding:8px 9px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);max-width:100%}
@@ -461,6 +477,8 @@ table.t{width:100%;border-collapse:collapse;font-size:14px}
  .guide{grid-template-columns:repeat(2,minmax(0,1fr))}
  .tacgrid{grid-template-columns:minmax(0,0.8fr) minmax(0,1.2fr);align-items:start}
  .futgrid{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+ .menu{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px;align-items:center;padding-block:20px}
+ .menuL h1{font-size:72px}
  .race{overflow:hidden;display:flex;flex-direction:column;padding-bottom:0}
  .race-grid{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr)}
  .rcol{overflow-y:auto;min-height:0}
@@ -502,5 +520,7 @@ table.t{width:100%;border-collapse:collapse;font-size:14px}
 <script src="js/national.js"></script>
 <script src="js/juniors.js"></script>
 <script src="js/weather.js"></script>
+<script src="js/palmares.js"></script>
+<script src="js/menu.js"></script>
 <script src="js/roster.js"></script>
 <script src="js/ui.js"></script>

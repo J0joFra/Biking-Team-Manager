@@ -36,6 +36,8 @@ Apri `index.html` in un browser (oppure via GitHub Pages). Il salvataggio resta 
 - `js/national.js` — nazionali, convocazioni, Europei e Mondiali
 - `js/juniors.js` — gare juniores dal vivo per la scuola
 - `js/weather.js` — meteo, cadute di gruppo e ritiri per maltempo
+- `js/palmares.js` — palmarès dei corridori e della squadra
+- `js/menu.js` — menu iniziale, guida e impostazioni
 - `js/ui.js` — interfaccia
 
 Squadre e corridori sono inventati. I nomi delle corse sono quelli reali e servono solo come riferimento in un progetto amatoriale.

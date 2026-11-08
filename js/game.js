@@ -449,7 +449,7 @@ function negMode(r){
  const w=win();
  if(r.team==='t0')return(r.cEnd===SEASON&&!r.renewed&&!r.leavingTo)?'renew':null;
  if(r.next||r.team==='acad')return null;
- if(r.team==='jr')return w.next?'pre':null;
+ if(r.team==='jr')return r.age>=18?'pre':null;
  if(r.team==='fa')return w.now?'sign':null;
  const t=TEAM(r.team);
  if(w.next&&r.cEnd===SEASON)return'pre';
@@ -461,7 +461,7 @@ function whyNot(r){
  if(r.team==='t0')return r.leavingTo?'Ha già firmato altrove':r.renewed?'Già rinnovato':`Contratto fino al ${r.cEnd}`;
  if(r.team==='acad')return'È nella tua scuola juniores';
  if(r.next)return r.next.team==='t0'?'Già firmato per te':'Ha già un accordo altrove';
- if(r.team==='jr')return'Gli juniores si firmano dal 1° agosto';
+ if(r.team==='jr')return'Gli juniores si firmano dai 18 anni';
  if(r.team==='fa')return'Finestra di mercato chiusa';
  const t=TEAM(r.team);
  if(t.tier==='wt'||TIER_RANK[t.tier]>myCat().rank)return`Squadra di categoria superiore: firmabile solo a contratto in scadenza`;

@@ -67,8 +67,8 @@ function genCourse(type,seed,km,lf=1){
   for(let k=0;k<NL;k++)one[k]=ra(-0.5,0.5);for(let k=hs;k<hs+hl&&k<NL;k++)one[k]=hg;for(let k=hs+hl;k<hs+2*hl&&k<NL;k++)one[k]=-hg;
   for(let i=0;i<N;i++)g[i]=one[i%NL];pts=[];for(let k=2;k<laps;k+=2)pts.push(+(k*lap).toFixed(1))}
  else if(type==='piatta'){if(r()<0.65)put(len*ra(0.3,0.55),ra(2,4),ra(3,4.5));flat(len-30,len)}
- else if(type==='mossa'){const n=r()<0.5?3:4,last=len-ra(8,22);
-  for(let i=0;i<n;i++){const top=i===n-1?last:len*0.22+(last-len*0.22-18)*i/(n-1);put(top,ra(2.5,6),ra(4.5,7))}
+ else if(type==='mossa'){const n=r()<0.5?4:5,last=len-ra(6,15);
+  for(let i=0;i<n;i++){const fin=i>=n-2,top=i===n-1?last:i===n-2?last-ra(14,24):len*0.22+(last-30-len*0.22)*i/Math.max(1,n-3);put(top,fin?ra(2,4.5):ra(2.5,6),fin?ra(5.5,8.5):ra(4.5,7))}
   flat(len-3,len)}
  else if(type==='collinare'){put(len*0.35,ra(3,6),ra(4.5,6.5));put(len*0.62,ra(3,6),ra(4.5,6.5));
   const L=ra(1.5,3.2);flat(len-L-10,len-L);put(len,L,ra(6.5,9.5),false)}
@@ -240,7 +240,7 @@ function updatePlans(S){
   }else if(p.goal==='hill'){
    if(ahead&&!hasAhead){const allow=k2g>80?300:k2g*2.4+10;if(gap>allow){k=2;I=0.9}}
    if(k2g<S.finaleKm+5&&(!hasAhead||!ahead)){k=Math.max(k,1);I=Math.max(I,0.93)}
-   if(onClimb&&k2g<S.finaleKm){k=Math.max(k,2);I=1.0}
+   if(onClimb&&k2g<S.finaleKm+(S.type==='mossa'?25:0)){k=Math.max(k,2);I=k2g<S.finaleKm?1.02:0.98}
   }
   if(!k)continue;
   const doms=S.byTeam[t].filter(y=>y!==lead&&!y.finished&&y.cl===main&&y.E>12&&y.role!=='free'&&!(y.isMe&&y.order!=='auto')).sort((a,b)=>b.E-a.E);
@@ -317,7 +317,7 @@ function aiDecide(S,x){
   if(S.breakFormed&&!S.breakCaught&&main.idx>0&&gapSec(S,main.front)<75&&k2g>45&&x.role!=='lead'&&x.E>65&&R()<0.0015){startAttack(S,x,1.3,rnd(50,90));return}
   if((x.role==='lead'||x.role==='free')&&x.W>0.55*x.Wmax&&x.E>22){
    let p=0;const st=S.type;
-   if(hard&&k2g<S.finaleKm)p=0.03*clamp(Math.pow(x.r.wkg/(S.mainWkg||5.3),8),0.15,3)*(S.course.surf[i]?clamp(x.r.mass/68,0.7,1.3):1);
+   if(hard&&k2g<S.finaleKm)p=(S.type==='mossa'||S.type==='collinare'?0.045:0.03)*clamp(Math.pow(x.r.wkg/(S.mainWkg||5.3),8),0.15,3)*(S.course.surf[i]?clamp(x.r.mass/68,0.7,1.3):1);
    else if(!hard&&k2g<7&&st!=='piatta'&&x.r.arch!=='velocista'&&k2g>0.6)p=0.01;
    else if(st==='piatta'&&k2g<4&&k2g>1&&x.r.arch!=='velocista')p=0.003;
    if(S.stageRace&&x.gcGap>300&&hard)p*=0.4;

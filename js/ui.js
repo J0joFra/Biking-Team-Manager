@@ -114,7 +114,7 @@ function mailSheet(id){
 }
 
 /* ---------- calendario ---------- */
-const CALF=[['acc','Accessibili'],['reg','Iscritte'],['all','Tutte'],['ita','Italia'],['u23','Under 23'],['wt','WorldTour']];
+const CALF=[['acc','Accessibili'],['reg','Iscritte'],['all','Tutte'],['ita','Italia'],['u23','Under 23'],['wt','WorldTour'],['done','Concluse']];
 function raceState(r){
  if(r.status==='done')return r.result&&r.result.mine?{cls:'done me',t:`${ord(r.result.mine[0].pos)} ${esc(r.result.mine[0].name.split(' ').slice(-1)[0])}`}:r.result&&r.result.winner?{cls:'done',t:esc(r.result.winner)}:r.result&&r.result.junior?{cls:'done',t:`Scuola: ${ord(r.result.junior[0].pos)}`}:{cls:'done',t:'Conclusa'};
  if(r.status==='reg')return{cls:'reg',t:`${ic('check',14)} Iscritto`};
@@ -126,18 +126,19 @@ function raceState(r){
 }
 function renderCal(){
  const f=G.calf||'acc';
- const flt=r=>f==='all'?true:f==='reg'?r.status==='reg'||(r.status==='done'&&r.result&&r.result.mine):f==='ita'?r.ctry==='ITA':f==='u23'?(r.tier==='u23'||r.flag==='u23'||r.tier==='jun'):f==='wt'?['gt','mon','uwt1','uwt2'].includes(r.tier):(access(r).ok||r.status==='reg');
- const list=G.races.filter(flt).sort((a,b)=>a.w-b.w||TIER_ORDER[a.tier]-TIER_ORDER[b.tier]);
- let html=`<div class="toolbar"><div class="chips">${CALF.map(([k,l])=>`<button class="fchip" data-act="calf" data-v="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div><span class="note">${list.length} corse</span></div>`;
+ const past=r=>r.status==='done'||r.w<G.week||G.phase!=='season';
+ const flt=r=>f==='done'?past(r)&&r.status==='done':past(r)?false:f==='all'?true:f==='reg'?r.status==='reg':f==='ita'?r.ctry==='ITA':f==='u23'?(r.tier==='u23'||r.flag==='u23'||r.tier==='jun'):f==='wt'?['gt','mon','uwt1','uwt2'].includes(r.tier):(access(r).ok||r.status==='reg');
+ const list=G.races.filter(flt).sort((a,b)=>f==='done'?(b.w-a.w||TIER_ORDER[a.tier]-TIER_ORDER[b.tier]):(a.w-b.w||TIER_ORDER[a.tier]-TIER_ORDER[b.tier]));
+ let html=`<div class="toolbar"><div class="chips">${CALF.map(([k,l])=>`<button class="fchip" data-act="calf" data-v="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div><span class="note">${list.length} corse${f==='done'?' concluse':''}</span></div>${!list.length?`<div class="note">${f==='done'?'Nessuna corsa conclusa finora.':G.phase!=='season'?'Stagione finita: il nuovo calendario arriva con la prossima stagione.':'Nessuna corsa in programma con questo filtro.'}</div>`:''}`;
  let lw=-1;html+='<div class="callist">';
  for(const r of list){
   if(r.w!==lw){lw=r.w;html+=`<div class="wk ${r.w===G.week?'now':''}" ${r.w===G.week?'id="wknow"':''}><b>Sett. ${r.w}</b> ${weekLab(r.w)}${r.w===G.week?' · <span class="chip u23">adesso</span>':''}</div>`}
   const s=raceState(r);
-  html+=`<button class="rrow ${r.w<G.week?'past':''}" data-act="race" data-v="${r.id}"><div class="rmain"><div class="rn">${esc(r.name)}</div><div class="mt">${raceChips(r)}</div></div><span class="pill ${s.cls}">${s.t}</span></button>`;
+  html+=`<button class="rrow ${f==='done'?'past':''}" data-act="race" data-v="${r.id}"><div class="rmain"><div class="rn">${esc(r.name)}</div><div class="mt">${raceChips(r)}</div></div><span class="pill ${s.cls}">${s.t}</span></button>`;
  }
  html+='</div>';
  $('#view').innerHTML=html;
- const now=$('#wknow');if(now&&G.calf!=='reg')now.scrollIntoView({block:'start'});
+ window.scrollTo(0,0);
 }
 function profileSVG(c,w=260,h=46){
  const n=60,pts=[];let mn=c.mn,mx=Math.max(c.mx,c.mn+150);
@@ -192,29 +193,6 @@ function contractLine(r){
  else if(r.cEnd===SEASON)tag='<span class="chip red">In scadenza</span>';
  return`<span>${eurk(r.sal)}/anno · fino al ${r.cEnd}</span>${tag}`;
 }
-function riderCard(r){
- const c=condOf(r),ae=altEff(r,G.week),camp=inCamp(r,G.week,G.week);
- return`<button class="card rider" data-act="rider" data-v="${r.id}">
-  <div class="ovr ${ovr(r)>=75?'hi':''}">${ovr(r)}</div>
-  <div style="min-width:0"><div class="nm">${esc(r.name)}</div>
-   <div class="tags"><span class="chip ${r.age<=22?'u23':''}">${catOf(r)}</span>${r.neo?'<span class="chip">1° anno</span>':''}<span>${ARCH[r.arch].lab} · ${r.age} anni · ${r.nat}</span></div></div>
-  <div class="rr2"><span class="cond" style="--c:${c.c}">${c.t}</span><small>${r.days} gg</small></div>
-  ${statRow(r)}
-  <div class="cline">${injured(r)?`<span class="chip red">Infortunato fino al ${weekLab(r.injUntil)}</span>`:r.injRec&&G.week<=r.injRec?'<span class="chip amber">Rientro: recupero lento</span>':''}${recDays(r)?`<span class="chip">Recupero ~${recDays(r)} gg</span>`:''}${camp?'<span class="chip amber">In altura</span>':''}${ae>0?`<span class="chip amber">Altura +${(ae*100).toFixed(1)}%</span>`:''}${contractLine(r)}</div>
- </button>`;
-}
-function renderTeam(){
- const rs=ME().riders.map(RID);
- const u=rs.filter(r=>r.age<=22).sort((a,b)=>ovr(b)-ovr(a)),e=rs.filter(r=>r.age>22).sort((a,b)=>ovr(b)-ovr(a));
- const inc=incoming();
- const ms=mainSponsor();
- $('#view').innerHTML=`<div class="teamhead">${myJersey(46)}<div style="min-width:0"><div class="eyebrow">Nome ufficiale ${SEASON} · ${myCat().lab} · ${esc(G.sede.city)}</div><h2 class="teamname">${ms?`<span class="msp">${esc(ms.name)}</span> `:''}${esc(G.name)}</h2></div></div>
- <div class="kv kv4"><div><small>Corridori</small><b>${rs.length}/${myCat().max}</b></div><div><small>Monte ingaggi</small><b>${eurk(payroll())}</b></div><div><small>Giorni di gara</small><b>${rs.reduce((a,r)=>a+r.days,0)}</b></div><div><small>Vittorie</small><b>${rs.reduce((a,r)=>a+r.wins,0)}</b></div></div>
-  <div class="note" style="margin:8px 0 14px">SAL salita · PIA pianura · CRO cronometro · VOL volata · RES resistenza · REC recupero. Programma consigliato 50–70 giorni di corsa.</div>
-  <div class="sec"><div class="sec-h"><h2>Under 23</h2><span class="eyebrow">19–22 anni</span></div><div class="cols">${u.map(riderCard).join('')||'<div class="note">Nessun Under 23.</div>'}</div></div>
-  <div class="sec"><div class="sec-h"><h2>Elite</h2><span class="eyebrow">23 anni e oltre</span></div><div class="cols">${e.map(riderCard).join('')}</div></div>
-  ${inc.length?`<div class="sec"><div class="sec-h"><h2>In arrivo nel ${SEASON+1}</h2></div><div class="cols">${inc.map(r=>mkRow(r,'inc')).join('')}</div></div>`:''}`;
-}
 function riderSheet(id){
  const r=RID(id);if(!r)return;
  const c=condOf(r),ftp=Math.round(r.mass*r.wkg);
@@ -231,7 +209,7 @@ function riderSheet(id){
  </div><div class="stack">
   ${r.team==='t0'?`<div class="card pad stack"><div class="eyebrow">Contratto</div><div>${eur(r.sal)} l'anno · fino al ${r.cEnd}${r.nextSal?` · dal ${SEASON+1}: ${eur(r.nextSal)}`:''}</div>${r.leavingTo?`<div class="note">Ha firmato con ${esc(TEAM(r.leavingTo).name)} per il ${SEASON+1}.</div>`:''}
    <div class="note"><span class="cond" style="--c:${moodLab(moodOf(r)).c}">${moodLab(moodOf(r)).t}</span>${r.promise?` · ruolo promesso: ${PROMISE[r.promise].toLowerCase()} (capitano ${r.capN||0} su ${r.myRaces||0} corse)`:''}${r.listed?` · sul mercato a ${eurk(r.listed)}`:''}</div>
-   <div class="row">${negMode(r)==='renew'?`<button class="btn primary" data-act="neg" data-v="${r.id}">Rinnova</button>`:''}<button class="btn" data-act="sell" data-v="${r.id}">${r.listed?'Prezzo di vendita':'Metti sul mercato'}</button><button class="btn ghost" data-act="release" data-v="${r.id}">Svincola</button></div></div>${focusBlock(r)}`:''}
+   <div class="row">${negMode(r)==='renew'?`<button class="btn primary" data-act="neg" data-v="${r.id}">Rinnova</button>`:''}<button class="btn" data-act="sell" data-v="${r.id}">${r.listed?'Prezzo di vendita':'Metti sul mercato'}</button><button class="btn ghost" data-act="release" data-v="${r.id}">Svincola</button></div></div>${roleBlock(r)}${focusBlock(r)}`:''}
   <div><div class="eyebrow" style="margin-bottom:4px">Risultati ${SEASON}</div>${res?`<div class="card tbl"><table class="t">${res}</table></div>`:'<div class="note">Nessuna corsa disputata.</div>'}</div>
  </div></div></div>`,'wide');
 }
@@ -376,8 +354,12 @@ function selSize(race){return race.tier==='nc'?8:TIERS[race.tier].size}
 function suggest(){
  const race=SEL.race;
  const el=ME().riders.map(RID).filter(r=>!whyCant(r,race));
- const sc=el.map(r=>({r,s:avgSuit(r,race)-r.fat*0.45-(r.days>65?12:0)+altEff(r,race.w)*300})).sort((a,b)=>b.s-a.s);
- SEL.ids=new Set(sc.slice(0,selSize(race)).map(o=>o.r.id));SEL.cap=sc[0]?sc[0].r.id:null;
+ autoRoles();
+ const sc=el.map(r=>({r,s:avgSuit(r,race)-r.fat*0.45-(r.days>65?12:0)+altEff(r,race.w)*300+roleBonus(r,race)})).sort((a,b)=>b.s-a.s);
+ const pickd=sc.slice(0,selSize(race)).map(o=>o.r);
+ SEL.ids=new Set(pickd.map(r=>r.id));
+ const sp=raceSpec(race),capC=pickd.filter(r=>r.role==='cap'&&r.spec===sp).sort((a,b)=>avgSuit(b,race)-avgSuit(a,race))[0]||pickd.filter(r=>r.role==='cap').sort((a,b)=>avgSuit(b,race)-avgSuit(a,race))[0]||pickd.slice().sort((a,b)=>avgSuit(b,race)-avgSuit(a,race))[0];
+ SEL.cap=capC?capC.id:null;
 }
 function renderConvoca(){
  const race=SEL.race,size=selSize(race),min=race.tier==='nc'?1:4;
@@ -388,11 +370,11 @@ function renderConvoca(){
  `<div class="pb"><div class="wrap"><div class="card pickgrid">${rs.map(r=>{
    const why=whyCant(r,race),on=SEL.ids.has(r.id),c=condOf(r),fit=Math.round(avgSuit(r,race)),ae=altEff(r,race.w);
    return`<div class="pick ${why?'off':''}"><input type="checkbox" id="p_${r.id}" data-act="pick" data-v="${r.id}" ${on?'checked':''} ${why?'disabled':''} aria-label="Convoca ${esc(r.name)}">
-    <label for="p_${r.id}" style="min-width:0"><div class="nm">${esc(r.name)} <span class="chip ${r.age<=22?'u23':''}">${catOf(r)}</span></div>
+    <label for="p_${r.id}" style="min-width:0"><div class="nm">${esc(r.name)} <span class="chip ${r.age<=22?'u23':''}">${catOf(r)}</span>${r.role?`<span class="chip ${r.role==='cap'?'amber':''}">${ROLES[r.role].lab}${(r.role==='cap'||r.role==='luog')&&r.spec?' · '+SPEC[r.spec]:''}</span>`:''}</div>
      <div class="sm"><span>${ARCH[r.arch].lab}</span><span class="cond" style="--c:${c.c}">${c.t}</span>${ae>0?`<span class="chip amber">altura +${(ae*100).toFixed(1)}%</span>`:''}<span>fatica ${Math.round(r.fat)}${recDays(r)?` · recupero ${recDays(r)} gg`:''}</span><span${r.days>65?' style="color:var(--danger)"':''}>${r.days} gg</span>${why?`<span>· ${why}</span>`:''}</div>
      <div class="sm"><span>Adatto</span><div class="bar fit"><i style="width:${fit}%"></i></div><span class="mono">${fit}</span></div></label>
     <button class="star" data-act="cap" data-v="${r.id}" aria-pressed="${SEL.cap===r.id}" ${!on?'disabled':''} title="Capitano">C</button></div>`}).join('')}</div>
-  <div class="note" style="margin-top:8px">C = capitano: la squadra lavora per lui. Puoi cambiare gli ordini in corsa.</div></div></div>
+  <div class="note" style="margin-top:8px">C = capitano: la squadra lavora per lui. La proposta del DS segue i ruoli: per questa corsa (${SPEC[raceSpec(race)].toLowerCase()}) propone il capitano con quella specialità.</div></div></div>
  <div class="pf"><div class="wrap fr"><b class="cnt ${!ok?'neg':''}">${n}/${size}</b><button class="btn ghost" data-act="suggest">Proposta DS</button>${n<min?`<button class="btn ghost" data-act="forfeit">Non partire</button>`:''}<span style="flex:1"></span>
   <button class="btn" data-act="go" data-v="sim" ${ok?'':'disabled'}>Simula</button><button class="btn primary" data-act="go" data-v="live" ${ok?'':'disabled'}>In corsa</button></div></div>`,'wide');
 }

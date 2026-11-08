@@ -381,6 +381,47 @@ table.t{width:100%;border-collapse:collapse;font-size:14px}
 .bidrow .row{grid-column:1/-1;justify-content:flex-end}
 .bidrow .nm{font-weight:700}
 
+.teamseg{margin:12px 0}
+.pb select{font:inherit;font-size:14px;padding:8px 9px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);max-width:100%}
+.rc{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px 12px;width:100%;text-align:left}
+.rc.big{border-width:2px;border-color:var(--amber)}
+.rc .ovr{width:48px;height:48px;flex-direction:column;line-height:1}
+.rc .ovr .tr{font-size:11px;font-weight:700;margin-top:2px}
+.tr.up{color:var(--ok)}.ovr.hi .tr.up{color:var(--on-accent)}.tr.down{color:var(--danger)}
+.rcm{min-width:0;display:flex;flex-direction:column;gap:3px}
+.rcm .nm{font-weight:700;font-size:15.5px}
+.kst{display:flex;gap:10px;font-size:12.5px;color:var(--muted)}
+.kst b{font-family:var(--f-display);font-size:15px;color:var(--ink)}
+.rcr{text-align:right;font-size:12.5px;display:flex;flex-direction:column;gap:2px;align-items:flex-end;white-space:nowrap}
+.rcr small{color:var(--muted)}
+.chip.spec{background:var(--ink);color:var(--bg)}
+.covgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.cov{display:flex;flex-direction:column;gap:2px;padding:8px;border-radius:10px;background:var(--sunk);min-width:0}
+.cov small{font-family:var(--f-display);font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cov b{font-family:var(--f-display);font-size:22px;line-height:1}
+.cov span{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cov.weak{background:color-mix(in srgb,var(--danger) 14%,transparent)}.cov.weak .bar>i{background:var(--danger)}
+.cov.strong{background:var(--ok-soft)}.cov.strong .bar>i{background:var(--ok)}
+.rolesec{margin-top:14px;margin-bottom:6px}
+.rolesec .sec-h{flex-wrap:wrap}
+.cnt2{font-size:16px;color:var(--muted);margin-left:4px}
+.rolepick{display:flex;flex-wrap:wrap;gap:5px}
+.rolepick button{padding:7px 10px;border-radius:9px;background:var(--sunk);font-family:var(--f-display);font-weight:700;font-size:13.5px;letter-spacing:.03em;text-transform:uppercase}
+.rolepick button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.futgrid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+@media (max-width:480px){.covgrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.prow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:2px 10px;align-items:center;padding:8px 0;border-top:1px solid var(--line);width:100%;text-align:left}
+.prow:first-of-type{border-top:0}
+.prow .nm{font-weight:700}
+.prow .muted{grid-column:1;grid-row:2;font-size:12.5px}
+.prow .stars{color:var(--amber);font-size:13px}
+.prow .pv{font-family:var(--f-display);font-size:17px;white-space:nowrap}
+.prow .up{color:var(--ok)}
+.prow .bar2{grid-column:2/-1;grid-row:2;display:flex;height:6px;border-radius:3px;background:var(--sunk);overflow:hidden;min-width:90px}
+.bar2 i{display:block;height:100%;background:var(--accent)}.bar2 i.g{background:var(--ok);opacity:.55}
+.prow .chip{grid-column:1/-1;justify-self:start}
+.trd{font-family:var(--f-body);font-size:12px}.trd.up{color:var(--ok)}.trd.down{color:var(--danger)}.trd.flat{color:var(--muted)}
+
 @media (min-width:560px){.hide-s{display:inline}.hud .hide-s{display:block}}
 
 /* ORIZZONTALE: barra laterale, due colonne */
@@ -417,6 +458,7 @@ table.t{width:100%;border-collapse:collapse;font-size:14px}
  .rsgrid{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);align-items:start}
  .guide{grid-template-columns:repeat(2,minmax(0,1fr))}
  .tacgrid{grid-template-columns:minmax(0,0.8fr) minmax(0,1.2fr);align-items:start}
+ .futgrid{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
  .race{overflow:hidden;display:flex;flex-direction:column;padding-bottom:0}
  .race-grid{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr)}
  .rcol{overflow-y:auto;min-height:0}
@@ -455,4 +497,5 @@ table.t{width:100%;border-collapse:collapse;font-size:14px}
 <script src="js/training.js"></script>
 <script src="js/tactics.js"></script>
 <script src="js/transfers.js"></script>
+<script src="js/roster.js"></script>
 <script src="js/ui.js"></script>

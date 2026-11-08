@@ -24,7 +24,7 @@ function stats(r){
   pia:Math.round(clamp(45+(ftp-320)/120*47,1,99)),
   cro:Math.round(clamp(45+(ftp/r.tt-1250)/700*47,1,99)),
   vol:Math.round(clamp(35+(r.spr-900)/800*57,1,99)),
-  res:r.endu,rec:r.rec
+  res:Math.round(r.endu),rec:Math.round(r.rec)
  };
 }
 function suitType(r,t){

@@ -29,6 +29,7 @@ Apri `index.html` in un browser (oppure via GitHub Pages). Il salvataggio resta 
 - `js/training.js` — allenamenti settimanali
 - `js/tactics.js` — tattica pre-gara
 - `js/transfers.js` — trattative, offerte ricevute, cessioni e morale
+- `js/roster.js` — ruoli, gerarchie e prospetti della squadra
 - `js/ui.js` — interfaccia
 
 Squadre e corridori sono inventati. I nomi delle corse sono quelli reali e servono solo come riferimento in un progetto amatoriale.

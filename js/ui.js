@@ -108,7 +108,7 @@ function renderHome(){
    ${recent.length?`<div class="card pad"><div class="sec-h"><h3>Risultati recenti</h3></div>${recent.map(r=>`<button class="recent" data-act="race" data-v="${r.id}"><span class="chip cls">${r.lab}</span><span class="rn">${esc(r.name)}</span><span class="muted">${esc(r.result.winner)}</span></button>`).join('')}</div>`:''}
   </div></div>`;
 }
-function raceChips(r){return`<span class="chip cls">${r.lab}</span><span class="chip">${r.ctry}</span>${r.tier==='u23'||r.flag==='u23'?'<span class="chip u23">U23</span>':''}<span class="muted">${r.stages.length>1?r.stages.length+' tappe':TYPE_LAB[r.stages[0].t]+(r.stages[0].km?' · '+r.stages[0].km+' km':'')}</span>${stBars(r)}`}
+function raceChips(r){return`<span class="chip cls">${r.lab}</span>${r.status==='reg'&&r.mode==='singles'?'<span class="chip amber">Singoli</span>':''}<span class="chip">${r.ctry}</span>${r.tier==='u23'||r.flag==='u23'?'<span class="chip u23">U23</span>':''}<span class="muted">${r.stages.length>1?r.stages.length+' tappe':TYPE_LAB[r.stages[0].t]+(r.stages[0].km?' · '+r.stages[0].km+' km':'')}</span>${stBars(r)}`}
 function stBars(r){return`<span class="stbars" aria-hidden="true">${r.stages.slice(0,21).map(s=>`<i class="${ROAD(s.t)?'':'tt'} ${['pave','roubaix','sterrato'].includes(s.t)?'pv':''}" style="height:${TYPE_H[s.t]}px"></i>`).join('')}</span>`}
 function mailSheet(id){
  const m=G.inbox.find(x=>x.id===id);if(!m)return;m.read=true;save();
@@ -119,7 +119,7 @@ function mailSheet(id){
 const CALF=[['acc','Accessibili'],['reg','Iscritte'],['all','Tutte'],['ita','Italia'],['u23','Under 23'],['wt','WorldTour'],['naz','Nazionali'],['done','Concluse']];
 function raceState(r){
  if(r.status==='done')return r.result&&r.result.mine?{cls:'done me',t:`${ord(r.result.mine[0].pos)} ${esc(r.result.mine[0].name.split(' ').slice(-1)[0])}`}:r.result&&r.result.winner?{cls:'done',t:esc(r.result.winner)}:r.result&&r.result.junior?{cls:'done',t:`Scuola: ${ord(r.result.junior[0].pos)}`}:{cls:'done',t:'Conclusa'};
- if(r.status==='reg')return{cls:'reg',t:`${ic('check',14)} Iscritto`};
+ if(r.status==='reg')return{cls:'reg',t:`${ic('check',14)} ${r.mode==='singles'?'Singoli':'Iscritto'}`};
  if(r.tier==='naz'){const n=(G.callups||[]).filter(c=>c.status==='accepted'&&c.keys.includes(r.key)).length;return{cls:n?'reg':'inv',t:n?`${n} convocat${n>1?'i':'o'}`:'Nazionali'}}
  if(r.status==='declined')return{cls:'no',t:'Invito rifiutato'};
  const a=access(r);
@@ -173,7 +173,8 @@ function raceSheet(id){
  else{
   info=a.mode==='invite'?`<div class="msg">Serve un invito degli organizzatori. Probabilità ${chanceLab(a.chance)} (${Math.round(a.chance*100)}%): dipende da reputazione e nazionalità. Se ti invitano paghi la quota.</div>`:a.auto?`<div class="msg ok">Sei tra le prime due ProTeam: invito automatico.</div>`:'';
   info+=`<div class="note">${r.stages.length>1?'Corsa a tappe: si corre solo come squadra (almeno 4 corridori), con classifica individuale e classifica a squadre.':indivOk(r)?`Iscrizione anche individuale: puoi schierare da 1 a ${selSize(r)} corridori; la trasferta dei posti vuoti ti viene rimborsata.`:'Si corre come squadra: almeno 4 corridori.'}</div>`;
-  act=`<button class="btn primary big" data-act="register" data-v="${r.id}" ${G.cash<fee?'disabled':''}>${a.mode==='invite'?'Chiedi l\'invito':'Iscriviti'} · ${eur(fee)}</button>`;
+  act=`<button class="btn primary big" data-act="register" data-v="${r.id}" ${G.cash<fee?'disabled':''}>${a.mode==='invite'?'Chiedi l\'invito':'Iscrivi la squadra'} · ${eur(fee)}</button>${indivOk(r)&&a.mode==='fee'?`<button class="btn big" data-act="register" data-v="${r.id}" data-m="singles" ${G.cash<singlesFee(r)?'disabled':''}>Iscrivi singoli · ${eur(singlesFee(r))} a corridore</button>`:''}`;
+  if(indivOk(r)&&a.mode==='fee')info+=`<div class="note"><b>Squadra</b>: corrono insieme con punta e gregari. <b>Singoli</b>: mandi i corridori che non usi altrove, ognuno corre per sé; paghi solo per chi parte.</div>`;
  }
  const dl=r.dur>1?`${weekLab(r.w)} – ${weekLab(r.w+r.dur-1)}`:weekLab(r.w);
  openSheet(sheetHead(`${r.lab} · ${T.lab} · ${COUNTRY[r.ctry]||r.ctry} · ${dl}`,esc(r.name),`${r.stages.length>1?r.stages.length+' tappe':'Corsa di un giorno'} · ${T.win?`${T.win} punti UCI al vincitore`:'Gara giovanile'}${T.size&&r.tier!=='jun'?` · squadre da ${T.size}`:''}`)+
@@ -358,7 +359,7 @@ function openConvoca(id){
  const race=G.races.find(r=>r.id===id);
  SEL={race,ids:new Set(),cap:null};suggest();renderConvoca();
 }
-function selSize(race){return race.tier==='nc'?8:TIERS[race.tier].size}
+function selSize(race){return race.tier==='nc'||race.mode==='singles'?8:TIERS[race.tier].size}
 function suggest(){
  const race=SEL.race;
  const el=ME().riders.map(RID).filter(r=>!whyCant(r,race));
@@ -372,9 +373,9 @@ function suggest(){
 function renderConvoca(){
  const race=SEL.race,size=selSize(race),min=minRiders(race);
  const rs=ME().riders.map(RID).sort((a,b)=>avgSuit(b,race)-avgSuit(a,race));
- const n=SEL.ids.size,ok=n>=min&&n<=size&&SEL.cap;
+ const singles=race.mode==='singles',n=SEL.ids.size,ok=n>=min&&n<=size&&(SEL.cap||singles);
  const pro=race.stages[0].t==='prologo';
- openSheet(sheetHead(`Convocazioni · ${race.lab} · ${weekLab(race.w)}`,esc(race.name),`${race.stages.map((s,i)=>(race.stages.length>1?(s.t==='prologo'?'P':i+(pro?0:1))+'. ':'')+TYPE_LAB[s.t]).join(' · ')}`)+
+ openSheet(sheetHead(`${singles?'Singoli':'Convocazioni'} · ${race.lab} · ${weekLab(race.w)}`,esc(race.name)+(singles?' <span class="chip amber">Gara per singoli</span>':''),`${race.stages.map((s,i)=>(race.stages.length>1?(s.t==='prologo'?'P':i+(pro?0:1))+'. ':'')+TYPE_LAB[s.t]).join(' · ')}`)+
  `<div class="pb"><div class="wrap"><div class="card pickgrid">${rs.map(r=>{
    const why=whyCant(r,race),on=SEL.ids.has(r.id),c=condOf(r),fit=Math.round(avgSuit(r,race)),ae=altEff(r,race.w);
    return`<div class="pick ${why?'off':''}"><input type="checkbox" id="p_${r.id}" data-act="pick" data-v="${r.id}" ${on?'checked':''} ${why?'disabled':''} aria-label="Convoca ${esc(r.name)}">
@@ -391,7 +392,8 @@ function renderConvoca(){
 let LIVE=null;
 function launch(mode){
  const race=SEL.race;race.sel=[...SEL.ids];race.cap=SEL.cap;closeSheet();
- if(indivOk(race)&&race.sel.length<selSize(race)&&race.tier!=='nc'){const T=TIERS[race.tier],ref=Math.round(T.prd*(selSize(race)-race.sel.length)*race.stages.length*(race.ctry==='ITA'?1:1.2));if(ref>0){G.cash+=ref;toast(`Partecipazione con ${race.sel.length} corridor${race.sel.length>1?'i':'e'}: rimborsati ${eurk(ref)} di trasferta`,'ok')}}
+ if(race.mode==='singles'){const extra=singlesFee(race)*Math.max(0,race.sel.length-1);if(extra){G.cash-=extra;toast(`Singoli: ${race.sel.length} al via, pagati altri ${eurk(extra)}`,'ok')}}
+ else if(indivOk(race)&&race.sel.length<selSize(race)&&race.tier!=='nc'){const T=TIERS[race.tier],ref=Math.round(T.prd*(selSize(race)-race.sel.length)*race.stages.length*(race.ctry==='ITA'?1:1.2));if(ref>0){G.cash+=ref;toast(`Partecipazione con ${race.sel.length} corridor${race.sel.length>1?'i':'e'}: rimborsati ${eurk(ref)} di trasferta`,'ok')}}
  const RC=newRC(race);LIVE=null;
  openTactic(RC,mode);
 }
@@ -605,9 +607,9 @@ function renderSponsor(){
   return`<button class="tile ${G.spArea===k?'sel':''} ${G.sede.reg===k?'home':''}" style="grid-column:${Rg.x+1};grid-row:${Rg.y+1};--h:${Math.round(h*100)}%" data-act="sparea" data-v="${k}" aria-label="${Rg.n}"><b>${k}</b><small>${n}${mine?` · ${mine}${ic('check',10)}`:''}</small>${G.sede.reg===k?`<span class="pin">${ic('pin',14)}</span>`:''}</button>`}).join('');
  const foreign=Object.keys(FOREIGN).map(k=>{const ss=G.sponsors.filter(s=>s.area===k),open=ss.some(s=>G.rep>=s.req),h=areaHeat(k);
   return`<button class="ftile ${G.spArea===k?'sel':''} ${open?'':'locked'}" style="--h:${Math.round(h*100)}%" data-act="sparea" data-v="${k}">${open?'':ic('lock',12)}<span>${FOREIGN[k].n}</span></button>`}).join('');
- const area=G.spArea,list=G.sponsors.filter(s=>s.area===area).sort((a,b)=>(myContract(b)?1:0)-(myContract(a)?1:0)||interest(b).p-interest(a).p||b.pot-a.pot);
+ const area=G.spArea,list=G.sponsors.filter(s=>s.area===area&&(!G.spCity||s.city===G.spCity||isForeign(area))).sort((a,b)=>(myContract(b)?1:0)-(myContract(a)?1:0)||interest(b).p-interest(a).p||b.pot-a.pot);
  const contracts=G.contracts.filter(c=>c.end>=SEASON).sort((a,b)=>['main','co','partner'].indexOf(a.slot)-['main','co','partner'].indexOf(b.slot)||b.amount-a.amount);
- const tabs=[['area',areaName(area)],['mine',`Contratti (${contracts.length})`],['offers',`Proposte (${G.offers.length})`]];
+ const tabs=[['area',G.spCity&&!isForeign(area)?G.spCity:areaName(area)],['mine',`Contratti (${contracts.length})`],['offers',`Proposte (${G.offers.length})`]];
  let body='';
  if(G.spTab==='area')body=`<div class="note">${isForeign(area)?`Gli sponsor esteri guardano reputazione e corse disputate nel loro paese (${(G.exp[area]||0)} finora).`:area===G.sede.reg?'La tua regione: qui ti conoscono, la propensione è più alta.':`A ${list.length?spDist(list[0]):'?'} km circa dalla sede: più sei lontano, più servono risultati.`}</div><div class="cols1">${list.map(spRow).join('')||'<div class="note">Nessuno sponsor.</div>'}</div>`;
  else if(G.spTab==='mine')body=`<div class="cols1">${contracts.map(c=>{const sp=SP(c.sid),v=Math.min(c.obj.n,Math.round(contractProg(c)));return`<button class="card crow" data-act="sponsor" data-v="${sp.id}">${spLogo(sp)}<div style="min-width:0"><div class="nm">${esc(sp.name)} <span class="chip ${c.slot==='main'?'cat':''}">${SLOTS[c.slot].lab}</span></div>
@@ -618,7 +620,9 @@ function renderSponsor(){
    <div class="row"><button class="btn ghost sm" data-act="offno" data-v="${o.id}">Rifiuta</button><button class="btn primary sm" data-act="offyes" data-v="${o.id}">Accetta</button></div></div>`}).join('')||'<div class="note">Nessuna proposta in arrivo. Più cresce la reputazione, più sponsor si fanno avanti da soli.</div>'}</div>`;
  $('#view').innerHTML=`<div class="spgrid">
  <div class="col"><div class="card pad"><div class="sec-h"><h3>${ic('pin',18)} ${esc(G.sede.city)}, ${REGIONS[G.sede.reg].n}</h3><span class="eyebrow">più scuro = più interessati</span></div>
-  <div class="itmap">${tiles}</div>
+  ${spMapSVG()}
+  <div class="maplg"><span><i class="lg-dot"></i> città con sponsor: più grande = più sponsor, più scuro = più interessati</span><span><i class="lg-mine"></i> tuoi sponsor</span></div>
+  ${G.spCity?`<button class="chip" data-act="spcity" data-v="">Mostra tutta la regione ${esc(REGIONS[G.spArea]?REGIONS[G.spArea].n:'')}</button>`:''}
   <div class="eyebrow" style="margin:12px 0 6px">Estero</div><div class="fmap">${foreign}</div></div></div>
  <div class="col">
   <div class="kv kv4"><div><small>Sponsor ${SEASON}</small><b>${eurk(incomeIn(SEASON))}</b></div><div><small>Garantiti ${SEASON+1}</small><b>${eurk(incomeIn(SEASON+1))}</b></div><div><small>Reputazione</small><b>${Math.round(G.rep)}</b></div><div><small>Ruoli ${seasonView}</small><b class="slots">${slotUsed('main',seasonView)}/1 · ${slotUsed('co',seasonView)}/2 · ${slotUsed('partner',seasonView)}/8</b></div></div>
@@ -723,7 +727,7 @@ document.addEventListener('click',e=>{
   case'calf':G.calf=v;renderCal();break;
   case'rankf':G.rankf=v;renderRank();break;
   case'race':raceSheet(v);break;
-  case'register':{const race=G.races.find(x=>x.id===v);const res=register(race);toast(res.msg,res.ok?'ok':res.declined?'bad':'');raceSheet(v);renderTop();if(G.tab==='cal')renderCal();break}
+  case'register':{const race=G.races.find(x=>x.id===v);const res=register(race,t.dataset.m);toast(res.msg,res.ok?'ok':res.declined?'bad':'');raceSheet(v);renderTop();if(G.tab==='cal')renderCal();break}
   case'withdraw':{const race=G.races.find(x=>x.id===v);withdraw(race);toast('Iscrizione ritirata');raceSheet(v);renderTop();if(G.tab==='cal')renderCal();break}
   case'rider':riderSheet(v);break;
   case'close':closeSheet();render();break;
@@ -744,7 +748,8 @@ document.addEventListener('click',e=>{
    if(v==='scatta'){if(x.intent!=='attack'&&x.W>0.1*x.Wmax){x.order='scatta';startAttack(S,x,1.3,rnd(50,80))}}
    else{x.order=v;if(x.intent==='attack')x.atkUntil=0;decide(S,x)}
    renderMine(false);break}
-  case'sparea':G.spArea=v;G.spTab='area';renderSponsor();break;
+  case'sparea':G.spArea=v;G.spCity=null;G.spTab='area';renderSponsor();break;
+  case'spcity':{if(v){G.spArea=t.dataset.r||G.spArea;G.spCity=G.spCity===v?null:v}else G.spCity=null;G.spTab='area';renderSponsor();break}
   case'sptab':G.spTab=v;renderSponsor();break;
   case'sponsor':SPN=null;sponsorSheet(v);break;
   case'spslot':SPN.slot=v;SPN.msg=null;sponsorSheet(SPN.id);break;

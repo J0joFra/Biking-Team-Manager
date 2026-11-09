@@ -168,3 +168,31 @@ function initialSponsors(){
  for(const c of G.contracts)c.base=0;
  return c1;
 }
+
+/* ============================================================
+   MAPPA DELL'ITALIA (contorno semplificato, lon/lat)
+   ============================================================ */
+const IT_SHAPES=[
+ [[7.53,43.78],[8.0,43.88],[8.4,44.2],[8.93,44.41],[9.5,44.2],[9.85,44.07],[10.2,43.9],[10.3,43.55],[10.5,42.95],[11.1,42.4],[11.8,42.05],[12.25,41.75],[12.6,41.45],[13.05,41.25],[13.6,41.2],[14.0,40.95],[14.25,40.83],[14.4,40.6],[14.75,40.65],[15.0,40.4],[15.3,40.05],[15.65,40.0],[15.8,39.6],[16.05,39.2],[16.2,38.95],[15.9,38.6],[15.65,38.25],[15.65,38.0],[15.9,37.95],[16.1,38.0],[16.55,38.4],[16.6,38.8],[17.15,39.0],[17.1,39.4],[16.6,39.6],[16.5,39.9],[16.85,40.3],[17.24,40.47],[17.4,40.3],[17.9,40.1],[18.35,39.8],[18.5,40.15],[17.94,40.64],[17.2,40.95],[16.87,41.13],[16.1,41.4],[15.9,41.6],[16.15,41.9],[15.6,41.95],[15.1,41.95],[14.7,42.1],[14.2,42.45],[13.9,42.9],[13.6,43.55],[13.0,43.85],[12.6,44.1],[12.3,44.5],[12.4,44.95],[12.3,45.25],[12.4,45.45],[12.9,45.6],[13.5,45.75],[13.75,45.6],[13.9,45.65],[13.6,46.15],[13.7,46.5],[12.7,46.65],[12.3,47.05],[11.5,47.0],[10.5,46.85],[10.1,46.6],[9.3,46.5],[9.0,46.1],[8.7,46.1],[8.4,46.45],[7.9,45.95],[7.1,45.85],[6.8,45.6],[7.1,45.2],[6.9,44.85],[7.0,44.25],[7.5,44.1]],
+ [[12.43,37.8],[12.65,38.1],[13.36,38.12],[14.0,38.03],[14.9,38.15],[15.55,38.25],[15.2,37.6],[15.1,37.3],[15.25,37.05],[15.1,36.7],[14.5,36.75],[14.2,37.05],[13.6,37.25],[13.0,37.5],[12.6,37.6]],
+ [[8.4,40.95],[9.2,41.25],[9.6,40.95],[9.75,40.4],[9.65,39.9],[9.6,39.3],[9.1,39.15],[8.6,38.9],[8.4,39.1],[8.45,39.6],[8.5,40.0],[8.35,40.5],[8.2,40.6]]
+];
+const MAP={lon0:6.3,lon1:18.9,lat0:36.4,lat1:47.3,k:60,cx:Math.cos(42*Math.PI/180)};
+const mapX=lon=>(lon-MAP.lon0)*MAP.cx*MAP.k,mapY=lat=>(MAP.lat1-lat)*MAP.k;
+const MAP_NEIGH={SUI:[8.9,46.75],FRA:[6.55,44.9],AUT:[12.2,47.15],SLO:[14.3,46.05],GER:[10.6,47.2]};
+function spMapSVG(){
+ const W=Math.round(mapX(MAP.lon1)),H=Math.round(mapY(MAP.lat0));
+ const shapes=IT_SHAPES.map(sh=>`<polygon points="${sh.map(([lo,la])=>`${mapX(lo).toFixed(1)},${mapY(la).toFixed(1)}`).join(' ')}" class="mp-land"/>`).join('');
+ const cities={};
+ for(const s of G.sponsors){if(isForeign(s.area))continue;const k=s.city;const c=cities[k]||(cities[k]={city:k,reg:s.area,lat:0,lon:0,n:0,mine:0,heat:0});c.lat+=s.lat;c.lon+=s.lon;c.n++;if(myContract(s))c.mine++;else c.heat=Math.max(c.heat,interest(s,'partner').p)}
+ const pts=Object.values(cities).map(c=>{c.lat/=c.n;c.lon/=c.n;return c}).sort((a,b)=>b.n-a.n);
+ const sel=G.spCity||null;
+ const marks=pts.map(c=>{const x=mapX(c.lon),y=mapY(c.lat),r=5+Math.sqrt(c.n)*3.2,on=c.reg===G.spArea,isSel=c.city===sel;
+  return`<g class="mp-c ${on?'on':''} ${isSel?'sel':''}" data-act="spcity" data-v="${esc(c.city)}" data-r="${c.reg}" tabindex="0" role="button" aria-label="${esc(c.city)}: ${c.n} sponsor"><title>${esc(c.city)} · ${c.n} sponsor${c.mine?` · ${c.mine} tuoi`:''} · propensione ${Math.round(c.heat*100)}%</title>
+   <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" style="fill-opacity:${(0.2+0.8*c.heat).toFixed(2)}" class="mp-dot"/>${c.mine?`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r+3).toFixed(1)}" class="mp-mine"/>`:''}
+   ${on||isSel||c.city===G.sede.city?`<text x="${(x+r+3).toFixed(1)}" y="${(y+4).toFixed(1)}" class="mp-lab">${esc(c.city)}</text>`:''}</g>`}).join('');
+ const sx=mapX(G.sede.lon),sy=mapY(G.sede.lat);
+ const pin=`<g class="mp-pin"><path d="M${sx} ${sy} l-8 -16 a9 9 0 1 1 16 0 z"/><circle cx="${sx}" cy="${sy-19}" r="3.6" class="mp-pinhole"/></g>`;
+ const neigh=Object.keys(MAP_NEIGH).map(k=>{const[lo,la]=MAP_NEIGH[k],x=mapX(lo),y=mapY(la),open=G.sponsors.some(s=>s.area===k&&G.rep>=s.req);return`<g class="mp-n ${open?'':'locked'} ${G.spArea===k?'sel':''}" data-act="sparea" data-v="${k}" role="button" tabindex="0"><text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle">${FOREIGN[k].n}${open?'':' · chiuso'}</text></g>`}).join('');
+ return`<svg class="itsvg" viewBox="-10 -10 ${W+20} ${H+20}" role="img" aria-label="Mappa degli sponsor in Italia">${shapes}${neigh}${marks}${pin}</svg>`;
+}

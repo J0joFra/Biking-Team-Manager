@@ -34,36 +34,88 @@ function openTactic(RC,mode){
  let plan;
  if(RC.tactic){plan=JSON.parse(JSON.stringify(RC.tactic));for(const id in plan)if(plan[id].zone.startsWith('climb:')&&RC.tacStage!==RC.stage)plan[id].zone='last';
   for(const id of RC.race.sel)if(!plan[id]&&!RC.out.has(id))plan[id]={move:'gruppo',zone:'none',when:'mid'}}
+ if(RC.race.mode==='singles'){TAC={RC,mode,c,plan:RC.tactic?plan:singlesPlan(RC,c)};renderTactic();return}
  const lead=defaultLead(RC);
- if(!RC.tactic)plan=defaultTactic(RC,c,lead);
- TAC={RC,mode,c,plan,lead,lead2:RC.lead2&&!RC.out.has(RC.lead2)?RC.lead2:null};renderTactic();
+ TAC={RC,mode,c,plan,lead,lead2:RC.lead2&&!RC.out.has(RC.lead2)?RC.lead2:null,obj:RC.obj||suggestObj(c,lead),atk:null,atk2:null};
+ if(!RC.tactic||RC.tacStage!==RC.stage){TAC.obj=suggestObj(c,lead);applyObj()}
+ renderTactic();
 }
+const OBJ={volata:{lab:'Volata',d:'Squadra compatta, treno nel finale: la punta fa lo sprint'},attacco:{lab:'Attacco',d:'Selezione in salita o sul pavé: la punta attacca nel momento scelto'},fuga:{lab:'Fuga',d:'Due uomini in fuga da lontano, la punta aspetta coperta'},attesa:{lab:'Attesa',d:'Corsa coperta: si controllano i rivali senza rischi'}};
+const ROLE_BTN=[['scorta','Scorta'],['tira','Tira'],['fuga','Fuga'],['copri','Copri'],['gruppo','Libero']];
+const ROLE_HELP={scorta:'resta con la punta e la riporta sotto',tira:'tira per la punta nel finale',fuga:'prova ad andare in fuga',copri:'risponde agli scatti dei rivali',gruppo:'resta coperto e si gioca le sue carte',vicino:'resta entro 1\' dalla testa'};
+function atkMoments(c){
+ const o=[];
+ if(['piatta','circuito','mossa'].includes(c.type))o.push(['sprint|end','Volata finale']);
+ if(c.climbs.length){const L=c.climbs[c.climbs.length-1];o.push(['last|start',`Ai piedi dell'ultima salita`],['last|end',`Ultimi 2 km dell'ultima salita`]);
+  c.climbs.forEach((cb,i)=>{if(i<c.climbs.length-1&&cb.cat!=='4'&&c.len-cb.top<70)o.push([`climb:${i}|mid`,`Su ${cb.name}`])})}
+ if(c.secN)o.push(['pave|start','Primo settore decisivo'],['pave|end','Ultimo settore']);
+ o.push(['k10|mid','Ultimi 10 km'],['none|mid','Nessun attacco']);
+ return o;
+}
+function suggestObj(c,lead){const r=RID(lead),t=c.type,sp=stats(r).vol>=62;if(t==='piatta'||t==='circuito')return sp?'volata':'fuga';if(t==='mossa')return sp?'volata':'attacco';return'attacco'}
+function defaultAtk(c,obj){if(obj==='volata')return'sprint|end';if(obj==='attesa')return'none|mid';if(['pave','roubaix','sterrato'].includes(c.type)&&c.secN)return'pave|end';if(c.climbs.length)return'last|end';return'k10|mid'}
+function applyObj(){
+ const{RC,c,obj,lead,lead2}=TAC,plan={};
+ if(!TAC.atk)TAC.atk=defaultAtk(c,obj);
+ const[z,w]=TAC.atk.split('|');
+ plan[lead]={move:obj==='attesa'?'vicino':'gruppo',zone:z,when:w};
+ if(lead2){const[z2,w2]=(TAC.atk2||'k10|mid').split('|');plan[lead2]={move:obj==='fuga'?'fuga':'gruppo',zone:obj==='volata'?'none':z2,when:w2}}
+ const doms=RC.race.sel.filter(id=>id!==lead&&id!==lead2&&!RC.out.has(id)).map(RID).sort((a,b)=>ovr(b)-ovr(a));
+ doms.forEach((r,i)=>{const m=obj==='volata'?(i<1?'scorta':i<3?'tira':'copri'):obj==='attacco'?(i<2?'scorta':i<4?'tira':'fuga'):obj==='fuga'?(i<2?'fuga':i<3?'scorta':'copri'):(i<2?'scorta':'copri');plan[r.id]={move:m,zone:'none',when:'mid'}});
+ TAC.plan=plan;
+}
+function singlesPlan(RC,c){const plan={};for(const id of RC.race.sel){if(RC.out.has(id))continue;const r=RID(id),sp=stats(r).vol>=62&&['piatta','mossa','circuito'].includes(c.type);plan[id]={move:'gruppo',zone:sp?'sprint':c.climbs.length?'last':'k10',when:'end'}}return plan}
+function chipRow(items,act,cur,extra=''){return`<div class="rchips">${items.map(([k,l,sub])=>`<button class="rchip" data-act="${act}" data-v="${k}" ${extra} aria-pressed="${cur===k}"><b>${esc(l)}</b>${sub?`<small>${esc(sub)}</small>`:''}</button>`).join('')}</div>`}
 function renderTactic(){
- const{RC,mode,c,plan}=TAC,race=RC.race;
- const zo=zoneOptions(c),mo=moveOptions(RC);
+ const{RC,mode,c,plan}=TAC,race=RC.race,singles=race.mode==='singles';
  const keys=[];
- c.climbs.forEach(cb=>keys.push(`<li><b>km ${Math.round(cb.start)}–${Math.round(cb.top)}</b> GPM ${cb.cat==='HC'?'HC':cb.cat+'ª'} ${esc(cb.name)}: ${km1(cb.len)} km al ${cb.avg.toFixed(1).replace('.',',')}%${cb.top>=c.len-0.2?' (arrivo in salita)':''}</li>`));
- if(c.secN)keys.push(`<li><b>${c.secN} settori</b> di ${c.type==='sterrato'?'sterrato':'pavé'}, i decisivi negli ultimi 60 km</li>`);
- if(c.sprintKm)keys.push(`<li><b>km ${c.sprintKm}</b> traguardo volante (abbuoni e punti)</li>`);
- if(c.pts)keys.push(`<li><b>${c.laps} giri</b> da ${km1(c.len/c.laps)} km · ${c.pts.length} traguardi a punti (5-3-2-1) ogni 2 giri · arrivo doppio (10-6-4-2). Vince chi fa più punti.</li>`);
- {const wx=makeWeather(RC.race,RC.stage);keys.unshift(`<li><b>Meteo</b>: ${esc(wxText(wx))}${wxEffects(wx).length?' — '+wxEffects(wx).join(', '):''}</li>`)}
- keys.push(`<li><b>Tempo massimo</b>: ${Math.round((TIME_CUT[c.type]||0.15)*100)}% sul tempo del vincitore</li>`);
- const ids=race.sel.filter(id=>!RC.out.has(id)).sort((a,b)=>(a===TAC.lead?-1:b===TAC.lead?1:a===TAC.lead2?-1:b===TAC.lead2?1:0));
- const opts=race.sel.filter(id=>!RC.out.has(id)).map(RID).sort((a,b)=>avgSuit(b,race)-avgSuit(a,race));
+ {const wx=makeWeather(RC.race,RC.stage);keys.push(`<li><b>Meteo</b>: ${esc(wxText(wx))}${wxEffects(wx).length?' — '+wxEffects(wx).join(', '):''}</li>`)}
+ c.climbs.forEach(cb=>keys.push(`<li><b>km ${Math.round(cb.start)}</b> ${esc(cb.name)}: ${km1(cb.len)} km al ${cb.avg.toFixed(1).replace('.',',')}%${cb.top>=c.len-0.2?' (arrivo in salita)':` · a ${Math.round(c.len-cb.top)} km dall'arrivo`}</li>`));
+ if(c.secN)keys.push(`<li><b>${c.secN} settori</b> di ${c.type==='sterrato'?'sterrato':'pavé'}</li>`);
+ if(c.pts)keys.push(`<li><b>${c.laps} giri</b>: traguardi a punti ogni 2 giri, arrivo doppio</li>`);
  const st=RC.stageRace?(race.stages[RC.stage].t==='prologo'?'Prologo':`Tappa ${RC.stage+(race.stages[0].t==='prologo'?0:1)}`):'';
- openSheet(sheetHead(`Tattica · ${esc(race.name)}${st?' · '+st:''} · ${TYPE_LAB[c.type]} · ${km1(c.len)} km`,'Il piano di corsa','Per ogni corridore: come muoversi, dove e quando attaccare. In corsa puoi sempre cambiare con gli ordini radio; "Piano" fa seguire questa tattica.',false)+
- `<div class="pb wrap"><div class="tacgrid"><div class="stack"><div class="card pad"><div class="eyebrow">Percorso</div>${profileSVG(c,320,60)}<ul class="keys">${keys.join('')}</ul></div>
-  <div class="note">Consigli: attacca in salita negli ultimi 2–3 km (nel finale), sul pavé a metà dei settori decisivi, dalla fuga negli ultimi 10 km. In pianura gli attacchi lontani vengono ripresi. "Resta entro 1' dalla testa" fa inseguire il corridore se la corsa scappa.</div></div>
- <div class="stack"><div class="card pad leadbox"><div class="eyebrow">Su chi punta la squadra</div>
-   <div class="tsel two2"><label><span class="eyebrow">Punta</span><select data-lead="1">${opts.map(r=>`<option value="${r.id}" ${TAC.lead===r.id?'selected':''}>${esc(r.name)} · ${ARCH[r.arch].lab}${r.id===race.cap?' (capitano)':''}${RC.stageRace&&RC.stage>0?' · '+gcGapTxt(RC,r.id):''}</option>`).join('')}</select></label>
-   <label><span class="eyebrow">Seconda punta</span><select data-lead="2"><option value="">Nessuna</option>${opts.filter(r=>r.id!==TAC.lead).map(r=>`<option value="${r.id}" ${TAC.lead2===r.id?'selected':''}>${esc(r.name)} · ${ARCH[r.arch].lab}</option>`).join('')}</select></label></div>
-   <div class="note">La squadra lavora per la punta: i gregari la scortano e tirano per lei. Non deve essere per forza il capitano: scegli chi è più adatto al percorso${RC.stageRace?' o meglio messo in classifica':''}. La seconda punta è libera di giocarsi la sua occasione.</div></div>
-  ${ids.map(id=>{const r=RID(id),p=plan[id];return`<div class="card tacrow"><div class="tn2">${esc(r.name)} ${id===TAC.lead?'<span class="chip amber">Punta</span>':id===TAC.lead2?'<span class="chip u23">Seconda punta</span>':''}${id===race.cap&&id!==TAC.lead?'<span class="chip">Capitano</span>':''}<span class="note">${ARCH[r.arch].lab} · ${ovr(r)}</span></div>
-   <div class="tsel"><label><span class="eyebrow">Movimento</span><select data-tac="${id}" data-k="move">${mo.map(k=>`<option value="${k}" ${p.move===k?'selected':''}>${MOVES[k]}</option>`).join('')}</select></label>
-   <label><span class="eyebrow">Attacco</span><select data-tac="${id}" data-k="zone">${zo.map(([k,l])=>`<option value="${k}" ${p.zone===k?'selected':''}>${esc(l)}</option>`).join('')}</select></label>
-   <label><span class="eyebrow">Quando</span><select data-tac="${id}" data-k="when" ${p.zone==='none'||p.zone==='sprint'?'disabled':''}>${Object.keys(WHENS).map(k=>`<option value="${k}" ${p.when===k?'selected':''}>${WHENS[k]}</option>`).join('')}</select></label></div></div>`}).join('')}</div></div></div>
- <div class="pf"><div class="wrap fr"><button class="btn ghost" data-act="tacreset">Piano dell'ammiraglia</button>${RC.stage===0?'<button class="btn ghost" data-act="tacback">Convocazioni</button>':''}<span style="flex:1"></span><button class="btn primary big" data-act="tacgo">${mode==='sim'?'Simula la corsa':RC.stage===0?'Via!':'Via alla tappa'}</button></div></div>`,'wide');
+ const riders=race.sel.filter(id=>!RC.out.has(id)).map(RID).sort((a,b)=>avgSuit(b,race)-avgSuit(a,race));
+ const mom=atkMoments(c);
+ const nm=r=>esc(r.name.split(' ').slice(-1)[0]);
+ let right;
+ if(singles){
+  right=`<div class="note">Gara per singoli: ognuno corre per sé, senza gregari. Scegli per ciascuno come correre e quando attaccare.</div>
+  ${riders.map(r=>{const p=plan[r.id];return`<div class="card tacrow"><div class="tn2">${esc(r.name)}<span class="note">${ARCH[r.arch].lab} · ${ovr(r)}</span></div>
+   <div class="seg sm">${[['gruppo','Aspetta in gruppo'],['fuga','Va in fuga'],['copri','Marca i rivali']].map(([k,l])=>`<button data-act="tacrole" data-id="${r.id}" data-v="${k}" aria-pressed="${p.move===k}">${l}</button>`).join('')}</div>
+   ${chipRow(mom.map(([k,l])=>[k,l]),'tacatkr',`${p.zone}|${p.when}`,`data-id="${r.id}"`)}</div>`}).join('')}`;
+ }else{
+  const lead=RID(TAC.lead),lead2=TAC.lead2?RID(TAC.lead2):null;
+  const doms=riders.filter(r=>r.id!==TAC.lead&&r.id!==TAC.lead2);
+  right=`
+  <section class="tstep"><span class="tnum">1</span><div class="tbody"><div class="eyebrow">Obiettivo della corsa</div>
+   <div class="objpick">${Object.keys(OBJ).map(k=>`<button data-act="tacobj" data-v="${k}" aria-pressed="${TAC.obj===k}"><b>${OBJ[k].lab}</b><small>${OBJ[k].d}</small></button>`).join('')}</div></div></section>
+  <section class="tstep"><span class="tnum">2</span><div class="tbody"><div class="eyebrow">Su chi puntiamo</div>
+   ${chipRow(riders.map(r=>[r.id,r.name.split(' ').slice(-1)[0],`${ARCH[r.arch].lab} · ${Math.round(avgSuit(r,race))}${r.id===race.cap?' · cap.':''}${RC.stageRace&&RC.stage>0?' · '+gcGapTxt(RC,r.id):''}`]),'taclead',TAC.lead)}
+   <div class="eyebrow" style="margin-top:8px">Seconda punta <span class="muted">(facoltativa)</span></div>
+   ${chipRow([['','Nessuna']].concat(riders.filter(r=>r.id!==TAC.lead).map(r=>[r.id,r.name.split(' ').slice(-1)[0]])),'taclead2',TAC.lead2||'')}</div></section>
+  ${TAC.obj!=='attesa'?`<section class="tstep"><span class="tnum">3</span><div class="tbody"><div class="eyebrow">Quando attacca ${nm(lead)}</div>
+   ${chipRow(mom.map(([k,l])=>[k,l]),'tacatk',TAC.atk)}
+   ${lead2&&TAC.obj!=='volata'?`<div class="eyebrow" style="margin-top:8px">Quando attacca ${nm(lead2)}</div>${chipRow(mom.map(([k,l])=>[k,l]),'tacatk2',TAC.atk2||'k10|mid')}`:''}</div></section>`:''}
+  <section class="tstep"><span class="tnum">${TAC.obj!=='attesa'?4:3}</span><div class="tbody"><div class="eyebrow">Compiti dei compagni</div>
+   ${doms.map(r=>{const p=plan[r.id]||{move:'gruppo'};return`<div class="drow"><div class="dn"><b>${esc(r.name)}</b><small>${ARCH[r.arch].lab} · ${ROLE_HELP[p.move]||''}</small></div>
+    <div class="seg sm">${ROLE_BTN.map(([k,l])=>`<button data-act="tacrole" data-id="${r.id}" data-v="${k}" aria-pressed="${p.move===k}">${l}</button>`).join('')}</div></div>`}).join('')||'<div class="note">Nessun compagno.</div>'}</div></section>`;
+ }
+ openSheet(sheetHead(`Tattica · ${esc(race.name)}${st?' · '+st:''}`,singles?'Piano dei singoli':'Il piano di corsa',`${TYPE_LAB[c.type]} · ${km1(c.len)} km · tempo massimo +${Math.round((TIME_CUT[c.type]||0.15)*100)}%. In corsa puoi cambiare tutto con gli ordini radio.`,false)+
+ `<div class="pb wrap"><div class="tacgrid"><div class="stack"><div class="card pad"><div class="eyebrow">Percorso</div>${profileSVG(c,320,60)}<ul class="keys">${keys.join('')}</ul></div></div>
+ <div class="stack">${right}</div></div></div>
+ <div class="pf"><div class="wrap fr"><button class="btn ghost" data-act="tacreset">Piano consigliato</button>${RC.stage===0?'<button class="btn ghost" data-act="tacback">Convocazioni</button>':''}<span style="flex:1"></span><button class="btn primary big" data-act="tacgo">${mode==='sim'?'Simula la corsa':RC.stage===0?'Via!':'Via alla tappa'}</button></div></div>`,'wide');
 }
+document.addEventListener('click',e=>{
+ const t=e.target.closest('[data-act]');if(!t||!TAC)return;
+ const a=t.dataset.act,v=t.dataset.v,keep=()=>{const sc=$('#sheet .pb').scrollTop;renderTactic();$('#sheet .pb').scrollTop=sc};
+ if(a==='tacobj'){TAC.obj=v;TAC.atk=null;applyObj();keep()}
+ else if(a==='taclead'){TAC.lead=v;if(TAC.lead2===v)TAC.lead2=null;applyObj();keep()}
+ else if(a==='taclead2'){TAC.lead2=v||null;applyObj();keep()}
+ else if(a==='tacatk'){TAC.atk=v;const[z,w]=v.split('|');TAC.plan[TAC.lead].zone=z;TAC.plan[TAC.lead].when=w;keep()}
+ else if(a==='tacatk2'){TAC.atk2=v;const[z,w]=v.split('|');if(TAC.lead2){TAC.plan[TAC.lead2].zone=z;TAC.plan[TAC.lead2].when=w}keep()}
+ else if(a==='tacatkr'){const[z,w]=v.split('|');const p=TAC.plan[t.dataset.id];p.zone=z;p.when=w;keep()}
+ else if(a==='tacrole'){TAC.plan[t.dataset.id].move=v;keep()}
+});
 function proceedRace(RC,mode){
  if(mode==='sim'){simAsync(RC);return}
  if(!LIVE)LIVE={RC,S:null,speed:25,playing:true,acc:0,last:0,lastUI:0,zoom:false,course:null};
@@ -77,8 +129,8 @@ document.addEventListener('change',e=>{
 document.addEventListener('click',e=>{
  const t=e.target.closest('[data-act]');if(!t||!TAC)return;
  const a=t.dataset.act;
- if(a==='tacgo'){const{RC,mode,plan}=TAC;RC.tactic=plan;RC.tacStage=RC.stage;RC.lead=TAC.lead;RC.lead2=TAC.lead2;TAC=null;closeSheet();proceedRace(RC,mode)}
- else if(a==='tacreset'){TAC.plan=defaultTactic(TAC.RC,TAC.c,TAC.lead);renderTactic()}
+ if(a==='tacgo'){const{RC,mode,plan}=TAC;RC.tactic=plan;RC.tacStage=RC.stage;RC.lead=TAC.lead||null;RC.lead2=TAC.lead2||null;RC.obj=TAC.obj;TAC=null;closeSheet();proceedRace(RC,mode)}
+ else if(a==='tacreset'){if(TAC.RC.race.mode==='singles')TAC.plan=singlesPlan(TAC.RC,TAC.c);else{TAC.obj=suggestObj(TAC.c,TAC.lead);TAC.atk=null;TAC.atk2=null;applyObj()}renderTactic()}
  else if(a==='tacback'){const race=TAC.RC.race;for(const r of TAC.RC.field)if(r.team!=='t0'){r.bF=0;r.bT=0}TAC=null;SEL={race,ids:new Set(race.sel),cap:race.cap};renderConvoca()}
 });
 
@@ -93,7 +145,7 @@ function defaultLead(RC){
  return mine.includes(race.cap)?race.cap:mine[0];
 }
 const _stageCtxL=stageCtx;
-stageCtx=function(RC){const c=_stageCtxL(RC);if(RC.lead&&!RC.out.has(RC.lead))c.capId=RC.lead;c.lead2=RC.lead2&&!RC.out.has(RC.lead2)?RC.lead2:null;return c};
+stageCtx=function(RC){const c=_stageCtxL(RC);if(RC.race.mode==='singles'){c.entrants=c.entrants.map(e=>e.r.team==='t0'?{r:e.r,team:'si_'+e.r.id}:e);c.capId=null;c.lead2=null;return c}if(RC.lead&&!RC.out.has(RC.lead))c.capId=RC.lead;c.lead2=RC.lead2&&!RC.out.has(RC.lead2)?RC.lead2:null;return c};
 const _createSimL=createSim;
 createSim=function(ctx){
  const S=_createSimL(ctx);
@@ -109,3 +161,6 @@ document.addEventListener('change',e=>{
  else{TAC.lead2=t.value||null;if(TAC.lead2)TAC.plan[TAC.lead2]={move:'gruppo',zone:TAC.plan[TAC.lead]?TAC.plan[TAC.lead].zone:'k10',when:'mid'}}
  const sc=$('#sheet .pb').scrollTop;renderTactic();$('#sheet .pb').scrollTop=sc;
 });
+
+const _TEAMs=TEAM;
+TEAM=function(id){if(typeof id==='string'&&id.startsWith('si_')){const r=RID(id.slice(3));return{id,name:(r?r.name:'Individuale')+' (individuale)',short:G.teams[0].short,tier:'si',nats:[]}}return _TEAMs(id)};

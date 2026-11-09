@@ -140,15 +140,18 @@ function access(race){
  return{ok:true,mode:'invite',chance:clamp(ch,0.02,0.95)};
 }
 function chanceLab(c){return c>=0.7?'alta':c>=0.4?'media':c>=0.15?'bassa':'minima'}
-function register(race){
+function singlesFee(race){const T=TIERS[race.tier];return Math.round((T.fee*0.15+T.prd*race.stages.length)*(race.ctry==='ITA'?1:1.2)/100)*100}
+function register(race,mode){
  if(race.w<=G.week)return{ok:false,msg:'Iscrizioni chiuse: serve almeno una settimana di anticipo.'};
  const a=access(race);if(!a.ok)return{ok:false,msg:a.why};
- const fee=feeOf(race);
+ const singles=mode==='singles'&&indivOk(race)&&a.mode==='fee';
+ const fee=singles?singlesFee(race):feeOf(race);
  if(G.cash<fee)return{ok:false,msg:`Non hai i soldi per la quota (${eur(fee)}).`};
  if(a.mode==='invite'){
   if(R()>=a.chance){race.status='declined';save();return{ok:false,msg:`${race.name}: l'organizzazione ha scelto altre squadre.`,declined:true}}
  }
- G.cash-=fee;race.status='reg';race.fee=fee;save();
+ G.cash-=fee;race.status='reg';race.fee=fee;race.mode=singles?'singles':'team';save();
+ if(singles)return{ok:true,msg:`Iscrizione per singoli a ${race.name}: ${eur(fee)} a corridore, il resto si paga alle convocazioni.`};
  return{ok:true,msg:a.mode==='invite'?`Invito accettato! Iscritti a ${race.name} (${eur(fee)}).`:`Iscritti a ${race.name} (${eur(fee)}).`};
 }
 function withdraw(race){if(race.status!=='reg')return;G.cash+=Math.round((race.fee||0)*0.5);race.status='open';G.rep=Math.max(0,G.rep-1);save()}
@@ -211,7 +214,7 @@ function newRC(race){
 }
 function teamGcOrder(RC){return Object.entries(RC.teamGc||{}).filter(([k,t])=>t!==null).map(([k,t])=>({k,t})).sort((a,b)=>a.t-b.t)}
 function indivOk(race){return race.stages.length===1&&['c2','u23','crit','nc','c1'].includes(race.tier)}
-function minRiders(race){return indivOk(race)?1:4}
+function minRiders(race){return indivOk(race)||race.mode==='singles'?1:4}
 function gcOrder(RC){return RC.field.filter(r=>!RC.out.has(r.id)).map(r=>({id:r.id,team:RC.nat?'n_'+r.nat:r.team,t:RC.gc[r.id].t})).sort((a,b)=>a.t-b.t)}
 function stageCtx(RC){
  const st=RC.race.stages[RC.stage];

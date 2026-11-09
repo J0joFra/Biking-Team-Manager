@@ -241,6 +241,7 @@ function updatePlans(S){
    if(ahead&&!hasAhead){const allow=k2g>80?300:k2g*2.4+10;if(gap>allow){k=2;I=0.9}}
    if(k2g<S.finaleKm+5&&(!hasAhead||!ahead)){k=Math.max(k,1);I=Math.max(I,0.93)}
    if(onClimb&&k2g<S.finaleKm+(S.type==='mossa'?25:0)){k=Math.max(k,2);I=k2g<S.finaleKm?1.02:0.98}
+   else if(onClimb&&k2g<80){k=Math.max(k,1);I=Math.max(I,0.95)}
   }
   if(!k)continue;
   const doms=S.byTeam[t].filter(y=>y!==lead&&!y.finished&&y.cl===main&&y.E>12&&y.role!=='free'&&!(y.isMe&&y.order!=='auto')).sort((a,b)=>b.E-a.E);
@@ -359,7 +360,7 @@ function tick(S){
  if(!S.finalKmLogged&&S.clusters[0].front>=S.len-1){S.finalKmLogged=true;slog(S,'Triangolo rosso: ultimo chilometro')}
  const fi=gi(S,S.clusters[0].front);
  if(c.surf[fi]&&(fi===0||!c.surf[fi-1])&&S.lastSector!==fi){S.lastSector=fi;const k2g=S.len-S.clusters[0].front;if(k2g<90)slog(S,c.surf[fi]===1?`Settore di pavé a ${Math.round(k2g)} km`:`Sterrato a ${Math.round(k2g)} km`)}
- if(S.tick%6===0){updatePlans(S);aiTeamBreaks(S);abandons(S);for(const x of act)decide(S,x);S.attacks=S.attacks.filter(a=>S.t-a.t<60)}
+ if(S.tick%6===0){updatePlans(S);aiTeamBreaks(S);abandons(S);nervous(S);for(const x of act)decide(S,x);S.attacks=S.attacks.filter(a=>S.t-a.t<60)}
  for(const x of act){
   if(x.intent!=='sprint'&&S.len-x.pos<0.28&&x.stop<=0){
    const lead=S.plans[x.team].lead;
@@ -403,6 +404,7 @@ function tick(S){
   const ws=mem.filter(x=>x.intent==='pull');
   let v;const k2g=S.len-cl.front;
   let cI=cl===main?((!S.breakFormed&&k2g>40)?0.69:0.6):0.62;if(gr>3)cI+=cl===main?0.18:0.12;if(c.surf[i])cI+=0.08;
+  const surge=cl===main&&S.surge&&S.t<S.surge.until;if(surge)cI+=S.surge.add;
   if(cl.idx>main.idx&&S.allow){const gp=gapSec(S,cl.front);if(gp>S.allow*0.4)cI+=0.12;if(gp>S.allow*0.7)cI+=0.08}
   let fs=0,ms=0;for(const x of mem){fs+=ftpE(x);ms+=x.m}
   const vC=spd(cI*fs/mem.length,ms/mem.length,s,co,0.32,cr);
@@ -418,8 +420,9 @@ function tick(S){
   }else{v=vC;for(const x of mem)x._req=null}
   cl.v=v;
   const hard=gr>3||c.surf[i]>0||(S.W&&S.W.draft<1&&Math.abs(gr)<2&&ws.length>0);
-  const tense=hard;
+  const tense=hard||surge;
   mem.forEach((x,rank)=>{x._rk=rank});
+  const avgF=fs/mem.length;
   for(const x of mem){
    let vv=v,req;let df=1-db*dScale(v);
    /* coda del gruppo: quando si va forte su salita, pavé o col vento chi è dietro paga l'elastico e prende meno scia */
@@ -431,6 +434,9 @@ function tick(S){
    if(tense&&n>12&&x.intent!=='pull')req*=1+0.05*(x._rk/n);
    const fe=ftpE(x),allow=x.W>1500?fe*1.5:fe;
    if(req>allow){x.P=allow;vv=spd(allow,x.m,s,co,x.cda*df,cr)}else x.P=req;
+   /* perdere le ruote: in coda, nei tratti tirati, chi è al limite lascia qualche metro e resta staccato */
+   if(tense&&n>25&&x.intent!=='pull'&&x._rk/n>0.6&&!(x.gapLoss>0)){const weak=x.W<0.5*x.Wmax||x.E<50||fe<avgF*0.92;if(weak&&R()<(surge?0.03:0.012))x.gapLoss=rint(3,6)}
+   if(x.gapLoss>0){vv=Math.max(1,vv-1.8);x.gapLoss--}
    x.v=vv;
   }
  }
@@ -546,4 +552,18 @@ function abandons(S){
   if(!x.isMe&&x.role==='dom'&&behind>300&&x.E<40&&S.len-x.pos>15&&R()<0.03){x.dnf=true;x.finished=true;x.v=0;continue}
   if(x.E<14&&behind&&S.allow&&behind>S.allow*0.55&&R()<0.25){x.dnf=true;x.finished=true;x.v=0;if(x.isMe)slog(S,`${x.r.name} si ritira: senza energie e fuori tempo`,true)}
  }
+}
+
+/* fasi nervose: il ritmo in testa si alza per qualche minuto e il gruppo si allunga; chi è in coda può perdere contatto */
+function nervous(S){
+ const main=S.main;if(!main||main.rs.length<35)return;
+ const k2g=S.len-main.front;if(k2g<S.finaleKm||S.clusters[0].front<15)return;
+ if(S.surge&&S.t<S.surge.until)return;
+ const i=gi(S,main.front),wind=S.W&&S.W.draft<1;
+ const p=(S.type==='piatta'||S.type==='circuito'?0.035:0.05)*(wind?2:1)*(S.course.g[i]<-3?1.5:1);
+ if(R()>p)return;
+ const kind=wind&&Math.abs(S.course.g[i])<2?'vento':S.course.g[i]<-3?'discesa':S.course.g[i]>3?'salita':'posizioni';
+ S.surge={until:S.t+rint(90,200),add:kind==='vento'?0.28:kind==='salita'?0.18:0.22};
+ S.nSurge=(S.nSurge||0)+1;
+ if(S.nSurge<=4)slog(S,{vento:'Ventagli: il gruppo si spezza col vento laterale',discesa:'Discesa tirata: il gruppo si allunga',salita:'Ritmo alto in salita: il gruppo si sgrana',posizioni:'Lotta per le posizioni: si va forte in testa al gruppo'}[kind]);
 }

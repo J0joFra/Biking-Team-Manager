@@ -116,6 +116,9 @@ function mailSheet(id){
 }
 
 /* ---------- calendario ---------- */
+const CALT=[['all','Tutti i tipi'],['crono','Cronometro'],['piatta','Volata'],['ondulata','Mosse e colline'],['montagna','Montagna'],['pave','Pavé e sterrato'],['tappe','A tappe'],['pista','Pista']];
+const CALT_T={crono:['crono','prologo'],piatta:['piatta','circuito'],ondulata:['mossa','collinare'],montagna:['montagna'],pave:['pave','roubaix','sterrato']};
+function typeOk(r,k){if(!k||k==='all')return true;if(k==='tappe')return r.stages.length>1;if(k==='pista')return r.tier==='track';const ts=CALT_T[k];return r.tier!=='track'&&r.stages.some(s=>ts.includes(s.t))}
 const CALF=[['acc','Accessibili'],['reg','Iscritte'],['all','Tutte'],['ita','Italia'],['u23','Under 23'],['wt','WorldTour'],['naz','Nazionali'],['done','Concluse']];
 function raceState(r){
  if(r.status==='done')return r.result&&r.result.mine?{cls:'done me',t:`${ord(r.result.mine[0].pos)} ${esc(r.result.mine[0].name.split(' ').slice(-1)[0])}`}:r.result&&r.result.winner?{cls:'done',t:esc(r.result.winner)}:r.result&&r.result.junior?{cls:'done',t:`Scuola: ${ord(r.result.junior[0].pos)}`}:{cls:'done',t:'Conclusa'};
@@ -131,8 +134,9 @@ function renderCal(){
  const f=G.calf||'acc';
  const past=r=>r.status==='done'||r.w<G.week||G.phase!=='season';
  const flt=r=>f==='done'?past(r)&&r.status==='done':past(r)?false:f==='all'?true:f==='reg'?r.status==='reg':f==='ita'?r.ctry==='ITA':f==='u23'?(r.tier==='u23'||r.flag==='u23'||r.tier==='jun'):f==='wt'?['gt','mon','uwt1','uwt2'].includes(r.tier):f==='naz'?r.tier==='naz':(access(r).ok||r.status==='reg'||r.tier==='naz');
- const list=G.races.filter(flt).sort((a,b)=>f==='done'?(b.w-a.w||TIER_ORDER[a.tier]-TIER_ORDER[b.tier]):(a.w-b.w||TIER_ORDER[a.tier]-TIER_ORDER[b.tier]));
- let html=`<div class="toolbar"><div class="chips">${CALF.map(([k,l])=>`<button class="fchip" data-act="calf" data-v="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div><span class="note">${list.length} corse${f==='done'?' concluse':''}</span></div>${!list.length?`<div class="note">${f==='done'?'Nessuna corsa conclusa finora.':G.phase!=='season'?'Stagione finita: il nuovo calendario arriva con la prossima stagione.':'Nessuna corsa in programma con questo filtro.'}</div>`:''}`;
+ const tk=G.calt||'all';
+ const list=G.races.filter(r=>flt(r)&&typeOk(r,tk)).sort((a,b)=>f==='done'?(b.w-a.w||TIER_ORDER[a.tier]-TIER_ORDER[b.tier]):(a.w-b.w||TIER_ORDER[a.tier]-TIER_ORDER[b.tier]));
+ let html=`<div class="toolbar"><div class="chips">${CALF.map(([k,l])=>`<button class="fchip" data-act="calf" data-v="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div><div class="chips">${CALT.map(([k,l])=>`<button class="fchip" data-act="calt" data-v="${k}" aria-pressed="${tk===k}">${l}</button>`).join('')}</div><span class="note">${list.length} corse${f==='done'?' concluse':''}</span></div>${!list.length?`<div class="note">${f==='done'?'Nessuna corsa conclusa finora.':G.phase!=='season'?'Stagione finita: il nuovo calendario arriva con la prossima stagione.':'Nessuna corsa in programma con questo filtro.'}</div>`:''}`;
  let lw=-1;html+='<div class="callist">';
  for(const r of list){
   if(r.w!==lw){lw=r.w;html+=`<div class="wk ${r.w===G.week?'now':''}" ${r.w===G.week?'id="wknow"':''}><b>Sett. ${r.w}</b> ${weekLab(r.w)}${r.w===G.week?' · <span class="chip u23">adesso</span>':''}</div>`}
@@ -153,7 +157,7 @@ function raceSheet(id){
  const r=G.races.find(x=>x.id===id);if(!r)return;
  const T=TIERS[r.tier],a=access(r),fee=feeOf(r);
  const pro=r.stages[0].t==='prologo';
- const stg=r.stages.map((s,i)=>{const c=genCourse(s.t,s.seed,s.km,T.lf);const climbs=c.climbs.filter(x=>x.cat!=='4').length;
+ const stg=r.tier==='track'?'':r.stages.map((s,i)=>{const c=genCourse(s.t,s.seed,s.km,T.lf);const climbs=c.climbs.filter(x=>x.cat!=='4').length;
   return`<div class="stage"><div class="sl"><b>${r.stages.length>1?(s.t==='prologo'?'P':i+(pro?0:1)):''}</b><span>${TYPE_LAB[s.t]} · ${km1(c.len)} km${climbs?` · ${climbs} GPM`:''}${c.secN?` · ${c.secN} settori`:''}</span></div>${profileSVG(c)}</div>`}).join('');
  let act='',info='';
  if(r.status==='done'&&r.result){
@@ -172,12 +176,12 @@ function raceSheet(id){
  else if(r.w<=G.week)info=`<div class="msg no">Iscrizioni chiuse: servono almeno 7 giorni di anticipo.</div>`;
  else{
   info=a.mode==='invite'?`<div class="msg">Serve un invito degli organizzatori. Probabilità ${chanceLab(a.chance)} (${Math.round(a.chance*100)}%): dipende da reputazione e nazionalità. Se ti invitano paghi la quota.</div>`:a.auto?`<div class="msg ok">Sei tra le prime due ProTeam: invito automatico.</div>`:'';
-  info+=`<div class="note">${r.stages.length>1?'Corsa a tappe: si corre solo come squadra (almeno 4 corridori), con classifica individuale e classifica a squadre.':indivOk(r)?`Iscrizione anche individuale: puoi schierare da 1 a ${selSize(r)} corridori; la trasferta dei posti vuoti ti viene rimborsata.`:'Si corre come squadra: almeno 4 corridori.'}</div>`;
+  info+=r.tier==='track'?'<div class="note">Riunione su pista: dopo l\'iscrizione scegli chi corre in ogni specialità.</div>':`<div class="note">${r.stages.length>1?'Corsa a tappe: si corre solo come squadra (almeno 4 corridori), con classifica individuale e classifica a squadre.':indivOk(r)?`Iscrizione anche individuale: puoi schierare da 1 a ${selSize(r)} corridori; la trasferta dei posti vuoti ti viene rimborsata.`:'Si corre come squadra: almeno 4 corridori.'}</div>`;
   act=`<button class="btn primary big" data-act="register" data-v="${r.id}" ${G.cash<fee?'disabled':''}>${a.mode==='invite'?'Chiedi l\'invito':'Iscrivi la squadra'} · ${eur(fee)}</button>${indivOk(r)&&a.mode==='fee'?`<button class="btn big" data-act="register" data-v="${r.id}" data-m="singles" ${G.cash<singlesFee(r)?'disabled':''}>Iscrivi singoli · ${eur(singlesFee(r))} a corridore</button>`:''}`;
   if(indivOk(r)&&a.mode==='fee')info+=`<div class="note"><b>Squadra</b>: corrono insieme con punta e gregari. <b>Singoli</b>: mandi i corridori che non usi altrove, ognuno corre per sé; paghi solo per chi parte.</div>`;
  }
  const dl=r.dur>1?`${weekLab(r.w)} – ${weekLab(r.w+r.dur-1)}`:weekLab(r.w);
- openSheet(sheetHead(`${r.lab} · ${T.lab} · ${COUNTRY[r.ctry]||r.ctry} · ${dl}`,esc(r.name),`${r.stages.length>1?r.stages.length+' tappe':'Corsa di un giorno'} · ${T.win?`${T.win} punti UCI al vincitore`:'Gara giovanile'}${T.size&&r.tier!=='jun'?` · squadre da ${T.size}`:''}`)+
+ openSheet(sheetHead(`${r.lab} · ${T.lab} · ${COUNTRY[r.ctry]||r.ctry} · ${dl}`,esc(r.name),r.tier==='track'?`Riunione su pista · ${r.disc.length} specialità${r.flag==='ita'?' · maglia tricolore':''}`:`${r.stages.length>1?r.stages.length+' tappe':'Corsa di un giorno'} · ${T.win?`${T.win} punti UCI al vincitore`:'Gara giovanile'}${T.size&&r.tier!=='jun'?` · squadre da ${T.size}`:''}`)+
  `<div class="pb wrap"><div class="rsgrid"><div class="stages">${stg}</div><div class="rsside">
    ${r.tier!=='jun'&&r.status!=='done'?`<div class="card pad"><div class="eyebrow">Costi</div><div class="big2">${eur(fee)}</div><div class="note">Iscrizione ${eur(T.fee)} + trasferta ${eur(T.prd)} per corridore al giorno${r.ctry!=='ITA'?' · +20% per la trasferta all\'estero':''}</div></div>`:''}
    ${info}<div class="row">${act}</div></div></div></div>`,'wide');
@@ -740,6 +744,7 @@ document.addEventListener('click',e=>{
   case'advnext':{busyOn('Le settimane passano…');setTimeout(()=>{const n=advanceToNext();busyOff();render();toast(`Avanzato di ${n} settiman${n===1?'a':'e'}`)},30);break}
   case'mail':mailSheet(v);render();break;
   case'calf':G.calf=v;renderCal();break;
+  case'calt':G.calt=v;renderCal();break;
   case'rankf':G.rankf=v;renderRank();break;
   case'race':raceSheet(v);break;
   case'register':{const race=G.races.find(x=>x.id===v);const res=register(race,t.dataset.m);toast(res.msg,res.ok?'ok':res.declined?'bad':'');raceSheet(v);renderTop();if(G.tab==='cal')renderCal();break}

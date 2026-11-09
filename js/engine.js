@@ -549,7 +549,9 @@ function abandons(S){
   if(x.badDay===undefined)x.badDay=R()<0.006?rnd(0.2,0.8)*S.len:-1;
   if(x.badDay>0&&x.pos>=x.badDay){x.dnf=true;x.finished=true;x.v=0;slog(S,`${x.r.name} (${tshort(x)}) si ritira: giornata storta`,x.isMe);continue}
   const behind=x.cl&&x.cl.idx>main.idx?gapSec(S,x.pos)-gapSec(S,main.front):0;
-  if(!x.isMe&&x.role==='dom'&&behind>300&&x.E<40&&S.len-x.pos>15&&R()<0.03){x.dnf=true;x.finished=true;x.v=0;continue}
+  const H=({montagna:5,sterrato:4,collinare:3.5,mossa:2,pave:1,roubaix:1})[S.type]||1,SR=S.stageRace?0.25:1;
+  if(!x.isMe&&x.role!=='lead'&&behind>(H>2?200:300)&&x.E<(H>2?50:40)&&S.len-x.pos>12&&R()<0.03*H*SR){x.dnf=true;x.finished=true;x.v=0;continue}
+  if(!x.isMe&&H>2&&behind>120&&x.E<30&&R()<0.04*H*SR){x.dnf=true;x.finished=true;x.v=0;continue}
   if(x.E<14&&behind&&S.allow&&behind>S.allow*0.55&&R()<0.25){x.dnf=true;x.finished=true;x.v=0;if(x.isMe)slog(S,`${x.r.name} si ritira: senza energie e fuori tempo`,true)}
  }
 }

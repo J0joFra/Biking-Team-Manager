@@ -149,6 +149,7 @@ main.view.enter{animation:enter .22s ease-out}
 .recent .rn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
 
 /* calendario */
+.trackgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
 .toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
 .chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;max-width:100%}
 .fchip{padding:7px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-family:var(--f-display);font-weight:600;font-size:14px;letter-spacing:.04em;white-space:nowrap}
@@ -572,4 +573,5 @@ tr.clk:hover td{background:var(--sunk)}
 <script src="js/menu.js"></script>
 <script src="js/roster.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/track.js"></script>
 <script src="js/tv.js"></script>

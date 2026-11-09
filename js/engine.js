@@ -270,6 +270,7 @@ function applyOrder(S,x){
 }
 function decide(S,x){
  if(x.finished||x.stop>0||x.intent==='sprint')return;
+ if(x.tbr&&x.tbr.phase!=='end'&&teamBreakDecide(S,x))return;
  if(x.intent==='attack'){if(S.t<x.atkUntil&&x.W>0.15*x.Wmax)return;x.intent='pull';x.I=0.9;if(x.isMe&&x.order==='scatta')x.order='tira'}
  if(x.intent==='follow'){const t=S.byId[x.followId];if(t&&t.intent==='attack'&&!t.finished)return;x.intent='sit'}
  if(x.isMe&&x.order!=='auto'){applyOrder(S,x);return}
@@ -358,7 +359,7 @@ function tick(S){
  if(!S.finalKmLogged&&S.clusters[0].front>=S.len-1){S.finalKmLogged=true;slog(S,'Triangolo rosso: ultimo chilometro')}
  const fi=gi(S,S.clusters[0].front);
  if(c.surf[fi]&&(fi===0||!c.surf[fi-1])&&S.lastSector!==fi){S.lastSector=fi;const k2g=S.len-S.clusters[0].front;if(k2g<90)slog(S,c.surf[fi]===1?`Settore di pavé a ${Math.round(k2g)} km`:`Sterrato a ${Math.round(k2g)} km`)}
- if(S.tick%6===0){updatePlans(S);for(const x of act)decide(S,x);S.attacks=S.attacks.filter(a=>S.t-a.t<60)}
+ if(S.tick%6===0){updatePlans(S);aiTeamBreaks(S);abandons(S);for(const x of act)decide(S,x);S.attacks=S.attacks.filter(a=>S.t-a.t<60)}
  for(const x of act){
   if(x.intent!=='sprint'&&S.len-x.pos<0.28&&x.stop<=0){
    const lead=S.plans[x.team].lead;
@@ -401,7 +402,7 @@ function tick(S){
   const n=cl.rs.length,db=dBase(n)*(c.surf[i]?0.6:1)*(S.W&&Math.abs(gr)<2?S.W.draft:1);
   const ws=mem.filter(x=>x.intent==='pull');
   let v;const k2g=S.len-cl.front;
-  let cI=cl===main?((!S.breakFormed&&k2g>40)?0.69:0.6):0.62;if(gr>3)cI+=0.12;if(c.surf[i])cI+=0.08;
+  let cI=cl===main?((!S.breakFormed&&k2g>40)?0.69:0.6):0.62;if(gr>3)cI+=cl===main?0.18:0.12;if(c.surf[i])cI+=0.08;
   if(cl.idx>main.idx&&S.allow){const gp=gapSec(S,cl.front);if(gp>S.allow*0.4)cI+=0.12;if(gp>S.allow*0.7)cI+=0.08}
   let fs=0,ms=0;for(const x of mem){fs+=ftpE(x);ms+=x.m}
   const vC=spd(cI*fs/mem.length,ms/mem.length,s,co,0.32,cr);
@@ -417,7 +418,7 @@ function tick(S){
   }else{v=vC;for(const x of mem)x._req=null}
   cl.v=v;
   const hard=gr>3||c.surf[i]>0||(S.W&&S.W.draft<1&&Math.abs(gr)<2&&ws.length>0);
-  const tense=hard&&ws.length>0;
+  const tense=hard;
   mem.forEach((x,rank)=>{x._rk=rank});
   for(const x of mem){
    let vv=v,req;let df=1-db*dScale(v);
@@ -491,4 +492,58 @@ function quickStage(field,type,fat,week){
   if(gap<prev)gap=prev;if(gap-prev<2&&QS[type]>0&&type!=='crono'&&type!=='prologo')gap=prev;
   prev=gap;return{id:o.r.id,team:o.r.team,time:Math.round(gap)};
  });
+}
+
+/* ============================================================
+   FUGA DI SQUADRA: 3–4 compagni partono insieme. Per 5 km danno
+   tutto; se il distacco arriva ad almeno 2' continuano finché ce
+   la fanno, altrimenti rientrano in gruppo.
+   ============================================================ */
+function teamBreak(S,ids,why){
+ const rs=ids.map(id=>S.byId[id]).filter(x=>x&&!x.finished&&x.stop<=0);
+ if(rs.length<3)return false;
+ const tb={team:rs[0].team,ids:rs.map(x=>x.id),start:Math.max(...rs.map(x=>x.pos)),phase:'go',t:S.t};
+ (S.tbs=S.tbs||[]).push(tb);
+ for(const x of rs){x.tbr=tb;x.intent='attack';x.I=1.35;x.atkUntil=S.t+50;x.W=Math.max(x.W,0.5*x.Wmax)}
+ slog(S,`Fuga di squadra ${rs[0].isMe?'dei nostri':`della ${TEAM(rs[0].team).name}`}: partono ${rs.map(x=>rname(x)).join(', ')}`,rs[0].isMe);
+ return true;
+}
+function teamBreakDecide(S,x){
+ const tb=x.tbr,main=S.main;
+ if(x.intent==='attack'&&S.t<x.atkUntil)return true;
+ const caught=x.cl===main||x.cl.idx>main.idx;
+ const lead=Math.max(...tb.ids.map(id=>S.byId[id].pos));
+ if(tb.phase==='go'&&lead-tb.start>=5){
+  const gap=main.idx>x.cl.idx?gapSec(S,main.front)-gapSec(S,x.pos):0;
+  tb.phase=gap>=120?'hold':'end';
+  slog(S,tb.phase==='hold'?`La fuga di squadra ha ${fmtGap(gap)} dopo 5 km: continuano a spingere`:`Fuga di squadra: solo ${fmtGap(Math.max(0,gap))} dopo 5 km, si rialzano`,S.byId[tb.ids[0]].isMe);
+ }
+ if(tb.phase==='hold'&&caught&&lead-tb.start>6){tb.phase='end';slog(S,'La fuga di squadra è stata ripresa',S.byId[tb.ids[0]].isMe)}
+ if(tb.phase==='end'){x.tbr=null;x.intent='sit';return false}
+ if(x.E<12){x.intent='sit';return true}
+ x.intent='pull';x.I=tb.phase==='go'?1.08:0.92;
+ return true;
+}
+function aiTeamBreaks(S){
+ const main=S.main;if(!main||!S.breakFormed&&S.clusters[0].front<20)return;
+ const k2g=S.len-main.front;if(k2g<10||k2g>45)return;
+ for(const t in S.plans){
+  if(t.startsWith('t0')||t.startsWith('si_')||t.startsWith('n_'))continue;
+  const p=S.plans[t];if(S.tbs&&(S.tbs.some(b=>b.team===t)||S.tbs.filter(b=>!S.byId[b.ids[0]].isMe).length>=2))continue;
+  if(R()>(p.goal==='break'?0.0025:p.goal==='hill'?0.0012:0.0003))continue;
+  const rs=S.byTeam[t].filter(x=>!x.finished&&x.cl===main&&x.E>40&&x.W>0.5*x.Wmax&&x!==p.lead).sort((a,b)=>b.E-a.E).slice(0,rint(3,4));
+  if(rs.length>=3)teamBreak(S,rs.map(x=>x.id));
+ }
+}
+/* ritiri: chi è stremato e molto staccato, o ha una giornata storta */
+function abandons(S){
+ const main=S.main;if(!main)return;
+ for(const x of S.riders){
+  if(x.finished||x.stop>0)continue;
+  if(x.badDay===undefined)x.badDay=R()<0.006?rnd(0.2,0.8)*S.len:-1;
+  if(x.badDay>0&&x.pos>=x.badDay){x.dnf=true;x.finished=true;x.v=0;slog(S,`${x.r.name} (${tshort(x)}) si ritira: giornata storta`,x.isMe);continue}
+  const behind=x.cl&&x.cl.idx>main.idx?gapSec(S,x.pos)-gapSec(S,main.front):0;
+  if(!x.isMe&&x.role==='dom'&&behind>300&&x.E<40&&S.len-x.pos>15&&R()<0.03){x.dnf=true;x.finished=true;x.v=0;continue}
+  if(x.E<14&&behind&&S.allow&&behind>S.allow*0.55&&R()<0.25){x.dnf=true;x.finished=true;x.v=0;if(x.isMe)slog(S,`${x.r.name} si ritira: senza energie e fuori tempo`,true)}
+ }
 }

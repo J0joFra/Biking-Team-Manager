@@ -437,7 +437,7 @@ function renderRaceSkeleton(){
   <div><div class="eyebrow">Situazione corsa</div><div class="card groups" id="grps"></div></div>
   <div><div class="eyebrow">Radio corsa</div><div class="card radio" id="radio"></div></div>
  </div></section>
- <section class="rcol rr"><div class="wrap rbody"><div><div class="eyebrow">Consigli dell'ammiraglia</div><div class="tips" id="tips"></div></div><div><div class="eyebrow">I tuoi corridori · ordini radio</div><div class="card" id="mine"></div></div></div></section></div>
+ <section class="rcol rr"><div class="wrap rbody"><div><div class="eyebrow">Consigli dell'ammiraglia</div><div class="tips" id="tips"></div></div><div><div class="eyebrow">I tuoi corridori · ordini radio</div><div id="tbbox"></div><div class="card" id="mine"></div></div></div></section></div>
  <div class="ctrl"><div class="wrap">
   <button class="btn play" data-act="play" id="playb" aria-label="Pausa">❚❚</button>
   <div class="sp" id="spd">${[[25,'1×'],[75,'3×'],[250,'10×']].map(([v,l])=>`<button data-act="speed" data-v="${v}" aria-pressed="${LIVE.speed===v}">${l}</button>`).join('')}</div>
@@ -483,6 +483,7 @@ function updateRaceUI(){
    <div style="min-width:0"><div class="gn">${o.name} <span class="gc">${o.rs.length} corridor${o.rs.length===1?'e':'i'}</span></div>${notable?`<div class="gc">${notable}</div>`:''}</div>
    <div class="gg">${o===gd[0]?'—':fmtGap(o.g)}</div>${mine.length?`<div class="mine">${mine.map(x=>`<span class="chip u23">${esc(rname(x))}</span>`).join('')}</div>`:''}</div>`}).join('')+(gd.length>7?`<div class="grp"><span></span><div class="gc">+ altri ${gd.length-7} gruppetti</div><span></span></div>`:'')+(S.finish.length?`<div class="grp"><span class="dot" style="background:var(--ok)"></span><div class="gn">Arrivati <span class="gc">${S.finish.length}</span></div><span></span></div>`:'');
  renderMine(false);
+ {const tb=$('#tbbox');if(tb)tb.innerHTML=tbButton(S)}
  let np=nextPoint(S,lead);
  if(S.ptsLines.length){const j=S.ptsLines.findIndex(k=>k>lead);const top=Object.entries(S.prPts).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([id,p])=>`${rname(S.byId[id])} ${p}`).join(', ');np=(j>=0?`Traguardo a punti ${j+1}/${S.ptsLines.length} tra ${km1(S.ptsLines[j]-lead)} km`:'Ultimo giro: volata finale a punti doppi')+(top?` · Punti: ${top}`:'')}
  if(S.allow&&S.clusters.length>1){np+=` · Tempo massimo ≈ +${Math.round(S.allow/60)}'`;const late=(S.byTeam.t0||[]).filter(x=>!x.finished&&gapSec(S,x.pos)>S.allow*0.7);if(late.length)np+=` · ${late.map(rname).join(', ')} a rischio!`}
@@ -706,12 +707,25 @@ function guideSheet(){
  ${sec('Gli ordini','<b>Piano</b>: segue la tattica decisa prima del via (movimento, zona e momento d\'attacco); se non c\'è un piano decide l\'ammiraglia.<br><b>Ruota</b>: resta coperto in scia, consuma fino al 40% in meno.<br><b>Copri</b>: resta coperto ma risponde subito agli scatti dei rivali nel suo gruppo.<br><b>Tira</b>: va in testa a fare il ritmo; consuma molto ma tiene chiusa la corsa o allunga la fuga.<br><b>Scatta</b>: attacco secco di 1–2 minuti, poi continua a tirare.<br><b>Scorta</b>: il gregario resta con il capitano, lo aspetta se è staccato e lo riporta sotto.')}
  ${sec('Quando attaccare','In <b>salita</b>, negli ultimi 2–3 km prima della cima o dell\'arrivo: in salita la scia conta poco e contano i W/kg.<br>Sui <b>muri e sul pavé</b>: il gruppo si spezza e chi è dietro fatica a rientrare.<br>Dalla <b>fuga</b>, negli ultimi 10 km, per staccare i compagni.<br>In <b>pianura</b> un attacco lontano dall\'arrivo di solito viene ripreso: il gruppo in scia va più veloce di un corridore da solo.<br>Prima di attaccare guarda la riserva scatti: sopra il 60%.')}
  ${sec('Quando coprire','Usa <b>Copri</b> quando scatta un rivale pericoloso: un uomo di classifica vicino in generale o uno scalatore forte nel finale. Non serve coprire chi è lontano in classifica o scatta a 100 km dall\'arrivo: costa riserva e il gruppo lo riprenderà.')}
- ${sec('La fuga','Va via nei primi chilometri: manda un gregario con <b>Scatta</b>. In fuga guadagni visibilità per gli sponsor e punti GPM. Le squadre dei velocisti la tengono a qualche minuto e la chiudono nel finale; nelle tappe dure può arrivare.')}
+ ${sec('La fuga','Va via nei primi chilometri: manda un gregario con <b>Scatta</b>. In fuga guadagni visibilità per gli sponsor e punti GPM. Le squadre dei velocisti la tengono a qualche minuto e la chiudono nel finale; nelle tappe dure può arrivare.<br><b>Fuga di squadra</b>: con almeno 3 compagni nello stesso gruppo partono insieme e danno tutto per 5 km. Se hanno almeno 2\' di vantaggio continuano finché ce la fanno, altrimenti si rialzano.')}
  ${sec('La volata','Negli ultimi chilometri i gregari su <b>Tira</b> fanno il treno e il velocista resta a <b>Ruota</b>. Negli ultimi 250 m lo sprint parte da solo: vince chi ha più potenza e più riserva rimasta.')}
  ${sec('Imprevisti','Forature e cadute capitano di più sul pavé, in discesa e nelle volate di gruppo. Se il capitano resta indietro, metti uno o due gregari su <b>Scorta</b>. Dopo una caduta grave il corridore si ritira e salta qualche settimana.')}
  </div></div><div class="pf"><div class="wrap fr"><button class="btn primary" data-act="close-guide">Ho capito</button></div></div>`,'wide');
 }
 
+function tbCandidates(S){
+ const me=S.riders.filter(x=>x.isMe&&!x.finished&&x.stop<=0&&!x.tbr);if(!me.length)return[];
+ const by=new Map();for(const x of me){by.set(x.cl,(by.get(x.cl)||[]).concat(x))}
+ let best=[];for(const v of by.values())if(v.length>best.length)best=v;
+ const lead=S.plans[best[0]&&best[0].team]&&S.plans[best[0].team].lead;
+ return best.filter(x=>x!==lead).sort((a,b)=>b.E-a.E).slice(0,4);
+}
+function tbButton(S){
+ const active=(S.tbs||[]).find(b=>S.byId[b.ids[0]].isMe&&b.phase!=='end');
+ if(active){const k=Math.max(...active.ids.map(id=>S.byId[id].pos))-active.start;return`<div class="tbstate">Fuga di squadra in corso · ${active.phase==='go'?`${km1(Math.max(0,5-k))} km alla verifica dei 2'`:'tengono duro oltre i 2\''}</div>`}
+ const c=tbCandidates(S);
+ return`<button class="btn tbbtn" data-act="teambreak" ${c.length<3?'disabled':''}>Fuga di squadra${c.length>=3?` (${c.map(x=>esc(rname(x))).join(', ')})`:' · servono 3 compagni nello stesso gruppo'}</button>`;
+}
 /* ---------- eventi ---------- */
 document.addEventListener('click',e=>{
  const t=e.target.closest('[data-act]');if(!t)return;
@@ -758,6 +772,7 @@ document.addEventListener('click',e=>{
   case'sppropose':{const sp=SP(SPN.id);const res=propose(sp,SPN.slot,SPN.years);SPN.msg={ok:res.ok,t:res.msg};toast(res.msg,res.ok?'gold':'');sponsorSheet(SPN.id);renderTop();break}
   case'offyes':{const o=G.offers.find(x=>x.id===v);if(o){const res=acceptOffer(o);toast(res.msg,res.ok?'gold':'bad')}render();break}
   case'offno':{const o=G.offers.find(x=>x.id===v);if(o)declineOffer(o);render();break}
+  case'teambreak':{const S=LIVE&&LIVE.S;if(!S)break;const c=tbCandidates(S);if(c.length>=3){teamBreak(S,c.map(x=>x.id));updateRaceUI()}break}
   case'guide':guideSheet();break;
   case'close-guide':closeSheet();break;
   case'tt':{const ctx=LIVE.ctx;finishStage(LIVE.RC,simTT(ctx),null,ctx.course);showStageResult();break}

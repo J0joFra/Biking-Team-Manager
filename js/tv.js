@@ -18,18 +18,26 @@ function tvTarget(S){
 }
 /* posizione visiva in gruppo: chi tira davanti, poi gli altri in file */
 function formation(S,cl){
- const rs=cl.rs.filter(x=>!x.finished).slice();
- const pri=x=>x.intent==='attack'?-2:x.intent==='sprint'?-1:x.intent==='pull'?0:x.intent==='follow'?1:2;
- rs.sort((a,b)=>pri(a)-pri(b)||(hashId(a.id)%97)-(hashId(b.id)%97));
- const n=rs.length,w=Math.max(1,Math.min(6,Math.ceil(Math.sqrt(n*0.7)))),wind=S.W&&S.W.draft<1;
- const out=[];
- rs.forEach((x,i)=>{
-  let row,col;
-  if(i<Math.min(2,n)&&pri(x)<=0){row=i===0?0:1;col=0}
-  else{const k=i;row=Math.floor(k/w)+1;col=k%w-(w-1)/2}
-  const back=row*2.5+(hashId(x.id)%10)/12;
-  const lat=wind?(-3+row*0.5+col*0.3):(col*0.75+((hashId(x.id)>>3)%10-5)/25);
-  out.push({x,dm:back,lat:clamp(lat,-3.2,3.2)});
+ const rs=cl.rs.filter(x=>!x.finished);
+ const pri=x=>x.intent==='attack'?0:x.intent==='sprint'?1:x.intent==='pull'?2:3;
+ const pullTeams=new Set(rs.filter(x=>x.intent==='pull').map(x=>x.team));
+ const front=rs.filter(x=>pri(x)<3).sort((a,b)=>pri(a)-pri(b)||String(a.team).localeCompare(String(b.team)));
+ /* subito dietro chi tira: la sua punta */
+ const leaders=rs.filter(x=>pri(x)===3&&pullTeams.has(x.team)&&S.plans[x.team]&&S.plans[x.team].lead===x);
+ const rest=rs.filter(x=>pri(x)===3&&!leaders.includes(x));
+ /* le squadre stanno compatte: blocchi di compagni */
+ const tk=t=>hashId(String(t))%1000;
+ rest.sort((a,b)=>tk(a.team)-tk(b.team)||((S.plans[a.team]&&S.plans[a.team].lead===a)?-1:0)-((S.plans[b.team]&&S.plans[b.team].lead===b)?-1:0));
+ const order=front.concat(leaders,rest);
+ const n=order.length,w=Math.max(1,Math.min(5,Math.ceil(n/12)+1)),wind=S.W&&S.W.draft<1&&n>10;
+ const out=[];let row=0,col=0;
+ order.forEach((x,i)=>{
+  let r,c;
+  if(i<front.length&&front.length<=3){r=i;c=0}
+  else{const k=i-(front.length<=3?front.length:0);r=Math.floor(k/w)+(front.length<=3?front.length:0);c=k%w-(w-1)/2}
+  const back=r*2.1+(hashId(x.id)%10)/14;
+  const lat=wind?(-3.2+Math.min(6.2,(r%12)*0.55)+c*0.25):(c*1.15+((hashId(x.id)>>3)%10-5)/30);
+  out.push({x,dm:back,lat:clamp(lat,-3.3,3.3)});
  });
  return out;
 }
@@ -69,13 +77,29 @@ function drawTV(){
    const xx=X(m),yy=Y(f.lat),r=Math.max(3.2,Math.min(6.5,ppm*0.55))*(f.x.isMe?1.25:1);
    const[c1,c2]=riderColors(f.x);
    g.beginPath();g.arc(xx,yy,r,0,Math.PI*2);g.fillStyle=c1;g.fill();
-   if(f.x.isMe){g.lineWidth=2;g.strokeStyle=c2;g.stroke();const pl=S.plans[f.x.team];if((pl&&pl.lead===f.x)||f.x.intent==='attack'||f.x.intent==='pull'||f.x.intent==='sprint')labels.push({xx,yy,r,t:f.x.r.name.split(' ').slice(-1)[0],att:f.x.intent==='attack'})}
-   else if(f.x.intent==='attack'){g.lineWidth=2;g.strokeStyle=col.danger;g.stroke()}
+   const small=cl.rs.length<=12&&cl!==S.main;
+   if(f.x.isMe){g.lineWidth=2;g.strokeStyle=c2;g.stroke()}
+   if(!small){const pl=S.plans[f.x.team];if(f.x.isMe&&((pl&&pl.lead===f.x)||f.x.intent==='attack'||f.x.intent==='pull'||f.x.intent==='sprint'))labels.push({xx,yy,r,t:f.x.r.name.split(' ').slice(-1)[0],att:f.x.intent==='attack',me:true})}
+   if(!f.x.isMe&&f.x.intent==='attack'){g.lineWidth=2;g.strokeStyle=col.danger;g.stroke()}
    if(f.x.stop>0){g.fillStyle=col.danger;g.fillText('!',xx-2,yy-r-2)}
   }
  }
  g.font='700 13px "Barlow Condensed", sans-serif';
- labels.forEach((l,i)=>{const up=i%2===0;g.fillStyle=l.att?col.danger:col.ink;g.fillText(l.t.toUpperCase(),l.xx+l.r+3,up?l.yy-l.r-2:l.yy+l.r+11)});
+ g.font='700 12px "Barlow Condensed", sans-serif';
+ labels.sort((a,b)=>a.xx-b.xx).forEach((l,i)=>{const lv=i%3;g.fillStyle=l.att?col.danger:col.ac;const ty=lv===0?l.yy-l.r-3:lv===1?l.yy+l.r+11:l.yy+4;g.fillText(l.t.toUpperCase(),l.xx+l.r+3,ty)});
+ /* gruppetti piccoli (fughe, contrattacchi): elenco dei nomi accanto alla testa */
+ for(const cl of vis){
+  if(cl.rs.length>12||cl===S.main)continue;
+  const hx=X(cl.front*1000);if(hx<-40||hx>W+40)continue;
+  const names=formation(S,cl).map(f=>f.x);
+  const lines=names.map(x=>({t:`${x.r.name.split(' ').slice(-1)[0]} ${x.isMe?'':tshort(x)}`.trim(),me:x.isMe,att:x.intent==='attack'}));
+  g.font='600 12px "Barlow Condensed", sans-serif';
+  const bw=Math.max(...lines.map(l=>g.measureText(l.t).width))+14,bh=lines.length*14+8;
+  let bx=hx+12;if(bx+bw>W-4)bx=Math.max(4,hx-bw-14);
+  const by=clamp(ry+6,30,H-bh-26);
+  g.globalAlpha=0.9;g.fillStyle=col.line;g.fillRect(bx,by,bw,bh);g.globalAlpha=1;g.strokeStyle=col.ink;g.lineWidth=1;g.strokeRect(bx+0.5,by+0.5,bw-1,bh-1);
+  lines.forEach((l,i)=>{g.fillStyle=l.att?col.danger:l.me?col.ac:col.ink;g.fillText(l.t.toUpperCase(),bx+7,by+16+i*14)});
+ }
  // gruppi fuori campo
  const gd=groupsDisplay(S);
  const ahead=gd.filter(o=>o.front*1000>cam+span).pop(),behind=gd.find(o=>o.front*1000<cam-40);

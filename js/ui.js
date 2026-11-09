@@ -430,6 +430,7 @@ function renderRaceSkeleton(){
   <div class="kmbig"><div class="k" id="k2g">0<small>km all'arrivo</small></div>
    <div class="o"><div>Tempo<b id="rt">0'00"</b></div><div>Media<b id="ravg">—</b></div><div>Pendenza<b id="rgr">0%</b></div></div></div>
   <div class="nextp" id="nextp"></div>
+  <div id="tvbar"></div>
   <div class="prof"><canvas id="pc"></canvas><button class="chip zoom" data-act="zoom" id="zbtn">Zoom</button></div>
  </div></div>
  <div class="wrap rbody">
@@ -442,7 +443,7 @@ function renderRaceSkeleton(){
   <div class="sp" id="spd">${[[25,'1×'],[75,'3×'],[250,'10×']].map(([v,l])=>`<button data-act="speed" data-v="${v}" aria-pressed="${LIVE.speed===v}">${l}</button>`).join('')}</div>
   <span style="flex:1"></span><button class="btn ghost" data-act="guide" aria-label="Guida tattica">?</button><button class="btn ghost" data-act="jump">Finale</button><button class="btn ghost" data-act="end">Fine</button>
  </div></div>`;
- renderMine(true);updateRaceUI();
+ renderMine(true);updateRaceUI();refreshTvBar();
 }
 function loop(now){
  if(!LIVE||!LIVE.S)return;
@@ -478,7 +479,7 @@ function updateRaceUI(){
  $('#grps').innerHTML=gd.slice(0,7).map(o=>{
   const mine=o.rs.filter(x=>x.isMe);
   const notable=o.rs.length<=6&&!o.main?o.rs.map(x=>`${rname(x)} <span class="muted">${tshort(x)}</span>`).join(', '):'';
-  return`<div class="grp"><span class="dot" style="background:${mine.length?'var(--accent)':o.main?'var(--muted)':'var(--amber)'}"></span>
+  return`<div class="grp" data-act="tvgroup" data-v="${o.rs[0].id}" role="button" tabindex="0" title="Inquadra con la moto TV"><span class="dot" style="background:${mine.length?'var(--accent)':o.main?'var(--muted)':'var(--amber)'}"></span>
    <div style="min-width:0"><div class="gn">${o.name} <span class="gc">${o.rs.length} corridor${o.rs.length===1?'e':'i'}</span></div>${notable?`<div class="gc">${notable}</div>`:''}</div>
    <div class="gg">${o===gd[0]?'—':fmtGap(o.g)}</div>${mine.length?`<div class="mine">${mine.map(x=>`<span class="chip u23">${esc(rname(x))}</span>`).join('')}</div>`:''}</div>`}).join('')+(gd.length>7?`<div class="grp"><span></span><div class="gc">+ altri ${gd.length-7} gruppetti</div><span></span></div>`:'')+(S.finish.length?`<div class="grp"><span class="dot" style="background:var(--ok)"></span><div class="gn">Arrivati <span class="gc">${S.finish.length}</span></div><span></span></div>`:'');
  renderMine(false);

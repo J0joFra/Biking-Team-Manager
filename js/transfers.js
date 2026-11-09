@@ -20,14 +20,17 @@ function askSal(r,mode,years,promise){
   a=(base+(mkt-base)*0.35)*(r.askMul||1);
   a*=1+(60-moodOf(r))/250;if((G.bids||[]).some(b=>b.rid===r.id))a*=1.08;
  }
- else if(!r.junior){const t=TEAM(r.team);a*=t.tier==='wt'?2.4:t.tier==='pro'?1.6:1;a*=1+clamp((60-G.rep)/200,0,0.25);
+ else if(!r.junior){const t=TEAM(r.team);a*=t.tier==='wt'?1.6:t.tier==='pro'?1.25:1;a*=1+clamp((60-G.rep)/300,0,0.15);
   if(r.sal){const up=TIER_RANK[t.tier]!==undefined&&TIER_RANK[t.tier]<myCat().rank;a=Math.max(a,r.sal*(up?0.95:1.1))}}
- const pref=r.age<=24?3:r.age>=31?1:2;a*=1+0.05*Math.abs(years-pref);
+ const pref=prefYears(r);a*=1+0.035*Math.abs(years-pref);
+ /* un contratto lungo è una sicurezza: chi non è ancora affermato accetta un po' meno all'anno */
+ if(years>=3&&r.age<=29)a*=1-0.025*(years-2);
  if(promise){const top=isTopForMe(r);a*=promise==='cap'?(top?0.9:0.97):promise==='greg'?(top?1.12:1.02):1}
  a*=1+0.04*(r.neg||0);
  return Math.max(minSalFor(r),Math.round(a/500)*500);
 }
 /* indennizzo: i corridori chiave costano di più */
+function prefYears(r){return r.age<=23?4:r.age<=27?3:r.age<=31?2:1}
 function feeAskFull(r){const k=teamRankOf(r);return Math.round(feeAsk(r)*(k<=2?1.7:k<=5?1.25:1)/1000)*1000}
 
 /* ---------- trattativa ---------- */
@@ -36,7 +39,7 @@ function openNeg(id){
  const r=RID(id),w=win();
  if(r.team==='acad'){riderSheet(id);return}
  if(r.negW!==w.id){r.negW=w.id;r.neg=0}
- const mode=negMode(r),years=r.age<=24?3:r.age>=31?1:2;
+ const mode=negMode(r),years=prefYears(r);
  NEG={id,mode,years,promise:r.promise||'lib',sal:0,fee:0,msg:null,done:false,cSal:null,cFee:null,cl:new Set(),reason:'none'};
  if(mode){NEG.sal=Math.max(minSalFor(r),Math.round(askSal(r,mode,years,NEG.promise)*0.9/1000)*1000);if(mode==='buy')NEG.fee=Math.round(feeAskFull(r)*0.85/1000)*1000}
  renderNeg();
@@ -73,13 +76,14 @@ function renderNeg(){
   ${m&&!block?`
    <div><div class="eyebrow">Ruolo promesso</div><div class="seg">${Object.keys(PROMISE).map(k=>`<button data-act="negpromise" data-v="${k}" aria-pressed="${NEG.promise===k}">${PROMISE[k]}</button>`).join('')}</div>
     <div class="note">${top?'Per lui conta il ruolo: da capitano accetta meno soldi, da gregario ne chiede di più.':'Il ruolo pesa poco sulle sue richieste.'} Se prometti il ruolo di capitano e poi non lo fai correre da capitano, si scontenta.</div></div>
-   <div><div class="eyebrow">Ingaggio annuo</div><div class="stepper"><button data-act="negstep" data-v="sal:-1000" aria-label="Meno">−</button><output>${eur(NEG.sal)}</output><button data-act="negstep" data-v="sal:1000" aria-label="Più">+</button></div>
-    <div class="note">Il procuratore chiede circa ${eur(ask)}${r.age<=24?' e preferisce un contratto lungo':r.age>=31?' e preferisce un anno solo':''}.${minSalFor(r)?` Minimo ${C.lab}: ${eur(minSalFor(r))}.`:''}</div></div>
-   <div><div class="eyebrow">Durata</div><div class="seg">${[1,2,3].map(y=>`<button data-act="negyears" data-v="${y}" aria-pressed="${NEG.years===y}">fino al ${endYear(y)}</button>`).join('')}</div></div>
+   <div><div class="eyebrow">Ingaggio annuo</div><div class="stepper"><button data-act="negstep" data-v="sal:-1000" aria-label="Meno">−</button><label class="eurin"><span>€</span><input type="number" inputmode="numeric" min="0" step="500" data-negin="sal" value="${NEG.sal}" aria-label="Ingaggio annuo in euro"></label><button data-act="negstep" data-v="sal:1000" aria-label="Più">+</button></div>
+    <div class="note">Scrivi la cifra che vuoi proporre, oppure usa − e +. Totale sul contratto: <b>${eur(NEG.sal*NEG.years)}</b> in ${NEG.years} ${NEG.years>1?'anni':'anno'}.</div>
+    <div class="note">Il procuratore chiede circa ${eur(ask)}${prefYears(r)>=3?` e preferisce un contratto lungo (${prefYears(r)} anni)`:prefYears(r)===1?' e preferisce un anno solo':' per 2 anni'}.${minSalFor(r)?` Minimo ${C.lab}: ${eur(minSalFor(r))}.`:''}</div></div>
+   <div><div class="eyebrow">Durata</div><div class="seg">${[1,2,3,4,5].map(y=>`<button data-act="negyears" data-v="${y}" aria-pressed="${NEG.years===y}">${y} ${y>1?'anni':'anno'}<small style="display:block;font-size:11px;opacity:.7">al ${endYear(y)}</small></button>`).join('')}</div>${r.age<=29?'<div class="note">I contratti lunghi costano meno all\'anno per chi non è ancora affermato.</div>':''}</div>
    <div><div class="eyebrow">Clausole</div><div class="clpick">${Object.keys(CLAUSES).map(k=>`<button data-act="negcl" data-v="${k}" aria-pressed="${NEG.cl.has(k)}"><b>${CLAUSES[k].lab}</b><small>${esc(CLAUSES[k].desc(r))}</small></button>`).join('')}</div></div>
    <label class="field"><span class="eyebrow">Motivazione dell'offerta</span><select data-negreason="1">${Object.keys(REASONS).map(k=>`<option value="${k}" ${NEG.reason===k?'selected':''}>${REASONS[k]}</option>`).join('')}</select></label>
    ${(()=>{const v=negExtra(r);return v.cl||v.rs?`<div class="note">Per lui l'offerta vale circa <b>${eur(NEG.sal*(1+v.cl+v.rs))}</b> (${v.cl?'clausole +'+Math.round(v.cl*100)+'%':''}${v.cl&&v.rs?', ':''}${v.rs?(v.rs>0?'motivazione convincente +':'motivazione poco credibile ')+Math.round(v.rs*100)+'%':''}).</div>`:''})()}
-   ${m==='buy'?`<div><div class="eyebrow">Indennizzo a ${esc(TEAM(r.team).short)}</div><div class="stepper"><button data-act="negstep" data-v="fee:-5000" aria-label="Meno">−</button><output>${eur(NEG.fee)}</output><button data-act="negstep" data-v="fee:5000" aria-label="Più">+</button></div></div>`:''}
+   ${m==='buy'?`<div><div class="eyebrow">Indennizzo a ${esc(TEAM(r.team).short)}</div><div class="stepper"><button data-act="negstep" data-v="fee:-5000" aria-label="Meno">−</button><label class="eurin"><span>€</span><input type="number" inputmode="numeric" min="0" step="1000" data-negin="fee" value="${NEG.fee}" aria-label="Indennizzo in euro"></label><button data-act="negstep" data-v="fee:5000" aria-label="Più">+</button></div></div>`:''}
    <div class="note">${m==='sign'||m==='buy'?(w.off?`Pesa sul bilancio dal ${SEASON+1}.`:`Costo su questa stagione: <b>${eur(cost)}</b> · saldo previsto dopo: <b class="${projA<0?'neg':''}">${eur(projA)}</b>`):`Il nuovo ingaggio pesa sul bilancio dal ${SEASON+1}.`}</div>
    ${!rosterOk?`<div class="msg no">Rosa al completo (${C.max} corridori).</div>`:''}
    ${!moneyOk?`<div class="msg no">Non ci sono i soldi: il saldo di fine stagione andrebbe sotto zero.</div>`:''}
@@ -110,7 +114,7 @@ function negOffer(){
  if(q>=1||(q>=0.95&&R()<0.5)||(q>=0.9&&ex.rs>0&&R()<0.3))return negClose(r,m);
  r.neg=(r.neg||0)+1;r.askMul*=1.02;
  if(r.team==='t0'&&q<0.85)r.mood=Math.max(0,moodOf(r)-4);
- const py=r.age<=24?3:r.age>=31?1:2;
+ const py=prefYears(r);
  NEG.cSal=r.neg>=3?null:{sal:Math.max(minSalFor(r),Math.round(askSal(r,m,py,NEG.promise)/(1+ex.cl+Math.max(0,ex.rs))*rnd(1,1.03)/1000)*1000),y:py};
  NEG.msg={ok:false,t:r.neg>=3?`${r.name} interrompe la trattativa fino alla prossima finestra.`:q<0.8?`Offerta lontana dalle richieste. Il procuratore risponde: ${eur(NEG.cSal.sal)} per ${py} ${py>1?'anni':'anno'}.`:`Il procuratore controbatte: ${eur(NEG.cSal.sal)} per ${py} ${py>1?'anni':'anno'}.`};
  renderNeg();
@@ -248,4 +252,5 @@ endOfSeason=function(){
  if(paid)mail('Amministrazione','Bonus obiettivi',`Bonus da contratto per chi ha superato 100 punti UCI: ${eur(paid)}.`);
  _endOfSeasonT();
 };
-document.addEventListener('change',e=>{if(e.target.dataset.negreason&&NEG){NEG.reason=e.target.value;renderNeg()}});
+document.addEventListener('change',e=>{if(e.target.dataset.negreason&&NEG){NEG.reason=e.target.value;renderNeg()}
+ const k=e.target.dataset.negin;if(k&&NEG){const v=Math.max(0,Math.round((+e.target.value||0)/500)*500);if(v===NEG[k])return;NEG[k]=v;NEG.msg=null;setTimeout(()=>{const sc=$('#sheet .pb').scrollTop;renderNeg();$('#sheet .pb').scrollTop=sc},0)}});

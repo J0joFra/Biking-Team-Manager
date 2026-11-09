@@ -41,7 +41,7 @@ function genRider(team,nat,arch,age,boost=0){
   pot,form:+rnd(0.95,0.99).toFixed(3),fat:0,days:0,pts:0,wins:0,res:[],bF:0,bT:0,
   neo:age===19||(age===23&&R()<0.5),askMul:+rnd(0.92,1.1).toFixed(3)};
  if(['fa','jr','acad'].includes(team.tier)){r.sal=0;r.cEnd=0;if(team.tier!=='fa'){r.junior=true;r.neo=false}}
- else{r.sal=Math.round(demand(r)*(SAL_MUL[team.tier]||1)*rnd(0.85,1.12)/500)*500;r.cEnd=SEASON+rint(0,2)}
+ else{r.sal=Math.round(demand(r)*(SAL_MUL[team.tier]||1)*rnd(0.85,1.12)/500)*500;r.cEnd=SEASON+(age<=25?rint(1,3):rint(0,2))}
  return r;
 }
 function genJuniors(n){for(let i=0;i<n;i++){const nat=R()<0.45?'ITA':pick(Object.keys(NAMES));const r=genRider({id:'jr',tier:'jr'},nat,pick(ARCH_MIX),18,R()<0.18?rnd(0.3,0.6):0);G.riders[r.id]=r}}

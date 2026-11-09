@@ -36,10 +36,10 @@ function interest(s,slot='partner'){
  const SZ=SPONSOR_SIZE[s.size],d=spDist(s);
  const prox=SZ.range?Math.exp(-d/SZ.range):0.45;
  const exp=isForeign(s.area)?Math.min(1,((G.exp||{})[s.area]||0)/4)*0.3:0;
- let p=0.05+0.7*prox+(G.rep-s.req)/150+exp+s.taste;
- if(slot==='main')p*=0.75;else if(slot==='partner')p*=1.15;
+ let p=0.02+0.5*prox+(G.rep-s.req)/200+exp+s.taste;
+ if(slot==='main')p*=0.6;else if(slot==='co')p*=0.85;else if(slot==='partner')p*=1.1;
  if(isForeign(s.area)&&s.size!=='internazionale')p*=0.8;
- return{p:clamp(p,0.03,0.95),d};
+ return{p:clamp(p,0.03,0.85),d};
 }
 function amountFor(s,slot){return Math.round(s.pot*SLOTS[slot].share*(0.85+G.rep/400)/1000)*1000}
 function activeIn(c,season){return c.from<=season&&c.end>=season}
@@ -72,11 +72,20 @@ function makeObj(s){
  else{const o=pick([['wins',2],['top10',8],['ita',12]]);k=o[0];n=o[1]}
  return{k,n,txt:objTxt(k,n)};
 }
-function signContract(s,slot,amount,years,from){
- const obj=makeObj(s);
+/* clausola di rimborso: più soldi, obiettivo più duro, se non lo centri restituisci una parte */
+function hardObj(s){const o=makeObj(s);let{k,n}=o;
+ if(k.startsWith('reg_')){const m=regRaces(k.slice(4));n=Math.max(n,Math.min(m,n+1));if(n===o.n){k='top10';n=G.cat==='conti'?5:8}}
+ else if(k.startsWith('ctry_'))n=n+1;
+ else if(k==='wins')n=Math.ceil(n*1.5);else if(k==='top10')n=Math.ceil(n*1.6);else if(k==='fuga')n=n*2;else n=n+(k==='wt'?4:5);
+ return{k,n,txt:objTxt(k,n)};}
+const PEN_MUL=1.4;
+function penFor(amount){return Math.round(amount*0.4/1000)*1000}
+function signContract(s,slot,amount,years,from,opt={}){
+ const obj=opt.obj||makeObj(s);
  const c={id:'k'+(G.nextId++),sid:s.id,slot,amount,from,end:from+years-1,obj,
   bonus:Math.round(amount*({locale:0.1,regionale:0.15,nazionale:0.2,internazionale:0.25}[s.size])/1000)*1000,
-  base:from===SEASON&&G.phase==='season'?(G.st[obj.k]||0):0,done:false,sat:60};
+  base:from===SEASON&&G.phase==='season'?(G.st[obj.k]||0):0,done:false,sat:60,pen:opt.pen||0};
+ if(c.pen)c.bonus=Math.round(c.bonus*0.5/1000)*1000;
  G.contracts.push(c);
  G.offers=G.offers.filter(o=>o.sid!==s.id);
  return c;
@@ -93,18 +102,19 @@ function checkSponsorObjectives(){
 function sponsorRaceUpdate(dS){for(const c of G.contracts)if(activeIn(c,SEASON))c.sat=clamp(Math.round(c.sat+dS*(c.slot==='main'?1:0.7)),0,100);G.sponsor=sponsorSat()}
 
 /* ---------- proposte e offerte ---------- */
-function propose(s,slot,years){
+function propose(s,slot,years,pen){
+ pen=pen&&slot!=='partner';
  const from=slotStart(slot);
  if(from===null)return{ok:false,msg:`Nessun posto libero da ${SLOTS[slot].lab}.`};
  if(hasContract(s))return{ok:false,msg:`${s.name} è già tuo sponsor.`};
  if((s.cool||0)>absWeek())return{ok:false,msg:`${s.name} ti ha già risposto: riprova tra qualche settimana.`};
  const it=interest(s,slot);if(it.p<=0)return{ok:false,msg:it.why};
- const p=it.p*(years===3?0.9:1);
- if(R()<p){const c=signContract(s,slot,amountFor(s,slot),years,from);
-  mail('Sponsor',`Accordo con ${s.name}`,`${SLOTS[slot].lab} dal ${from} al ${c.end}: ${eur(c.amount)} l'anno.\nObiettivo stagionale: ${c.obj.txt} (bonus ${eur(c.bonus)}).`);
+ const p=it.p*(years===3?0.9:1)*(pen?1.3:1);
+ if(R()<p){const am=pen?Math.round(amountFor(s,slot)*PEN_MUL/1000)*1000:amountFor(s,slot);const c=signContract(s,slot,am,years,from,pen?{obj:hardObj(s),pen:penFor(am)}:{});
+  mail('Sponsor',`Accordo con ${s.name}`,`${SLOTS[slot].lab} dal ${from} al ${c.end}: ${eur(c.amount)} l'anno.\nObiettivo stagionale: ${c.obj.txt} (bonus ${eur(c.bonus)}).${c.pen?`\nClausola di rimborso: se a fine stagione l'obiettivo non è raggiunto restituisci ${eur(c.pen)}.`:''}`);
   save();return{ok:true,msg:`${s.name} firma come ${SLOTS[slot].lab.toLowerCase()}: ${eurk(c.amount)} l'anno!`}}
- s.cool=absWeek()+8;save();
- return{ok:false,msg:`${s.name} per ora non è interessato. Riprova tra 8 settimane.`};
+ s.cool=absWeek()+12;save();
+ return{ok:false,msg:`${s.name} per ora non è interessato. Riprova tra 12 settimane.`};
 }
 function makeOffer(s,renew,src){
  let slot=src?src.slot:s.size==='locale'?'partner':s.size==='regionale'?pick(['partner','co','co']):pick(['co','main']);
@@ -113,16 +123,18 @@ function makeOffer(s,renew,src){
  if(from===null)return null;
  const amount=renew?Math.round(src.amount*(0.95+src.sat/500)/1000)*1000:Math.round(amountFor(s,slot)*rnd(0.95,1.12)/1000)*1000;
  const o={id:'o'+(G.nextId++),sid:s.id,slot,amount,years:rint(1,3),from,exp:absWeek()+(renew?20:4),renew:!!renew};
+ if(renew&&src.pen){o.pen=penFor(o.amount);o.obj=hardObj(s)}
+ else if(!renew&&slot!=='partner'&&R()<(['nazionale','internazionale'].includes(s.size)?0.7:slot==='main'?0.5:0.3)){o.amount=Math.round(o.amount*rnd(1.3,1.55)/1000)*1000;o.pen=penFor(o.amount);o.obj=hardObj(s)}
  G.offers.push(o);
- mail('Sponsor',renew?`${s.name} vuole rinnovare`:`Proposta da ${s.name}`,`${s.name} (${s.city}, ${SPONSOR_SIZE[s.size].lab.toLowerCase()}) offre ${eur(o.amount)} l'anno come ${SLOTS[slot].lab.toLowerCase()} per ${o.years} ${o.years>1?'anni':'anno'}, dal ${from}.\nRispondi dalla sezione Sponsor${renew?'':' entro 4 settimane'}.`);
+ mail('Sponsor',renew?`${s.name} vuole rinnovare`:`Proposta da ${s.name}`,`${s.name} (${s.city}, ${SPONSOR_SIZE[s.size].lab.toLowerCase()}) offre ${eur(o.amount)} l'anno come ${SLOTS[slot].lab.toLowerCase()} per ${o.years} ${o.years>1?'anni':'anno'}, dal ${from}.\n${o.pen?`\nAttenzione: vuole una clausola di rimborso. Obiettivo: ${o.obj.txt}. Se non lo raggiungi, a fine stagione restituisci ${eur(o.pen)}.`:''}\nRispondi dalla sezione Sponsor${renew?'':' entro 4 settimane'}.`);
  NOTIFY(renew?`${s.name} vuole rinnovare`:`Nuova proposta: ${s.name}`,'ok');
  return o;
 }
 function weeklyOffers(force){
  G.offers=G.offers.filter(o=>o.exp>absWeek());
  if(G.offers.filter(o=>!o.renew).length>=4)return;
- if(!force&&R()>0.07+G.rep/350)return;
- const cand=G.sponsors.filter(s=>!hasContract(s)&&!G.offers.some(o=>o.sid===s.id)&&(s.cool||0)<=absWeek()).map(s=>({s,p:interest(s,s.size==='locale'?'partner':'co').p})).filter(o=>o.p>0.35);
+ if(!force&&R()>0.035+G.rep/500)return;
+ const cand=G.sponsors.filter(s=>!hasContract(s)&&!G.offers.some(o=>o.sid===s.id)&&(s.cool||0)<=absWeek()).map(s=>({s,p:interest(s,s.size==='locale'?'partner':'co').p})).filter(o=>o.p>0.4);
  if(!cand.length)return;
  const tot=cand.reduce((a,o)=>a+o.p*o.p,0);let q=R()*tot;
  for(const o of cand){q-=o.p*o.p;if(q<=0){makeOffer(o.s,false);return}}
@@ -131,12 +143,22 @@ function acceptOffer(o){
  const s=SP(o.sid);
  if(!o.renew&&slotUsed(o.slot,o.from)>=SLOTS[o.slot].cap)return{ok:false,msg:`Non c'è più posto da ${SLOTS[o.slot].lab.toLowerCase()}.`};
  G.offers=G.offers.filter(x=>x!==o);
- const c=signContract(s,o.slot,o.amount,o.years,o.from);
- mail('Sponsor',`Accordo con ${s.name}`,`${SLOTS[o.slot].lab} dal ${c.from} al ${c.end}: ${eur(c.amount)} l'anno.\nObiettivo stagionale: ${c.obj.txt} (bonus ${eur(c.bonus)}).`);
+ const c=signContract(s,o.slot,o.amount,o.years,o.from,o.pen?{obj:o.obj,pen:o.pen}:{});
+ mail('Sponsor',`Accordo con ${s.name}`,`${SLOTS[o.slot].lab} dal ${c.from} al ${c.end}: ${eur(c.amount)} l'anno.\nObiettivo stagionale: ${c.obj.txt} (bonus ${eur(c.bonus)}).${c.pen?`\nClausola di rimborso: ${eur(c.pen)} se manchi l'obiettivo.`:''}`);
  save();return{ok:true,msg:`Firmato con ${s.name}`};
 }
 function declineOffer(o){G.offers=G.offers.filter(x=>x!==o);const s=SP(o.sid);if(s)s.cool=absWeek()+10;save()}
+function sponsorPenalties(){
+ let tot=0;
+ for(const c of G.contracts){
+  if(!c.pen||c.done||!activeIn(c,SEASON)||c.penPaid===SEASON)continue;
+  const s=SP(c.sid);c.penPaid=SEASON;G.cash-=c.pen;tot+=c.pen;c.sat=Math.max(0,c.sat-20);
+  mail('Sponsor',`${s.name}: scatta la clausola di rimborso`,`Obiettivo mancato (${c.obj.txt}: ${Math.round(contractProg(c))}/${c.obj.n}). Come da contratto restituisci ${eur(c.pen)}. Soddisfazione scesa a ${c.sat}%.`);
+ }
+ if(tot)NOTIFY(`Penali sponsor: −${eurk(tot)}`,'bad');
+}
 function sponsorSeasonEnd(){
+ sponsorPenalties();
  for(const c of G.contracts.filter(c=>c.end===SEASON)){
   const s=SP(c.sid);
   if(c.sat>=50&&R()<0.45+c.sat/200)makeOffer(s,true,c);

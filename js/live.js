@@ -124,7 +124,8 @@ function grades(S){
    if(!isLead){const work=(100-x.E)/50;if(work>0.8){v+=Math.min(1.5,work);why.push('tanto lavoro')}}
    else if(p>20){v-=1;why.push('sottotono')}
    if(x.kmFuga>15){v+=Math.min(1.5,x.kmFuga/40);why.push(`${Math.round(x.kmFuga)} km in fuga`)}}
-  return{name:x.r.name,v:Math.max(4,Math.min(10,Math.round(v*2)/2)),why:why.join(', '),lead:isLead};
+  const g=Math.max(4,Math.min(10,Math.round(v*2)/2));
+  return{id:x.id,name:x.r.name,v:g,why:why.join(', '),lead:isLead,xp:giveXp(x.r,g)};
  }).sort((a,b)=>b.v-a.v);
 }
 const _endStageLiveL=endStageLive;
@@ -135,7 +136,7 @@ showStageResult=function(){
  const g=LIVE&&LIVE.grades;if(!g||!g.length)return;
  const col=$('#sheet .negbox > div');if(!col)return;
  col.insertAdjacentHTML('afterbegin',`<div class="card pad pag"><div class="sec-h" style="margin:0 0 6px"><h3>Pagelle</h3><span class="eyebrow">migliore: ${esc(g[0].name.split(' ').slice(-1)[0])}</span></div>
-  ${g.map(x=>`<div class="pr"><b class="pv ${x.v>=7.5?'hi':x.v<5.5?'lo':''}">${String(x.v).replace('.',',')}</b><span>${esc(x.name)}${x.lead?' <span class="chip amber">C</span>':''}</span><small>${esc(x.why)}</small></div>`).join('')}</div>`);
+  ${g.map(x=>`<div class="pr"><b class="pv ${x.v>=7.5?'hi':x.v<5.5?'lo':''}">${String(x.v).replace('.',',')}</b><span>${esc(x.name)}${x.lead?' <span class="chip amber">C</span>':''}</span><small>${esc(x.why)}${x.xp?` <span class="xpc">+${x.xp} XP</span>`:''}</small></div>`).join('')}</div>`);
  LIVE.grades=null;
 };
 document.addEventListener('click',e=>{

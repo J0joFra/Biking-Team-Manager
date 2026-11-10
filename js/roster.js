@@ -23,7 +23,7 @@ function autoRoles(){
   if(r.role==='greg'&&r.age<=21&&r.pot>=0.35)r.role='svil';
  }
 }
-function projOvr(r){const o=ovr(r);if(r.age<=24)return Math.min(95,Math.round(o+(25-r.age)*(2.2+5*(r.pot||0))));if(r.age>=30)return Math.max(30,Math.round(o-(r.age-29)*1.5));return o}
+function projOvr(r){const o=ovr(r);if(r.age<=26){let g=0;for(let a=r.age;a<=26;a++)g+=AGE_STEP[a]||0;return Math.min(94,Math.round(o+g*(0.5+(r.pot||0))*30*(o>70?0.6:1)))}if(r.age>=31)return Math.max(30,Math.round(o-(r.age-30)*1.6));return o}
 function trend(r){const p=projOvr(r),o=ovr(r);return p>o+2?{t:`→ ${p}`,c:'up',l:'in crescita'}:p<o-2?{t:`→ ${p}`,c:'down',l:'in calo'}:{t:'',c:'flat',l:'al massimo'}}
 function raceSpec(race){
  const ts=race.stages.map(s=>s.t);
@@ -87,7 +87,7 @@ function renderTeam(){
   const toElite=rs.filter(r=>r.age===22);
   const young=rs.filter(r=>r.age<=24).sort((a,b)=>projOvr(b)-projOvr(a));
   body=`<div class="futgrid"><div class="col">
-   <div class="card pad"><div class="sec-h"><h3>I talenti</h3><span class="eyebrow">valore oggi → stimato a 25 anni</span></div>
+   <div class="card pad"><div class="sec-h"><h3>I talenti</h3><span class="eyebrow">valore oggi → stimato a 27 anni (il picco)</span></div>
     ${young.length?young.map(r=>{const p=projOvr(r);return`<button class="prow" data-act="rider" data-v="${r.id}"><span class="nm">${esc(r.name)}</span><span class="muted">${r.age} anni · ${ARCH[r.arch].lab}</span><span class="stars">${'★'.repeat(1+Math.round((r.pot||0)*4))}</span><span class="pv"><b>${ovr(r)}</b> → <b class="up">${p}</b></span><div class="bar2"><i style="width:${ovr(r)}%"></i><i class="g" style="width:${Math.max(0,p-ovr(r))}%"></i></div>${r.cEnd<=SEASON+1&&!r.renewed?`<span class="chip red">contratto fino al ${r.cEnd}</span>`:''}</button>`}).join(''):'<div class="note">Nessun giovane in rosa.</div>'}
    </div>
    ${js.length?`<div class="card pad"><div class="sec-h"><h3>Scuola juniores</h3><span class="eyebrow">${js.length} ragazzi</span></div>${js.sort((a,b)=>projOvr(b)-projOvr(a)).map(r=>`<button class="prow" data-act="rider" data-v="${r.id}"><span class="nm">${esc(r.name)}</span><span class="muted">${r.age} anni · ${ARCH[r.arch].lab}</span><span class="stars">${'★'.repeat(1+Math.round((r.pot||0)*4))}</span><span class="pv"><b>${ovr(r)}</b> → <b class="up">${projOvr(r)}</b></span></button>`).join('')}</div>`:''}

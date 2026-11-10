@@ -19,6 +19,24 @@ const NAMES={
  SUI:{f:['Marc','Silvan','Yannis','Joel','Fabio','Nico'],l:['Brunner','Gerber','Frei','Keller','Zbinden','Huber','Ammann']},
  AUT:{f:['Lukas','Felix','Matthias','Stefan','Gregor','Valentin'],l:['Gruber','Pichler','Steiner','Moser','Hofer','Leitner','Wimmer']}
 };
+/* nomi femminili per nazionalità (i cognomi sono gli stessi) */
+const NAMES_F={
+ ITA:['Giulia','Martina','Chiara','Sara','Elisa','Francesca','Alessia','Silvia','Marta','Letizia','Arianna','Federica','Elena','Gaia','Sofia','Beatrice','Asia','Vittoria','Camilla','Irene','Greta','Noemi','Ilaria','Anna'],
+ ESP:['Lucía','Ane','Sara','Laura','Paula','Ainhoa','Mireia','Irene','Naia','Carmen','Leire','Marta'],
+ FRA:['Juliette','Camille','Léa','Manon','Pauline','Clara','Margot','Jade','Inès','Océane','Chloé','Maëlle'],
+ BEL:['Lotte','Julie','Marthe','Sanne','Femke','Elke','Shari','Fien','Lien','Kaat','Jesse','Lore'],
+ NED:['Femke','Demi','Lorena','Shirin','Maaike','Floortje','Puck','Mischa','Riejanne','Anouk','Lieke','Esmée'],
+ COL:['Diana','Paula','Lina','Camila','Valentina','Daniela','Natalia','Juliana','Sofía','Mariana'],
+ DEN:['Emma','Cecilie','Julie','Rebecca','Amalie','Ida','Freja','Mathilde','Signe','Astrid'],
+ NOR:['Ingrid','Mie','Susanne','Kristine','Nora','Thea','Ane','Ingvild','Sigrid','Maren'],
+ SLO:['Urška','Eugenija','Nika','Lea','Maja','Tjaša','Špela','Ana','Hana','Tina'],
+ GBR:['Lizzie','Anna','Pfeiffer','Cat','Elinor','Josie','Millie','Grace','Lucy','Abi','Ella','Holly'],
+ GER:['Liane','Franziska','Antonia','Ricarda','Lisa','Clara','Hannah','Lena','Mieke','Romy'],
+ POL:['Katarzyna','Marta','Agnieszka','Aurela','Dominika','Karolina','Zofia','Natalia'],
+ POR:['Daniela','Beatriz','Maria','Inês','Sofia','Ana','Mariana','Rita'],
+ SUI:['Marlen','Elise','Noemi','Linda','Jasmin','Lea','Annika','Petra'],
+ AUT:['Anna','Christina','Carina','Kathrin','Lisa','Sarah','Leila','Valentina']
+};
 const ARCH={
  scalatore:{m:[55,63],w:[5.5,6.0],s:[880,1120],tt:[0.245,0.27],e:[60,90],lab:'Scalatore'},
  puncheur:{m:[61,69],w:[5.3,5.75],s:[1150,1400],tt:[0.24,0.265],e:[55,85],lab:'Puncheur'},
@@ -218,8 +236,8 @@ const POINTS_D=[1,0.8,0.68,0.56,0.48,0.42,0.36,0.3,0.25,0.21,0.17,0.14,0.11,0.09
 /* Categorie della tua squadra */
 const CAT={
  conti:{lab:'Continental',min:10,max:16,staff:340000,minSal:0,neoSal:0,rank:1},
- pro:{lab:'ProTeam',min:20,max:30,staff:1600000,minSal:40000,neoSal:32000,rank:2},
- wt:{lab:'WorldTeam',min:27,max:30,staff:5000000,minSal:45000,neoSal:36000,rank:3}
+ pro:{lab:'ProTeam',min:16,max:30,staff:1600000,minSal:40000,neoSal:32000,rank:2},
+ wt:{lab:'WorldTeam',min:23,max:30,staff:5000000,minSal:45000,neoSal:36000,rank:3}
 };
 const TIER_RANK={dev:0,conti:1,pro:2,wt:3};
 

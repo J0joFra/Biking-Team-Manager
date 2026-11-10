@@ -157,7 +157,7 @@ function raceSheet(id){
  const r=G.races.find(x=>x.id===id);if(!r)return;
  const T=TIERS[r.tier],a=access(r),fee=feeOf(r);
  const pro=r.stages[0].t==='prologo';
- const stg=r.tier==='track'?'':r.stages.map((s,i)=>{const c=genCourse(s.t,s.seed,s.km,T.lf);const climbs=c.climbs.filter(x=>x.cat!=='4').length;
+ const stg=r.tier==='track'?'':r.stages.map((s,i)=>{const c=genCourse(s.t,s.seed,s.km,raceLf(r));const climbs=c.climbs.filter(x=>x.cat!=='4').length;
   return`<div class="stage"><div class="sl"><b>${r.stages.length>1?(s.t==='prologo'?'P':i+(pro?0:1)):''}</b><span>${TYPE_LAB[s.t]} · ${km1(c.len)} km${climbs?` · ${climbs} GPM`:''}${c.secN?` · ${c.secN} settori`:''}</span></div>${profileSVG(c)}</div>`}).join('');
  let act='',info='';
  if(r.status==='done'&&r.result){
@@ -181,7 +181,7 @@ function raceSheet(id){
   if(indivOk(r)&&a.mode==='fee')info+=`<div class="note"><b>Squadra</b>: corrono insieme con punta e gregari. <b>Singoli</b>: mandi i corridori che non usi altrove, ognuno corre per sé; paghi solo per chi parte.</div>`;
  }
  const dl=r.dur>1?`${weekLab(r.w)} – ${weekLab(r.w+r.dur-1)}`:weekLab(r.w);
- openSheet(sheetHead(`${r.lab} · ${T.lab} · ${COUNTRY[r.ctry]||r.ctry} · ${dl}`,esc(r.name),r.tier==='track'?`Riunione su pista · ${r.disc.length} specialità${r.flag==='ita'?' · maglia tricolore':''}`:`${r.stages.length>1?r.stages.length+' tappe':'Corsa di un giorno'} · ${T.win?`${T.win} punti UCI al vincitore`:'Gara giovanile'}${T.size&&r.tier!=='jun'?` · squadre da ${T.size}`:''}`)+
+ openSheet(sheetHead(`${r.lab} · ${T.lab} · ${COUNTRY[r.ctry]||r.ctry} · ${dl}`,esc(r.name),r.tier==='track'?`Riunione su pista · ${r.disc.length} specialità${r.flag==='ita'?' · maglia tricolore':''}`:`${r.stages.length>1?r.stages.length+' tappe':'Corsa di un giorno'} · ${T.win?`${T.win} punti UCI al vincitore`:'Gara giovanile'}${T.size&&r.tier!=='jun'?` · squadre da ${raceSize(r)}`:''}`)+
  `<div class="pb wrap"><div class="rsgrid"><div class="stages">${stg}</div><div class="rsside">
    ${r.tier!=='jun'&&r.status!=='done'?`<div class="card pad"><div class="eyebrow">Costi</div><div class="big2">${eur(fee)}</div><div class="note">Iscrizione ${eur(T.fee)} + trasferta ${eur(T.prd)} per corridore al giorno${r.ctry!=='ITA'?' · +20% per la trasferta all\'estero':''}</div></div>`:''}
    ${info}<div class="row">${act}</div></div></div></div>`,'wide');
@@ -249,7 +249,7 @@ function renderBase(){
   ${js.length?`<div class="cols1">${js.map(r=>{const g=r.joined?r.wkg-r.joined.wkg:0;const canPro=r.age>=18&&!r.next;return`<div class="card jrow"><div class="ovr ${ovr(r)>=70?'hi':''}">${ovr(r)}</div><div style="min-width:0"><div class="nm">${esc(r.name)}</div><div class="tags"><span>${ARCH[r.arch].lab} · ${r.age} anni · ${r.nat}</span><span style="color:var(--amber)">${'★'.repeat(1+Math.round(r.pot*4))}</span>${g>0.005?`<span class="chip u23">+${g.toFixed(2)} W/kg</span>`:''}${r.next?'<span class="chip u23">Promosso</span>':''}</div></div>
     <div class="row">${canPro?`<button class="btn primary sm" data-act="promote" data-v="${r.id}">Promuovi</button>`:''}<button class="btn ghost sm" data-act="rider" data-v="${r.id}">Scheda</button></div></div>`}).join('')}</div>`:''}
   ${A.log.length?`<div class="card pad"><div class="eyebrow">Risultati juniores</div>${A.log.slice(0,5).map(l=>`<div class="note">${l.s} · ${esc(l.t)}</div>`).join('')}</div>`:''}
-  <div class="note">I ragazzi di 18 anni si possono promuovere in qualsiasi momento: firmano subito e passano in squadra la stagione dopo come Under 23 al primo anno. Chi non viene promosso lascia la scuola.</div>
+  <div class="note">I ragazzi di 18 anni si possono promuovere in qualsiasi momento: firmano subito e passano in squadra la stagione dopo: il primo anno sono Rookie, dal secondo Under 23. Chi non viene promosso lascia la scuola.</div>
  </div></div>`;
 }
 function campSheet(){
@@ -269,7 +269,7 @@ function campSheet(){
 function promoteSheet(id){
  const r=RID(id),c=myCat();
  const sal=Math.max(c.neoSal,Math.round((8000+r.pot*14000)/500)*500);
- openSheet(sheetHead('Scuola juniores',`Promuovere ${esc(r.name)}?`,`Firma un contratto da Under 23 al primo anno: arriva in squadra nel ${SEASON+1}.`)+`<div class="pb wrap stack"><div class="kv"><div><small>Valore</small><b>${ovr(r)}</b></div><div><small>Potenziale</small><b style="color:var(--amber)">${'★'.repeat(1+Math.round(r.pot*4))}</b></div><div><small>Ingaggio</small><b>${eurk(sal)}</b></div></div>
+ openSheet(sheetHead('Scuola juniores',`Promuovere ${esc(r.name)}?`,`Firma un contratto da Rookie (poi Under 23): arriva in squadra nel ${SEASON+1}.`)+`<div class="pb wrap stack"><div class="kv"><div><small>Valore</small><b>${ovr(r)}</b></div><div><small>Potenziale</small><b style="color:var(--amber)">${'★'.repeat(1+Math.round(r.pot*4))}</b></div><div><small>Ingaggio</small><b>${eurk(sal)}</b></div></div>
  <div class="note">Contratto di 3 anni fino al ${SEASON+3}. Il ragazzo è cresciuto da te: accetta senza trattativa.</div></div>
  <div class="pf"><div class="wrap fr"><button class="btn ghost" data-act="jrrelease" data-v="${r.id}">Lascialo andare</button><button class="btn primary" data-act="promoteok" data-v="${r.id}" data-s="${sal}" ${nextRoster()>=c.max?'disabled':''}>Firma</button></div></div>`);
 }
@@ -317,7 +317,7 @@ function renderMarket(){
   fa:'Senza squadra: si firmano subito, senza indennizzo, a finestra aperta.',
   others:`Acquisto con indennizzo da squadre di categoria pari o inferiore (a finestra aperta). Chi ha il contratto in scadenza si firma a parametro zero dal 1° agosto.${myCat().minSal?` Ingaggio minimo ${myCat().lab}: ${eur(myCat().minSal)} (${eur(myCat().neoSal)} per gli Under 23).`:''}`,
   bids:'Offerte delle altre squadre per i tuoi corridori. Puoi accettare, rifiutare o chiedere di più. Se rifiuti il salto in una squadra più grande, il corridore si scontenta.',
-  jr:`Diciottenni di altre società: si possono firmare in qualsiasi momento e arrivano nel ${SEASON+1} come Under 23 al primo anno.`}[mk.sub];
+  jr:`Diciottenni di altre società: si possono firmare in qualsiasi momento e arrivano nel ${SEASON+1} come Rookie, poi Under 23 dal secondo anno.`}[mk.sub];
  $('#view').innerHTML=`<div class="sec">
   <div class="kv kv4"><div><small>Cassa</small><b>${eurk(G.cash)}</b></div><div><small>Saldo a fine stagione</small><b class="${proj<0?'neg':''}">${eurk(proj)}</b></div><div><small>Monte ingaggi</small><b>${eurk(payroll())}</b></div><div><small>Rosa ${w.off?SEASON+1:SEASON}</small><b>${w.off?nextRoster():myRoster()}/${myCat().max}</b></div></div>
   <div class="banner ${w.now||w.next?'':'closed'}"><span class="chip ${w.now||w.next?'u23':''}">${w.now||w.next?'Aperto':'Chiuso'}</span><span>${w.label}</span></div>
@@ -363,7 +363,7 @@ function openConvoca(id){
  const race=G.races.find(r=>r.id===id);
  SEL={race,ids:new Set(),cap:null};suggest();renderConvoca();
 }
-function selSize(race){return race.tier==='nc'||race.mode==='singles'?8:TIERS[race.tier].size}
+function selSize(race){return race.tier==='nc'||race.mode==='singles'?8:raceSize(race)}
 function suggest(){
  const race=SEL.race;
  const el=ME().riders.map(RID).filter(r=>!whyCant(r,race));
@@ -738,7 +738,7 @@ document.addEventListener('click',e=>{
  const a=t.dataset.act,v=t.dataset.v;
  switch(a){
   case'jer':window._jer=+v;document.querySelectorAll('.jbtn').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v)));break;
-  case'start':{const n=($('#tname').value||'').trim()||'Ciclistica Valle Azzurra';const[rg,ct]=$('#tsede').value.split('|');const cc=REGIONS[rg].c.find(c=>c[0]===ct);busyOn('Si crea il mondo del ciclismo…');setTimeout(()=>{newGame(n,JERSEYS[window._jer||0],{city:ct,reg:rg,lat:cc[1],lon:cc[2]});NEWG=false;MENU=false;busyOff();render()},30);break}
+  case'start':{const n=($('#tname').value||'').trim()||'Ciclistica Valle Azzurra';const[rg,ct]=$('#tsede').value.split('|');const cc=REGIONS[rg].c.find(c=>c[0]===ct);busyOn('Si crea il mondo del ciclismo…');setTimeout(()=>{newGame(n,JERSEYS[window._jer||0],{city:ct,reg:rg,lat:cc[1],lon:cc[2]},window._side||'M');NEWG=false;MENU=false;busyOff();render()},30);break}
   case'tab':G.tab=v;save();closeSheet();render();window.scrollTo(0,0);break;
   case'fullscreen':{const el=document.documentElement;const p=el.requestFullscreen?el.requestFullscreen():null;if(p&&p.then)p.then(()=>{try{screen.orientation.lock('landscape').catch(()=>{})}catch(err){}}).catch(()=>toast('Schermo intero non disponibile qui'));else toast('Schermo intero non disponibile qui');break}
   case'rotok':try{localStorage.setItem('amm-rot','1')}catch(err){}ROT='';document.querySelectorAll('.rotate').forEach(x=>x.remove());break;

@@ -3,12 +3,13 @@
    ALLENAMENTI: due sedute a settimana nelle settimane senza gare
    ============================================================ */
 function trainState(){if(!G.train)G.train={s1:'fondo',s2:'soglia',last:null};return G.train}
-function trainGrowth(r){return r.age<=22?1.3*(0.5+(r.pot||0)):r.age<=27?0.7:r.age<=31?0.4:0.15}
+function trainGrowth(r){return r.age<=26?0.12+0.5*ageGrow(r):r.age<=30?0.12:r.age<=32?0.06:0.03}
 function teamRacingWeek(w){return G.races.some(r=>(r.status==='reg'||(r.status==='done'&&r.result&&r.result.mine))&&r.w<=w&&r.w+r.dur-1>=w)}
 function applySession(r,key){
  const T=TRAIN[key],e=T.eff,g=trainGrowth(r)*rnd(0.7,1.3);
- if(e.wkg)r.wkg=+(r.wkg+e.wkg*g*Math.max(0.2,(6.5-r.wkg)/1.2)).toFixed(4);
- if(e.spr)r.spr=Math.round(r.spr+e.spr*g*Math.max(0.2,(1850-r.spr)/500));
+ const fw=r.f?SXF.w:1,fs=r.f?SXF.spr:1;
+ if(e.wkg)r.wkg=+(r.wkg+e.wkg*fw*g*Math.max(0.2,(6.5-r.wkg/fw)/1.2)).toFixed(4);
+ if(e.spr)r.spr=Math.round(r.spr+e.spr*fs*g*Math.max(0.2,(1850-r.spr/fs)/500));
  if(e.endu)r.endu=Math.min(99,+(r.endu+e.endu*g).toFixed(2));
  if(e.tt)r.tt=Math.max(0.198,+(r.tt+e.tt*g).toFixed(4));
  if(e.mass)r.mass=Math.max(52,+(r.mass+e.mass*g).toFixed(2));

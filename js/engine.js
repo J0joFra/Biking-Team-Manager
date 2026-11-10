@@ -17,13 +17,17 @@ function fmtGap(s){s=Math.round(s);if(s<=0)return's.t.';const m=Math.floor(s/60)
 const km1=v=>v.toFixed(1).replace('.',',');
 
 /* ---------- caratteristiche ---------- */
+/* valori normalizzati: le atlete sono confrontate con le altre atlete (fisiologia diversa);
+   sopra 70 la scala si comprime, così i 90 sono rari come i fuoriclasse veri */
+const SXF={w:0.86,ftp:0.705,tt:0.9,spr:0.78};
+const SCMP=v=>Math.round(clamp(v>70?70+(v-70)*0.6:v,1,99));
 function stats(r){
- const ftp=r.mass*r.wkg;
+ const f=r.f,wk=f?r.wkg/SXF.w:r.wkg,ftp=r.mass*r.wkg/(f?SXF.ftp:1),tt=f?r.tt/SXF.tt:r.tt,sp=f?r.spr/SXF.spr:r.spr;
  return{
-  sal:Math.round(clamp(40+(r.wkg-4.6)/1.6*55,1,99)),
-  pia:Math.round(clamp(45+(ftp-320)/120*47,1,99)),
-  cro:Math.round(clamp(45+(ftp/r.tt-1250)/700*47,1,99)),
-  vol:Math.round(clamp(35+(r.spr-900)/800*57,1,99)),
+  sal:SCMP(40+(wk-4.6)/1.6*55),
+  pia:SCMP(45+(ftp-320)/120*47),
+  cro:SCMP(45+(ftp/tt-1250)/700*47),
+  vol:SCMP(35+(sp-900)/800*50),
   res:Math.round(r.endu),rec:Math.round(r.rec)
  };
 }

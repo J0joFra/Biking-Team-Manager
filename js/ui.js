@@ -20,7 +20,7 @@ const ICON={
 const ic=(n,s=20)=>`<svg class="ic" viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n]}</svg>`;
 function jersey(c1,c2,s=36){return`<svg viewBox="0 0 40 40" width="${s}" height="${s}" aria-hidden="true"><path d="M13 4l-9 6 4 8 4-2v20h16V16l4 2 4-8-9-6c-1 3-4 5-7 5s-6-2-7-5z" fill="${c1}" stroke="rgba(0,0,0,.28)" stroke-width="1"/><path d="M12 19h16v5H12z" fill="${c2}"/><path d="M16.5 4.6c1 2.3 2.2 3.4 3.5 3.4s2.5-1.1 3.5-3.4" fill="none" stroke="${c2}" stroke-width="2"/></svg>`}
 const myJersey=(s)=>jersey(G.jersey[0],G.jersey[1],s);
-const ord=n=>n+'°';
+const ord=n=>!n||n>=999?'Rit.':n+'°';
 function toast(t,kind=''){const box=$('#toasts');while(box.children.length>=3)box.firstChild.remove();const d=document.createElement('div');d.className='toast '+kind;d.textContent=t;box.appendChild(d);setTimeout(()=>d.classList.add('out'),2600);setTimeout(()=>d.remove(),3100)}
 NOTIFY=toast;
 function openSheet(html,cls=''){const s=$('#sheet');s.innerHTML=`<div class="panel ${cls}" role="dialog" aria-modal="true">${html}</div>`;s.hidden=false}

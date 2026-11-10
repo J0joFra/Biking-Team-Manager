@@ -125,7 +125,8 @@ function natRun(w){
  }
 }
 function natEffects(ev,field,final){
- const pos=id=>final.findIndex(x=>x.id===id)+1;
+ /* chi non è nell'ordine d'arrivo si è ritirato: posizione 999 */
+ const pos=id=>{const i=final.findIndex(x=>x.id===id);return i<0?999:i+1};
  const medal=['Oro','Argento','Bronzo'];
  for(const r of field){
   const p=pos(r.id);
@@ -133,7 +134,7 @@ function natEffects(ev,field,final){
   const xp=(p<=10?0.03:0.015)*(r.age<=23?1:0.4);r.wkg=+(r.wkg+xp).toFixed(4);
   if(ev.win&&p<=POINTS_D.length)r.pts+=Math.round(ev.win*POINTS_D[p-1]);
   if(p===1){r.wins++;(r.titles=r.titles||[]).push(`${ev.champ==='wc'?'Campione del mondo':ev.champ==='eu'?'Campione europeo':'Vincitore del Tour de l\'Avenir'} ${ev.name.includes('Cronometro')?'a cronometro ':''}${CAT_LAB[ev.cat]} ${SEASON}`)}
-  if(p<=3||r.team==='t0'||r.team==='acad')r.res.push({name:ev.name,cls:'Naz',pos:p,n:final.length,w:p===1?1:0});
+  if(p<=3||r.team==='t0'||r.team==='acad')r.res.push({name:ev.name,cls:'Naz',pos:p===999?0:p,n:final.length,w:p===1?1:0});
   r.natB=null;r.natSelKeys=[];
  }
  const mine=field.filter(r=>r.team==='t0'||r.team==='acad').map(r=>({id:r.id,name:r.name,pos:pos(r.id),pts:0,km:0})).sort((a,b)=>a.pos-b.pos);
@@ -149,7 +150,7 @@ function natEffects(ev,field,final){
  ev.result={top:final.slice(0,10).map(x=>({id:x.id,name:RID(x.id).name,team:RID(x.id).nat,t:x.time})),winner:W.name,winnerTeam:COUNTRY[W.nat]||W.nat,stageW:null,n:final.length,mine:mine.length?mine:null,myPts:0,prize:0,nat:true};
  if(mine.length){
   const best=mine[0];
-  mail('Federazione',`${ev.name}: ${best.pos<=3?medal[best.pos-1]+' per '+best.name+'!':'i nostri risultati'}`,`Vince ${W.name} (${COUNTRY[W.nat]||W.nat}).\n${mine.map(m=>`• ${m.name}: ${ord(m.pos)}`).join('\n')}\n\nEsperienza in nazionale: i giovani crescono di più. ${best.pos<=10?'Buon risultato anche per la reputazione della squadra.':''}`);
+  mail('Federazione',`${ev.name}: ${best.pos<=3?medal[best.pos-1]+' per '+best.name+'!':'i nostri risultati'}`,`Vince ${W.name} (${COUNTRY[W.nat]||W.nat}).\n${mine.map(m=>`• ${m.name}: ${m.pos===999?'ritirato':ord(m.pos)}`).join('\n')}\n\nEsperienza in nazionale: i giovani crescono di più. ${best.pos<=10?'Buon risultato anche per la reputazione della squadra.':''}`);
   if(best.pos<=3)NOTIFY(`${medal[best.pos-1]} per ${best.name} a ${ev.name}!`,'gold');
  }
 }
@@ -190,7 +191,7 @@ function natFinalSheet(RC){
  const ev=RC.race,R=ev.result;if(!R){render();return}
  const medal=['Oro','Argento','Bronzo'];
  openSheet(sheetHead(`${CHAMP_LAB[ev.champ]} · ${CAT_LAB[ev.cat]}`,esc(ev.name),`Vince <b>${esc(R.winner)}</b> (${esc(R.winnerTeam)})`)+
- `<div class="pb wrap"><div class="negbox"><div>${R.mine?`<div class="sec-h"><h3>I tuoi corridori</h3></div><div class="card tbl"><table class="t">${R.mine.map(m=>`<tr class="me"><td class="n">${m.pos}</td><td>${esc(m.name)}${m.pos<=3?` <span class="chip amber">${medal[m.pos-1]}</span>`:''}</td><td class="r">${COUNTRY[RID(m.id).nat]||''}</td></tr>`).join('')}</table></div><div class="note" style="margin-top:6px">Esperienza in nazionale: crescita, morale e reputazione per la squadra.</div>`:''}</div>
+ `<div class="pb wrap"><div class="negbox"><div>${R.mine?`<div class="sec-h"><h3>I tuoi corridori</h3></div><div class="card tbl"><table class="t">${R.mine.map(m=>`<tr class="me"><td class="n">${m.pos===999?'Rit.':m.pos}</td><td>${esc(m.name)}${m.pos<=3?` <span class="chip amber">${medal[m.pos-1]}</span>`:''}</td><td class="r">${COUNTRY[RID(m.id).nat]||''}</td></tr>`).join('')}</table></div><div class="note" style="margin-top:6px">Esperienza in nazionale: crescita, morale e reputazione per la squadra.</div>`:''}</div>
  <div><div class="sec-h"><h3>Ordine d'arrivo</h3></div><div class="card tbl"><table class="t">${R.top.map((x,i)=>`<tr class="${R.mine&&R.mine.some(m=>m.id===x.id)?'me':''}"><td class="n">${i+1}</td><td>${esc(x.name)} <span class="tm">${x.team}</span></td><td class="r">${i===0?fmtT(x.t):fmtGap(x.t-R.top[0].t)}</td></tr>`).join('')}</table></div></div></div></div>
  <div class="pf"><div class="wrap fr"><button class="btn primary" data-act="close">Continua</button></div></div>`,'wide');
 }

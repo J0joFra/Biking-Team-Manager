@@ -114,3 +114,11 @@ pkgHero=function(){
 /* premi */
 awardsGrid=function(list){return DT(TH([['Coppa'],['Corridore'],['Squadra','hm'],['Motivo','r']]),list.map(a=>{const A=AWARDS.find(x=>x[0]===a.k);return`<tr class="${a.me?'me':''}" data-act="rider" data-v="${a.id}"><td>${trophySvg(A[3],18)} <b>${A[1]}</b></td><td>${esc(a.name)}${a.me&&a.cash?` <span class="chip amber">+${eurk(a.cash)}</span>`:''}</td><td class="hm">${esc(a.team)}</td><td class="r tm">${esc(a.v)}</td></tr>`}).join(''))};
 teamAwardsGrid=function(list){return DT(TH([['Coppa'],['Squadra'],['Motivo','r']]),list.map(a=>{const T=TAWARDS.find(x=>x[0]===a.k);return`<tr class="${a.me?'me':''}"><td>${trophySvg(T[3],18)} <b>${T[1]}</b></td><td>${esc(a.name)}${a.me?` <span class="chip amber">+${eurk(a.cash||T[4])}</span>`:''}</td><td class="r tm">${esc(a.v)}</td></tr>`}).join(''))};
+/* guide: da riquadri a tabella Tema · Spiegazione */
+function guideToTable(){
+ const g=$('#sheet .guide');if(!g||g.dataset.tab)return;
+ const rows=[...g.querySelectorAll(':scope > .card')].map(c=>{const h=c.querySelector('h3'),b=c.querySelector('.gtx')||c;return`<tr><td class="gk"><b>${h?h.innerHTML:''}</b></td><td class="gtx">${b.innerHTML}</td></tr>`}).join('');
+ g.outerHTML=`<div class="card tbl dtw guide-t" data-tab="1"><table class="t dt gtab"><tr class="th"><td>Tema</td><td>Come funziona</td></tr>${rows}</table></div>`;
+}
+const _helpSheetT=helpSheet;helpSheet=function(){_helpSheetT();guideToTable()};
+const _guideSheetT=guideSheet;guideSheet=function(){_guideSheetT();guideToTable()};

@@ -77,32 +77,26 @@ function renderTactic(){
  const riders=race.sel.filter(id=>!RC.out.has(id)).map(RID).sort((a,b)=>avgSuit(b,race)-avgSuit(a,race));
  const mom=atkMoments(c);
  const nm=r=>esc(r.name.split(' ').slice(-1)[0]);
- let right;
+ let right,below='';
+ const sel=(act,v,opts,id)=>`<select class="tsel" data-tact="${act}"${id?` data-id="${id}"`:''}>${opts.map(([k,l])=>`<option value="${k}" ${v===k?'selected':''}>${esc(l)}</option>`).join('')}</select>`;
+ const rad=(on,act,v)=>`<button class="tradio" data-act="${act}" data-v="${v}" aria-pressed="${on}"><span class="radio ${on?'on':''}"></span></button>`;
  if(singles){
-  right=`<div class="note">Gara per singoli: ognuno corre per sé, senza gregari. Scegli per ciascuno come correre e quando attaccare.</div>
-  ${riders.map(r=>{const p=plan[r.id];return`<div class="card tacrow"><div class="tn2">${esc(r.name)}<span class="note">${ARCH[r.arch].lab} · ${ovr(r)}</span></div>
-   <div class="seg sm">${[['gruppo','Aspetta in gruppo'],['fuga','Va in fuga'],['copri','Marca i rivali']].map(([k,l])=>`<button data-act="tacrole" data-id="${r.id}" data-v="${k}" aria-pressed="${p.move===k}">${l}</button>`).join('')}</div>
-   ${chipRow(mom.map(([k,l])=>[k,l]),'tacatkr',`${p.zone}|${p.when}`,`data-id="${r.id}"`)}</div>`}).join('')}`;
+  right='';below=`<div style="margin-top:12px"><div class="eyebrow">Piano dei singoli · ognuno corre per sé</div>${DT(TH([['Corridore'],['Come corre'],['Quando attacca']]),riders.map(r=>{const p=plan[r.id];return`<tr><td><b>${esc(r.name)}</b><div class="tm">${ARCH[r.arch].lab} · ${ovr(r)}</div></td>
+   <td>${sel('tacrole',p.move,[['gruppo','Aspetta in gruppo'],['fuga','Va in fuga'],['copri','Marca i rivali']],r.id)}</td><td>${sel('tacatkr',`${p.zone}|${p.when}`,mom,r.id)}</td></tr>`}).join(''),'tac')}</div>`;
  }else{
   const lead=RID(TAC.lead),lead2=TAC.lead2?RID(TAC.lead2):null;
-  const doms=riders.filter(r=>r.id!==TAC.lead&&r.id!==TAC.lead2);
-  right=`
-  <section class="tstep"><span class="tnum">1</span><div class="tbody"><div class="eyebrow">Obiettivo della corsa</div>
-   <div class="objpick">${Object.keys(OBJ).map(k=>`<button data-act="tacobj" data-v="${k}" aria-pressed="${TAC.obj===k}"><b>${OBJ[k].lab}</b><small>${OBJ[k].d}</small></button>`).join('')}</div></div></section>
-  <section class="tstep"><span class="tnum">2</span><div class="tbody"><div class="eyebrow">Su chi puntiamo</div>
-   ${chipRow(riders.map(r=>[r.id,r.name.split(' ').slice(-1)[0],`${ARCH[r.arch].lab} · ${Math.round(avgSuit(r,race))}${r.id===race.cap?' · cap.':''}${RC.stageRace&&RC.stage>0?' · '+gcGapTxt(RC,r.id):''}`]),'taclead',TAC.lead)}
-   <div class="eyebrow" style="margin-top:8px">Seconda punta <span class="muted">(facoltativa)</span></div>
-   ${chipRow([['','Nessuna']].concat(riders.filter(r=>r.id!==TAC.lead).map(r=>[r.id,r.name.split(' ').slice(-1)[0]])),'taclead2',TAC.lead2||'')}</div></section>
-  ${TAC.obj!=='attesa'?`<section class="tstep"><span class="tnum">3</span><div class="tbody"><div class="eyebrow">Quando attacca ${nm(lead)}</div>
-   ${chipRow(mom.map(([k,l])=>[k,l]),'tacatk',TAC.atk)}
-   ${lead2&&TAC.obj!=='volata'?`<div class="eyebrow" style="margin-top:8px">Quando attacca ${nm(lead2)}</div>${chipRow(mom.map(([k,l])=>[k,l]),'tacatk2',TAC.atk2||'k10|mid')}`:''}</div></section>`:''}
-  <section class="tstep"><span class="tnum">${TAC.obj!=='attesa'?4:3}</span><div class="tbody"><div class="eyebrow">Compiti dei compagni</div>
-   ${doms.map(r=>{const p=plan[r.id]||{move:'gruppo'};return`<div class="drow"><div class="dn"><b>${esc(r.name)}</b><small>${ARCH[r.arch].lab} · ${ROLE_HELP[p.move]||''}</small></div>
-    <div class="seg sm">${ROLE_BTN.map(([k,l])=>`<button data-act="tacrole" data-id="${r.id}" data-v="${k}" aria-pressed="${p.move===k}">${l}</button>`).join('')}</div></div>`}).join('')||'<div class="note">Nessun compagno.</div>'}</div></section>`;
+  const atkOn=TAC.obj!=='attesa',atk2On=lead2&&TAC.obj!=='volata';
+  right=`<div><div class="eyebrow">1 · Obiettivo della corsa</div>${DT('',Object.keys(OBJ).map(k=>`<tr data-act="tacobj" data-v="${k}" class="${TAC.obj===k?'sel':''}"><td style="width:28px"><span class="radio ${TAC.obj===k?'on':''}"></span></td><td><b>${OBJ[k].lab}</b></td><td class="tm">${OBJ[k].d}</td></tr>`).join(''),'tac')}</div>
+`;
+  below=`<div style="margin-top:12px"><div class="eyebrow">2 · Piano dei corridori</div>${DT(TH([['Corridore'],['Punta','c'],['2ª','c'],['Compito'],['Attacco']]),riders.map(r=>{const isL=r.id===TAC.lead,isL2=r.id===TAC.lead2,p=plan[r.id]||{move:'gruppo'};
+   const task=isL?'<b class="pos">Punta</b>':isL2?'<b>Seconda punta</b>':sel('tacrole',p.move,ROLE_BTN,r.id);
+   const atk=isL&&atkOn?sel('tacatk',TAC.atk,mom):isL2&&atk2On?sel('tacatk2',TAC.atk2||'k10|mid',mom):'<span class="tm">—</span>';
+   return`<tr class="${isL?'sel':''}"><td><b>${esc(r.name)}</b><div class="tm">${ARCH[r.arch].lab} · adatto ${Math.round(avgSuit(r,race))}${r.id===race.cap?' · capitano':''}${RC.stageRace&&RC.stage>0?' · '+gcGapTxt(RC,r.id):''}</div></td>
+   <td class="c">${rad(isL,'taclead',r.id)}</td><td class="c">${isL?'':rad(isL2,'taclead2',isL2?'':r.id)}</td><td>${task}</td><td>${atk}</td></tr>`}).join(''),'tac')}</div>`;
  }
  openSheet(sheetHead(`Tattica · ${esc(race.name)}${st?' · '+st:''}`,singles?'Piano dei singoli':'Il piano di corsa',`${TYPE_LAB[c.type]} · ${km1(c.len)} km · tempo massimo +${Math.round((TIME_CUT[c.type]||0.15)*100)}%. In corsa puoi cambiare tutto con gli ordini radio.`,false)+
- `<div class="pb wrap"><div class="tacgrid"><div class="stack"><div class="card pad"><div class="eyebrow">Percorso</div>${profileSVG(c,320,60)}<ul class="keys">${keys.join('')}</ul></div></div>
- <div class="stack">${right}</div></div></div>
+ `<div class="pb wrap"><div class="tacgrid"><div class="stack"><div><div class="eyebrow">Percorso</div><div class="card pad" style="padding:8px">${profileSVG(c,320,60)}</div>${DT('',keys.map(k=>k.replace(/^<li><b>(.*?)<\/b>:?\s*(.*)<\/li>$/,'<tr><td class="nowrap"><b>$1</b></td><td class="tm">$2</td></tr>')).join(''),'tac')}</div></div>
+ <div class="stack">${right}</div></div>${below}</div>
  <div class="pf"><div class="wrap fr"><button class="btn ghost" data-act="tacreset">Piano consigliato</button>${RC.stage===0?'<button class="btn ghost" data-act="tacback">Convocazioni</button>':''}<span style="flex:1"></span><button class="btn primary big" data-act="tacgo">${mode==='sim'?'Simula la corsa':RC.stage===0?'Via!':'Via alla tappa'}</button></div></div>`,'wide');
 }
 document.addEventListener('click',e=>{
@@ -164,3 +158,6 @@ document.addEventListener('change',e=>{
 
 const _TEAMs=TEAM;
 TEAM=function(id){if(typeof id==='string'&&id.startsWith('si_')){const r=RID(id.slice(3));return{id,name:(r?r.name:'Individuale')+' (individuale)',short:G.teams[0].short,tier:'si',nats:[]}}return _TEAMs(id)};
+
+/* i menu a tendina della tattica usano le stesse azioni dei pulsanti */
+document.addEventListener('change',e=>{const t=e.target;if(!t.dataset||!t.dataset.tact||!TAC)return;const b=document.createElement('button');b.hidden=true;b.dataset.act=t.dataset.tact;b.dataset.v=t.value;if(t.dataset.id)b.dataset.id=t.dataset.id;$('#sheet').appendChild(b);b.click();b.remove()});

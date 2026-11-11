@@ -114,12 +114,17 @@ function trackConvoca(race){
  renderTrackConv();
 }
 function fmtTrack(k,v){return k==='ip'||k==='tp'?`${Math.floor(v/60)}'${(v%60).toFixed(2).padStart(5,'0').replace('.',',')}"`:''}
+const TK_SHORT={ip:'Ins. ind.',tp:'Ins. sq.',pr:'Punti',sc:'Scratch',el:'Elim.'};
 function renderTrackConv(){
  const race=TSEL.race,rs=ME().riders.map(RID).filter(r=>!whyCant(r,race));
  const ok=race.disc.every(k=>k!=='tp'||TSEL.sel[k].length===0||TSEL.sel[k].length===4)&&race.disc.some(k=>TSEL.sel[k].length);
  openSheet(sheetHead(`Pista · ${COUNTRY[race.ctry]||race.ctry} · ${weekLab(race.w)}`,esc(race.name),'Velodromo al coperto. Scegli chi corre in ogni specialità: un corridore può farne più di una.')+
- `<div class="pb wrap"><div class="trackgrid">${race.disc.map(k=>{const D=DISC[k],sel=TSEL.sel[k];return`<div class="card pad stack"><div class="sec-h" style="margin:0"><h3>${D.lab}</h3><span class="eyebrow">${sel.length}/${D.max}${k==='tp'?' · servono 4':''}</span></div><div class="note">${D.d}</div>
-  <div class="rchips">${rs.slice().sort((a,b)=>trackScore(b,k)-trackScore(a,k)).map(r=>`<button class="rchip" data-act="tksel" data-k="${k}" data-v="${r.id}" aria-pressed="${sel.includes(r.id)}"><b>${esc(r.name.split(' ').slice(-1)[0])}</b><small>${ARCH[r.arch].lab} · ${trackScore(r,k)}</small></button>`).join('')}</div></div>`}).join('')}</div>
+ `<div class="pb wrap"><div class="card tbl dtw"><table class="t dt trk">
+  <tr class="th"><td>Corridore</td>${race.disc.map(k=>`<td class="c" title="${esc(DISC[k].d)}">${TK_SHORT[k]}</td>`).join('')}</tr>
+  <tr class="th sub"><td>Scelti</td>${race.disc.map(k=>{const n=TSEL.sel[k].length,need=k==='tp'?4:DISC[k].max;return`<td class="c ${k==='tp'&&n&&n!==4?'neg':''}">${n}/${need}${k==='tp'?'*':''}</td>`}).join('')}</tr>
+  ${rs.slice().sort((a,b)=>Math.max(...race.disc.map(k=>trackScore(b,k)))-Math.max(...race.disc.map(k=>trackScore(a,k)))).map(r=>`<tr><td><b>${esc(r.name)}</b><div class="tm">${ARCH[r.arch].lab} · ${r.age} anni</div></td>${race.disc.map(k=>{const on=TSEL.sel[k].includes(r.id),sc=trackScore(r,k),best=Math.max(...rs.map(x=>trackScore(x,k)));return`<td class="c"><button class="tkc ${sc>=best-3?'best':''}" data-act="tksel" data-k="${k}" data-v="${r.id}" aria-pressed="${on}">${on?'✓ ':''}${sc}</button></td>`}).join('')}</tr>`).join('')}
+  </table></div>
+  <div class="note">Tocca il valore per far correre il corridore in quella specialità (può farne più di una). ${race.disc.includes('tp')?'* Inseguimento a squadre: servono 4 corridori.':''}</div>
   ${race.flag==='ita'?'<div class="note">Campionato italiano: solo corridori italiani.</div>':''}</div>
  <div class="pf"><div class="wrap fr"><button class="btn ghost" data-act="close">Chiudi</button><button class="btn ghost" data-act="tkskip">Non partecipare</button><button class="btn primary" data-act="tkgo" ${ok?'':'disabled'}>Corri in pista</button></div></div>`,'wide');
 }

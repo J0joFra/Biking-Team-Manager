@@ -71,7 +71,7 @@ function clubCareer(){
  const legends=Object.values(G.riders).filter(r=>r.team==='t0'||(r.car||[]).some(c=>c.me)).map(r=>({r,w:(r.car||[]).filter(c=>c.me).reduce((a,c)=>a+c.w,0)+(r.team==='t0'?r.wins:0),s:(r.car||[]).filter(c=>c.me).length+(r.team==='t0'?1:0)})).filter(o=>o.w||o.s>1).sort((a,b)=>b.w-a.w||b.s-a.s).slice(0,10);
  return`<div class="kv kv4"><div><small>Stagioni</small><b>${H.length+1}</b></div><div><small>Vittorie del club</small><b>${C.wins||0}</b></div><div><small>Traguardi</small><b>${ach}/${ACH.length}</b></div><div><small>Miglior stagione</small><b>${best?`${best.rank}ª ${CAT[best.cat].lab}`:'—'}</b></div></div>
  <div class="basegrid" style="margin-top:12px"><div class="col"><div class="sec-h"><h2>Stagione per stagione</h2></div>
-  <div class="card tbl"><table class="t"><tr class="th"><td>Anno</td><td>Categoria</td><td class="r">Pos.</td><td class="r">V</td><td class="r">Punti</td></tr>${rows.map(h=>`<tr class="${h.live?'me':''}"><td>${h.season}${h.live?'*':''}</td><td>${CAT[h.cat]?CAT[h.cat].lab:h.cat}</td><td class="r">${h.rank}ª</td><td class="r">${h.wins}</td><td class="r">${h.pts}</td></tr>`).join('')}</table></div></div>
+  <div class="card tbl"><table class="t"><tr class="th"><td>Anno</td><td>Categoria</td><td class="r">Pos.</td><td class="r">V</td><td class="r">Punti</td></tr>${rows.map(h=>`<tr class="${h.live?'me':''}"><td>${h.season}${h.live?'*':''}</td><td>${CAT[h.cat]?CAT[h.cat].lab:h.cat}</td><td class="r">${h.rank}ª</td><td class="r">${h.wins}</td><td class="r">${h.pts??"—"}</td></tr>`).join('')}</table></div></div>
  <div class="col"><div class="sec-h"><h2>Bandiere del club</h2><span class="eyebrow">vittorie con noi</span></div>
   ${legends.length?`<div class="card tbl"><table class="t">${legends.map((o,i)=>`<tr data-act="rider" data-v="${o.r.id}" style="cursor:pointer"><td class="n">${i+1}</td><td>${esc(o.r.name)} <div class="tm">${o.s} stagion${o.s>1?'i':'e'}${o.r.team!=='t0'?' · ex':''}</div></td><td class="r">${o.w} V</td></tr>`).join('')}</table></div>`:'<div class="note">Le prime vittorie scriveranno la storia del club.</div>'}</div></div>`;
 }
@@ -88,3 +88,18 @@ document.addEventListener('click',e=>{
  const t=e.target.closest('[data-act]');if(!t||!G)return;const a=t.dataset.act,v=t.dataset.v;
  if(a==='rkview'){G.rkView=v;renderRank()}else if(a==='rksort'){G.rkSort=v;renderRank()}else if(a==='rkscope'){G.rkScope=v;renderRank()}
 });
+/* ripara i salvataggi con punti non validi (vecchio bug dei ritirati in nazionale) */
+function fixNaN(){for(const r of Object.values(G.riders||{})){if(!Number.isFinite(r.pts))r.pts=0;if(!Number.isFinite(r.wins))r.wins=0}for(const h of G.history||[])if(!Number.isFinite(h.pts))h.pts=null}
+if(G){fixNaN();if(G.other)withOther(fixNaN);save()}
+/* classifiche dell'altra squadra (uomini / donne) */
+const _renderRankS=renderRank;
+renderRank=function(){
+ const o=G.other,other=o&&G.rkSide==='o';
+ if(other){withOther(()=>_renderRankS());document.querySelectorAll('#view [data-act="rider"]').forEach(el=>el.removeAttribute('data-act'))}
+ else _renderRankS();
+ const cur=G.side,alt=o?o.side:(G.side==='F'?'M':'F');
+ const bar=o?`<div class="seg sm rkside" style="margin-bottom:8px;max-width:340px">${[['m',cur],['o',alt]].map(([k,s])=>`<button data-act="rkside" data-v="${k}" aria-pressed="${(G.rkSide==='o')===(k==='o')}">${SIDE_LAB[s]}</button>`).join('')}</div>`
+  :`<div class="note" style="margin-bottom:8px">Classifiche ${SIDE_LAB[alt].toLowerCase()}: fonda la ${SIDE_LONG[alt]} dal Club per seguirle.</div>`;
+ $('#view').insertAdjacentHTML('afterbegin',bar);
+};
+document.addEventListener('click',e=>{const t=e.target.closest('[data-act="rkside"]');if(t&&G){G.rkSide=t.dataset.v;renderRank()}});

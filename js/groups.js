@@ -125,7 +125,7 @@ document.addEventListener('click',e=>{
  else if(a==='gauto'){autoGroups();renderTeam();toast('Gruppi ridistribuiti','ok')}
  else if(a==='gset'){const r=RID(t.dataset.id);r.grp=v||null;save();const y=window.scrollY;renderTeam();window.scrollTo(0,y)}
  else if(a==='racegrp'){const r=G.races.find(x=>x.id===t.dataset.r);r.grp=v==='auto'?null:v;save();
-  if(SEL&&SEL.race===r&&$('#sheet .pickgrid')){suggest();renderConvoca()}else{raceSheet(r.id);if(G.tab==='cal')renderCal()}}
+  if(SEL&&SEL.race===r&&$('#sheet .t.dt.conv')){suggest();renderConvoca()}else{raceSheet(r.id);if(G.tab==='cal')renderCal()}}
 });
 document.addEventListener('change',e=>{
  const t=e.target;if(!G)return;

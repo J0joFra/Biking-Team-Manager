@@ -106,7 +106,7 @@ awardsSheet=function(A){
  if(!A)return;
  const mine=A.list.filter(a=>a.me).length+(A.teams||[]).filter(a=>a.me).length;
  openSheet(sheetHead(`Premiazioni ${A.s}`,'Le coppe della stagione',mine?`${mine} coppe per la tua squadra`:'Nessuna coppa per i tuoi: sarà per la prossima')+
- `<div class="pb wrap">${A.teams&&A.teams.length?`<div class="sec-h"><h3>Squadre</h3></div>${teamAwardsGrid(A.teams)}`:''}<div class="sec-h" style="margin-top:12px"><h3>Corridori</h3></div>${_awardsGridT(A.list)}</div><div class="pf"><div class="wrap fr"><button class="btn primary" data-act="close">Continua</button></div></div>`,'wide');
+ `<div class="pb wrap">${A.teams&&A.teams.length?`<div class="sec-h"><h3>Squadre</h3></div>${teamAwardsGrid(A.teams)}`:''}<div class="sec-h" style="margin-top:12px"><h3>Corridori</h3></div>${awardsGrid(A.list)}</div><div class="pf"><div class="wrap fr"><button class="btn primary" data-act="close">Continua</button></div></div>`,'wide');
 };
 const _clubCareerT=clubCareer;
 clubCareer=function(){

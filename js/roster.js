@@ -74,11 +74,12 @@ function renderTeam(){
  else if(v==='ruoli'){
   const cov=coverage();
   body=`<div class="card pad"><div class="sec-h" style="margin-bottom:6px"><h3>Copertura dei terreni</h3><span class="eyebrow">il migliore per ogni specialità</span></div>
-   <div class="covgrid">${cov.map(({k,best})=>`<div class="cov ${best.v<60?'weak':best.v>=75?'strong':''}"><small>${SPEC[k]}</small><b>${best.v}</b><span>${esc(best.r.name.split(' ').slice(-1)[0])}</span><div class="bar"><i style="width:${best.v}%"></i></div></div>`).join('')}</div>
+   ${covTable(cov)}
+
    ${cov.filter(c=>c.best.v<60).length?`<div class="note">Punti deboli: ${cov.filter(c=>c.best.v<60).map(c=>SPEC[c.k].toLowerCase()).join(', ')}. Cerca rinforzi sul mercato o fai crescere un giovane.</div>`:''}</div>
   ${ROLE_ORD.map(k=>{const g=rs.filter(r=>r.role===k).sort((a,b)=>ovr(b)-ovr(a));
    return`<div class="sec rolesec"><div class="sec-h"><h2>${ROLES[k].lab} <span class="cnt2">${g.length}</span></h2><span class="note">${ROLES[k].desc}</span></div>
-   ${g.length?`<div class="cols">${g.map(r=>rcard(r,{big:k==='cap'})).join('')}</div>`:`<div class="note">Nessuno. Tocca un corridore per cambiargli ruolo.</div>`}</div>`}).join('')}
+   ${g.length?riderTable(g):`<div class="note">Nessuno. Tocca un corridore per cambiargli ruolo.</div>`}</div>`}).join('')}
   <div class="note">I ruoli guidano la proposta di convocazione e la scelta del capitano: per ogni corsa viene proposto il capitano con la specialità giusta. Cambia ruolo e specialità dalla scheda del corridore.</div>`;
  }else if(v==='futuro'){
   const js=acadJuniors(),inc=incoming();
@@ -88,7 +89,7 @@ function renderTeam(){
   const young=rs.filter(r=>r.age<=24).sort((a,b)=>projOvr(b)-projOvr(a));
   body=`<div class="futgrid"><div class="col">
    <div class="card pad"><div class="sec-h"><h3>I talenti</h3><span class="eyebrow">valore oggi → stimato a 27 anni (il picco)</span></div>
-    ${young.length?young.map(r=>{const p=projOvr(r);return`<button class="prow" data-act="rider" data-v="${r.id}"><span class="nm">${esc(r.name)}</span><span class="muted">${r.age} anni · ${ARCH[r.arch].lab}</span><span class="stars">${'★'.repeat(1+Math.round((r.pot||0)*4))}</span><span class="pv"><b>${ovr(r)}</b> → <b class="up">${p}</b></span><div class="bar2"><i style="width:${ovr(r)}%"></i><i class="g" style="width:${Math.max(0,p-ovr(r))}%"></i></div>${r.cEnd<=SEASON+1&&!r.renewed?`<span class="chip red">contratto fino al ${r.cEnd}</span>`:''}</button>`}).join(''):'<div class="note">Nessun giovane in rosa.</div>'}
+    ${young.length?DT(TH([['Corridore'],['Età','r'],['Pot.'],['Oggi','r'],['A 27','r'],['Contratto','r hs']]),young.map(r=>{const p=projOvr(r);return`<tr data-act="rider" data-v="${r.id}"><td><b>${esc(r.name)}</b><div class="tm">${ARCH[r.arch].lab}</div></td><td class="r">${r.age}</td><td class="stars">${'★'.repeat(1+Math.round((r.pot||0)*4))}</td><td class="r">${ovr(r)}</td><td class="r"><b class="pos">${p}</b></td><td class="r hs ${r.cEnd<=SEASON+1&&!r.renewed?'neg':''}">${r.cEnd}</td></tr>`}).join('')):'<div class="note">Nessun giovane in rosa.</div>'}
    </div>
    ${js.length?`<div class="card pad"><div class="sec-h"><h3>Scuola juniores</h3><span class="eyebrow">${js.length} ragazzi</span></div>${js.sort((a,b)=>projOvr(b)-projOvr(a)).map(r=>`<button class="prow" data-act="rider" data-v="${r.id}"><span class="nm">${esc(r.name)}</span><span class="muted">${r.age} anni · ${ARCH[r.arch].lab}</span><span class="stars">${'★'.repeat(1+Math.round((r.pot||0)*4))}</span><span class="pv"><b>${ovr(r)}</b> → <b class="up">${projOvr(r)}</b></span></button>`).join('')}</div>`:''}
   </div><div class="col">
@@ -104,8 +105,8 @@ function renderTeam(){
  }else{
   const u=rs.filter(r=>r.age<=22).sort((a,b)=>ovr(b)-ovr(a)),e=rs.filter(r=>r.age>22).sort((a,b)=>ovr(b)-ovr(a));
   body=`<div class="note" style="margin-bottom:8px">SAL salita · PIA pianura · CRO cronometro · VOL volata · RES resistenza. Programma consigliato 50–70 giorni di corsa.</div>
-  <div class="sec"><div class="sec-h"><h2>Under 23</h2><span class="eyebrow">19–22 anni</span></div><div class="cols">${u.map(r=>rcard(r,{trend:true})).join('')||'<div class="note">Nessun Under 23.</div>'}</div></div>
-  <div class="sec"><div class="sec-h"><h2>Elite</h2><span class="eyebrow">23 anni e oltre</span></div><div class="cols">${e.map(r=>rcard(r,{trend:true})).join('')}</div></div>`;
+  <div class="sec"><div class="sec-h"><h2>Under 23</h2><span class="eyebrow">19–22 anni</span></div>${riderTable(u,{trend:true})}</div>
+  <div class="sec"><div class="sec-h"><h2>Elite</h2><span class="eyebrow">23 anni e oltre</span></div>${riderTable(e,{trend:true})}</div>`;
  }
  $('#view').innerHTML=head+body;
 }

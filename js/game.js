@@ -131,7 +131,7 @@ function mail(from,title,body){G.inbox.unshift({id:'m'+(G.nextId++),w:G.week,s:S
 function addNews(t){G.news.unshift({s:SEASON,t});G.news=G.news.slice(0,40)}
 
 /* ---------- classifiche ---------- */
-function teamPoints(t){return t.riders.reduce((a,id)=>a+(RID(id)?RID(id).pts:0),0)}
+function teamPoints(t){return t.riders.reduce((a,id)=>a+((RID(id)&&+RID(id).pts)||0),0)}
 function tierOfTeam(t){return t.id==='t0'?G.cat:t.tier}
 function teamRanking(tier){return G.teams.filter(t=>!tier||tierOfTeam(t)===tier||(tier==='conti'&&tierOfTeam(t)==='dev')).map(t=>({t,p:teamPoints(t)})).sort((a,b)=>b.p-a.p)}
 function myRank(){return teamRanking().findIndex(o=>o.t.id==='t0')+1}

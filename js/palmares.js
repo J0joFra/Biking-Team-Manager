@@ -39,7 +39,7 @@ function palmBlock(r){
  const p=palmOf(r);
  const wins=p.w.slice().reverse(),pods=p.podl.slice().reverse().slice(0,6);
  return`<div class="card pad stack"><div class="sec-h" style="margin:0"><h3>Palmarès</h3><span class="eyebrow">carriera</span></div>
-  <div class="kv"><div><small>Vittorie</small><b>${p.w.length}</b></div><div><small>Podi</small><b>${p.pod}</b></div><div><small>Top 10</small><b>${p.t10}</b></div></div>
+  <div class="kv keep"><div><small>Vittorie</small><b>${p.w.length}</b></div><div><small>Podi</small><b>${p.pod}</b></div><div><small>Top 10</small><b>${p.t10}</b></div></div>
   ${(r.titles||[]).length?`<div class="titles">${r.titles.map(t=>`<span class="chip amber">${esc(t)}</span>`).join('')}</div>`:''}
   ${p.best?`<div class="note">Miglior piazzamento: <b>${ord(p.best.p)}</b> a ${esc(p.best.n)} (${p.best.s})</div>`:'<div class="note">Nessun piazzamento ancora.</div>'}
   ${wins.length?`<div><div class="eyebrow">Vittorie</div>${wins.slice(0,12).map(w=>`<div class="note">• ${w.s} · ${esc(w.n)} <span class="tm">${w.c}</span></div>`).join('')}${wins.length>12?`<div class="note">e altre ${wins.length-12}</div>`:''}</div>`:''}
@@ -55,10 +55,10 @@ function renderTeamPalm(){
  const riders={};for(const w of P.w)riders[w.r]=(riders[w.r]||0)+1;
  const top=Object.entries(riders).sort((a,b)=>b[1]-a[1]).slice(0,8);
  const bigs=P.w.filter(w=>['gt','mon','uwt1','uwt2','pro'].includes(w.t));
- return`<div class="kv kv4"><div><small>Vittorie totali</small><b>${P.w.length}</b></div><div><small>Podi</small><b>${P.pod}</b></div><div><small>Stagioni</small><b>${all.length}</b></div><div><small>Medaglie in nazionale</small><b>${P.nat.length}</b></div></div>
+ return`<div class="kv kv4 keep"><div><small>Vittorie totali</small><b>${P.w.length}</b></div><div><small>Podi</small><b>${P.pod}</b></div><div><small>Stagioni</small><b>${all.length}</b></div><div><small>Medaglie in nazionale</small><b>${P.nat.length}</b></div></div>
  <div class="futgrid" style="margin-top:12px"><div class="col">
   <div class="card pad"><div class="sec-h"><h3>Stagione per stagione</h3></div>
-   <table class="t">${all.slice().reverse().map(h=>`<tr><td class="n">${h.season}</td><td>${CAT[h.cat].lab} · ${h.rank}ª${h.cur?' <span class="chip u23">in corso</span>':''}</td><td class="r">${h.wins} V</td><td class="r">${h.pts} pt</td></tr>`).join('')}</table></div>
+   <table class="t">${all.slice().reverse().map(h=>`<tr><td class="n">${h.season}</td><td>${CAT[h.cat].lab} · ${h.rank}ª${h.cur?' <span class="chip u23">in corso</span>':''}</td><td class="r">${h.wins} V</td><td class="r">${h.pts??"—"} pt</td></tr>`).join('')}</table></div>
   ${top.length?`<div class="card pad"><div class="sec-h"><h3>I più vincenti</h3></div><table class="t">${top.map(([n,c],i)=>`<tr><td class="n">${i+1}</td><td>${esc(n)}</td><td class="r">${c} vittori${c>1?'e':'a'}</td></tr>`).join('')}</table></div>`:''}
   ${P.nat.length?`<div class="card pad"><div class="sec-h"><h3>Medaglie in nazionale</h3></div>${P.nat.slice().reverse().map(m=>`<div class="note">• ${m.s} · ${['Oro','Argento','Bronzo'][m.p-1]} · ${esc(m.r)} · ${esc(m.n)}</div>`).join('')}</div>`:''}
  </div><div class="col">

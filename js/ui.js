@@ -90,7 +90,7 @@ function renderHome(){
    <div class="note">${nx?`Tra ${nx.w-G.week} settiman${nx.w-G.week===1?'a':'e'} (${weekLab(nx.w)}).`:'Apri il Calendario e iscriviti alle corse adatte alla tua squadra.'}</div>
    <div class="row"><button class="btn primary big" data-act="adv1">Avanza di una settimana</button>${nx?`<button class="btn big" data-act="advnext">Vai alla prossima corsa</button>`:`<button class="btn big" data-act="tab" data-v="cal">Calendario</button>`}</div></div>`;
  }
- const objs=G.contracts.filter(c=>activeIn(c,SEASON)).sort((a,b)=>b.amount-a.amount).slice(0,5).map(c=>{const v=Math.min(c.obj.n,Math.round(contractProg(c)));return`<div class="obj ${c.done?'done':''}"><div class="ol"><span><b class="sn">${esc(SP(c.sid).name)}</b> ${esc(c.obj.txt)}</span><b>${c.done?ic('check',16):eurk(c.bonus)}</b></div><div class="bar ${c.done?'e':''}"><i style="width:${v/c.obj.n*100}%"></i></div><small>${v}/${c.obj.n}</small></div>`}).join('')||'<div class="note">Nessuno sponsor attivo.</div>';
+ const objs=G.contracts.filter(c=>activeIn(c,SEASON)).sort((a,b)=>b.amount-a.amount).slice(0,5).map(c=>{const v=Math.min(c.obj.n,Math.round(contractProg(c)));return`<tr class="${c.done?'okr':''}"><td><b>${esc(SP(c.sid).name)}</b><div class="tm">${esc(c.obj.txt)}</div></td><td style="width:28%">${miniBar(v,c.obj.n,c.done?'ok':'')}</td><td class="r">${v}/${c.obj.n}</td><td class="r"><b>${c.done?ic('check',14):eurk(c.bonus)}</b></td></tr>`}).join('');
  const mails=G.inbox.slice(0,6).map(m=>`<button class="mail ${m.read?'':'unread'}" data-act="mail" data-v="${m.id}"><span class="from">${esc(m.from)}</span><span class="mt2">${esc(m.title)}</span><span class="wk">S${m.w}</span></button>`).join('')||'<div class="note">Nessun messaggio.</div>';
  const recent=G.races.filter(r=>r.status==='done'&&r.result&&r.result.winner&&r.tier!=='jun').sort((a,b)=>b.w-a.w||TIER_ORDER[a.tier]-TIER_ORDER[b.tier]).slice(0,5);
  const camps=G.camps.filter(c=>!c.done);
@@ -99,7 +99,7 @@ function renderHome(){
   <div class="col">${callupBanner()}${hero}
    ${G.phase==='season'?trainCard():''}
    ${G.offers.length?`<button class="banner" data-act="tab" data-v="spon">${ic('spon',18)}<span><b>${G.offers.length} propost${G.offers.length>1?'e':'a'} di sponsorizzazione</b> da valutare</span></button>`:''}
-   <div class="card pad"><div class="sec-h"><h3>Obiettivi degli sponsor</h3><span class="eyebrow">${sponsorSat()}% soddisfatti</span></div>${objs}</div>
+   <div><div class="sec-h"><h3>Obiettivi degli sponsor</h3><span class="eyebrow">${sponsorSat()}% soddisfatti</span></div>${objs?DT('',objs):'<div class="note">Nessuno sponsor attivo.</div>'}</div>
    <div class="kv kv4"><div><small>Saldo a fine stagione</small><b class="${proj<0?'neg':''}">${eurk(proj)}</b></div><div><small>Classifica</small><b>${myCatRank()}ª</b></div><div><small>Punti</small><b>${teamPoints(ME())}</b></div><div><small>Rosa</small><b>${myRoster()}/${myCat().max}</b></div></div>
   </div>
   <div class="col">
@@ -137,13 +137,7 @@ function renderCal(){
  const tk=G.calt||'all';
  const list=G.races.filter(r=>flt(r)&&typeOk(r,tk)).sort((a,b)=>f==='done'?(b.w-a.w||TIER_ORDER[a.tier]-TIER_ORDER[b.tier]):(a.w-b.w||TIER_ORDER[a.tier]-TIER_ORDER[b.tier]));
  let html=`<div class="toolbar"><div class="chips">${CALF.map(([k,l])=>`<button class="fchip" data-act="calf" data-v="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div><div class="chips">${CALT.map(([k,l])=>`<button class="fchip" data-act="calt" data-v="${k}" aria-pressed="${tk===k}">${l}</button>`).join('')}</div><span class="note">${list.length} corse${f==='done'?' concluse':''}</span></div>${!list.length?`<div class="note">${f==='done'?'Nessuna corsa conclusa finora.':G.phase!=='season'?'Stagione finita: il nuovo calendario arriva con la prossima stagione.':'Nessuna corsa in programma con questo filtro.'}</div>`:''}`;
- let lw=-1;html+='<div class="callist">';
- for(const r of list){
-  if(r.w!==lw){lw=r.w;html+=`<div class="wk ${r.w===G.week?'now':''}" ${r.w===G.week?'id="wknow"':''}><b>Sett. ${r.w}</b> ${weekLab(r.w)}${r.w===G.week?' · <span class="chip u23">adesso</span>':''}</div>`}
-  const s=raceState(r);
-  html+=`<button class="rrow ${f==='done'?'past':''}" data-act="race" data-v="${r.id}"><div class="rmain"><div class="rn">${esc(r.name)}</div><div class="mt">${raceChips(r)}</div></div><span class="pill ${s.cls}">${s.t}</span></button>`;
- }
- html+='</div>';
+ if(list.length)html+=calTable(list,f==='done');
  $('#view').innerHTML=html;
  window.scrollTo(0,0);
 }
@@ -213,7 +207,7 @@ function riderSheet(id){
  openSheet(sheetHead(`${ARCH[r.arch].lab} · ${catOf(r)}${r.neo?' · 1° anno':''}`,esc(r.name),`${r.age} anni · ${r.nat} · ${esc(TEAM(r.team).name)}`)+
  `<div class="pb wrap"><div class="negbox"><div class="stack">
   ${(r.titles||[]).length?`<div class="titles">${r.titles.map(t=>`<span class="chip amber">${esc(t)}</span>`).join('')}</div>`:''}${r.natB&&r.natB[1]>=G.week?`<div class="msg">In nazionale dal ${weekLab(r.natB[0])} al ${weekLab(r.natB[1]+1)}</div>`:''}
-  <div class="kv"><div><small>Valore</small><b>${ovr(r)}</b></div><div><small>Soglia</small><b>${ftp}</b> W</div><div><small>W/kg</small><b>${r.wkg.toFixed(2)}</b></div>
+  <div class="kv keep"><div><small>Valore</small><b>${ovr(r)}</b></div><div><small>Soglia</small><b>${ftp}</b> W</div><div><small>W/kg</small><b>${r.wkg.toFixed(2)}</b></div>
   <div><small>Peso</small><b>${r.mass.toFixed(1)}</b> kg</div><div><small>Volata</small><b>${r.spr}</b> W</div><div><small>Potenziale</small><b style="font-size:16px;color:var(--amber)">${pot}</b></div></div>
   <div class="card pad">${statRow(r)}</div>
   <div class="card pad two"><div><div class="eyebrow">Condizione</div><div class="cond" style="--c:${c.c};margin-top:4px">${c.t}</div>${altEff(r,G.week)>0?`<div class="note">Effetto altura +${(altEff(r,G.week)*100).toFixed(1)}%</div>`:''}${camp?`<div class="note">In ritiro: ${weekLab(camp.from)}–${weekLab(camp.to)}</div>`:''}</div>
@@ -246,8 +240,7 @@ function renderBase(){
    ${A.level<5?`<button class="btn primary" data-act="acadup" ${G.cash<ACAD_UP[A.level+1]?'disabled':''}>${A.level?'Migliora':'Costruisci'} · ${eur(ACAD_UP[A.level+1])}</button>`:''}
    <div class="field"><label class="eyebrow" for="afocus">Osservatori</label><select id="afocus" data-act="afocus">${Object.keys(ACAD_FOCUS).map(k=>`<option value="${k}" ${A.focus===k?'selected':''}>${ACAD_FOCUS_LAB[k]}</option>`).join('')}</select></div>
   </div>
-  ${js.length?`<div class="cols1">${js.map(r=>{const g=r.joined?r.wkg-r.joined.wkg:0;const canPro=r.age>=18&&!r.next;return`<div class="card jrow"><div class="ovr ${ovr(r)>=70?'hi':''}">${ovr(r)}</div><div style="min-width:0"><div class="nm">${esc(r.name)}</div><div class="tags"><span>${ARCH[r.arch].lab} · ${r.age} anni · ${r.nat}</span><span style="color:var(--amber)">${'★'.repeat(1+Math.round(r.pot*4))}</span>${g>0.005?`<span class="chip u23">+${g.toFixed(2)} W/kg</span>`:''}${r.next?'<span class="chip u23">Promosso</span>':''}</div></div>
-    <div class="row">${canPro?`<button class="btn primary sm" data-act="promote" data-v="${r.id}">Promuovi</button>`:''}<button class="btn ghost sm" data-act="rider" data-v="${r.id}">Scheda</button></div></div>`}).join('')}</div>`:''}
+  ${js.length?DT(TH([['Val','r'],['Ragazzo'],['Età','r'],['Pot.'],['Crescita','r hs'],['']]),js.map(r=>{const g=r.joined?r.wkg-r.joined.wkg:0;const canPro=r.age>=18&&!r.next;return`<tr data-act="rider" data-v="${r.id}"><td class="r"><b class="ov">${ovr(r)}</b></td><td><b>${esc(r.name)}</b>${r.next?' <span class="chip u23">Promosso</span>':''}<div class="tm">${ARCH[r.arch].lab} · ${r.nat}</div></td><td class="r">${r.age}</td><td class="stars">${'★'.repeat(1+Math.round(r.pot*4))}</td><td class="r hs">${g>0.005?'+'+g.toFixed(2)+' W/kg':''}</td><td class="r">${canPro?`<button class="btn primary sm" data-act="promote" data-v="${r.id}">Promuovi</button>`:''}</td></tr>`}).join('')):''}
   ${A.log.length?`<div class="card pad"><div class="eyebrow">Risultati juniores</div>${A.log.slice(0,5).map(l=>`<div class="note">${l.s} · ${esc(l.t)}</div>`).join('')}</div>`:''}
   <div class="note">I ragazzi di 18 anni si possono promuovere in qualsiasi momento: firmano subito e passano in squadra la stagione dopo: il primo anno sono Rookie, dal secondo Under 23. Chi non viene promosso lascia la scuola.</div>
  </div></div>`;
@@ -330,7 +323,7 @@ function renderMarket(){
    <select id="mkrole" data-act="mkf" data-k="role" aria-label="Ruolo">${roles.map(([k,l])=>`<option value="${k}" ${mk.role===k?'selected':''}>${l}</option>`).join('')}</select>
    <span class="note">${total} corridori${total>40?' · primi 40 per valore':''}</span></div>
   <div class="note">${hint}</div>
-  ${mk.sub==='bids'?`<div class="cols1">${bidsList()}</div>`:`<div class="cols">${list.map(r=>mkRow(r)).join('')||'<div class="note">Nessun corridore.</div>'}</div>`}
+  ${mk.sub==='bids'?`<div class="cols1">${bidsList()}</div>`:mkTable(list)}
  </div>`;
 }
 function releaseSheet(id){
@@ -353,7 +346,7 @@ function renderRank(){
   <div class="card tbl"><table class="t">${tr.map((o,i)=>`<tr class="${o.t.id==='t0'?'me':''}"><td class="n">${i+1}</td><td>${esc(o.t.name)} <div class="tm">${lab(o.t)}</div></td><td class="r">${o.p}</td></tr>`).join('')}</table></div></div>
  <div class="col"><div class="sec-h"><h2>Corridori</h2><span class="eyebrow">top 30</span></div>${riders.length?`<div class="card tbl"><table class="t">${riders.map(row).join('')}</table></div>`:'<div class="note">La classifica si riempie con le prime corse.</div>'}
   ${u23.length?`<div class="sec-h" style="margin-top:14px"><h2>Under 23</h2></div><div class="card tbl"><table class="t">${u23.map(row).join('')}</table></div>`:''}
-  ${G.history.length?`<div class="sec-h" style="margin-top:14px"><h2>Albo della squadra</h2></div><div class="card tbl"><table class="t">${G.history.slice().reverse().map(h=>`<tr><td class="n">${h.season}</td><td>${CAT[h.cat].lab} · ${h.rank}ª · ${h.wins} vittorie</td><td class="r">${h.pts} pt</td></tr>`).join('')}</table></div>`:''}
+  ${G.history.length?`<div class="sec-h" style="margin-top:14px"><h2>Albo della squadra</h2></div><div class="card tbl"><table class="t">${G.history.slice().reverse().map(h=>`<tr><td class="n">${h.season}</td><td>${CAT[h.cat].lab} · ${h.rank}ª · ${h.wins} vittorie</td><td class="r">${h.pts??"—"} pt</td></tr>`).join('')}</table></div>`:''}
  </div></div>`;
 }
 
@@ -380,13 +373,12 @@ function renderConvoca(){
  const singles=race.mode==='singles',n=SEL.ids.size,ok=n>=min&&n<=size&&(SEL.cap||singles);
  const pro=race.stages[0].t==='prologo';
  openSheet(sheetHead(`${singles?'Singoli':'Convocazioni'} · ${race.lab} · ${weekLab(race.w)}`,esc(race.name)+(singles?' <span class="chip amber">Gara per singoli</span>':''),`${race.stages.map((s,i)=>(race.stages.length>1?(s.t==='prologo'?'P':i+(pro?0:1))+'. ':'')+TYPE_LAB[s.t]).join(' · ')}`)+
- `<div class="pb"><div class="wrap"><div class="card pickgrid">${rs.map(r=>{
+ `<div class="pb"><div class="wrap">${DT(TH([[''],['Corridore'],['Forma'],['Fatica','r'],['Gg','r hs'],['Adatto'],['Cap.','r']]),rs.map(r=>{
    const why=whyCant(r,race),on=SEL.ids.has(r.id),c=condOf(r),fit=Math.round(avgSuit(r,race)),ae=altEff(r,race.w);
-   return`<div class="pick ${why?'off':''}"><input type="checkbox" id="p_${r.id}" data-act="pick" data-v="${r.id}" ${on?'checked':''} ${why?'disabled':''} aria-label="Convoca ${esc(r.name)}">
-    <label for="p_${r.id}" style="min-width:0"><div class="nm">${esc(r.name)} <span class="chip ${r.age<=22?'u23':''}">${catOf(r)}</span>${r.role?`<span class="chip ${r.role==='cap'?'amber':''}">${ROLES[r.role].lab}${(r.role==='cap'||r.role==='luog')&&r.spec?' · '+SPEC[r.spec]:''}</span>`:''}</div>
-     <div class="sm"><span>${ARCH[r.arch].lab}</span><span class="cond" style="--c:${c.c}">${c.t}</span>${ae>0?`<span class="chip amber">altura +${(ae*100).toFixed(1)}%</span>`:''}<span>fatica ${Math.round(r.fat)}${recDays(r)?` · recupero ${recDays(r)} gg`:''}</span><span${r.days>65?' style="color:var(--danger)"':''}>${r.days} gg</span>${why?`<span>· ${why}</span>`:''}</div>
-     <div class="sm"><span>Adatto</span><div class="bar fit"><i style="width:${fit}%"></i></div><span class="mono">${fit}</span></div></label>
-    <button class="star" data-act="cap" data-v="${r.id}" aria-pressed="${SEL.cap===r.id}" ${!on?'disabled':''} title="Capitano">C</button></div>`}).join('')}</div>
+   return`<tr class="${why?'off':''} ${on?'sel':''}"><td><input type="checkbox" id="p_${r.id}" data-act="pick" data-v="${r.id}" ${on?'checked':''} ${why?'disabled':''} aria-label="Convoca ${esc(r.name)}"></td>
+    <td><label for="p_${r.id}"><span class="nm"><b>${esc(r.name)}</b> <span class="chip ${r.age<=22?'u23':''}">${catOf(r)}</span>${r.role?` <span class="chip ${r.role==='cap'?'amber':''}">${ROLES[r.role].lab}${(r.role==='cap'||r.role==='luog')&&r.spec?' · '+SPEC[r.spec]:''}</span>`:''}</span><div class="tm">${ARCH[r.arch].lab}${ae>0?` · altura +${(ae*100).toFixed(1)}%`:''}${why?` · <span class="neg">${why}</span>`:''}</div></label></td>
+    <td><span class="cond" style="--c:${c.c}">${c.t}</span></td><td class="r">${Math.round(r.fat)}${recDays(r)?`<div class="tm">${recDays(r)} gg</div>`:''}</td><td class="r hs ${r.days>65?'neg':''}">${r.days}</td>
+    <td class="nowrap">${miniBar(fit)} <b>${fit}</b></td><td class="r"><button class="star" data-act="cap" data-v="${r.id}" aria-pressed="${SEL.cap===r.id}" ${!on?'disabled':''} title="Capitano">C</button></td></tr>`}).join(''),'conv')}
   <div class="note" style="margin-top:8px">C = capitano: la squadra lavora per lui. La proposta del DS segue i ruoli: per questa corsa (${SPEC[raceSpec(race)].toLowerCase()}) propone il capitano con quella specialità.</div></div></div>
  <div class="pf"><div class="wrap fr"><b class="cnt ${!ok?'neg':''}">${n}/${size}</b><button class="btn ghost" data-act="suggest">Proposta DS</button>${n<min?`<button class="btn ghost" data-act="forfeit">Non partire</button>`:''}<span style="flex:1"></span>
   <button class="btn" data-act="go" data-v="sim" ${ok?'':'disabled'}>Simula</button><button class="btn primary" data-act="go" data-v="live" ${ok?'':'disabled'}>In corsa</button></div></div>`,'wide');
@@ -617,13 +609,9 @@ function renderSponsor(){
  const contracts=G.contracts.filter(c=>c.end>=SEASON).sort((a,b)=>['main','co','partner'].indexOf(a.slot)-['main','co','partner'].indexOf(b.slot)||b.amount-a.amount);
  const tabs=[['area',G.spCity&&!isForeign(area)?G.spCity:areaName(area)],['mine',`Contratti (${contracts.length})`],['offers',`Proposte (${G.offers.length})`]];
  let body='';
- if(G.spTab==='area')body=`<div class="note">${isForeign(area)?`Gli sponsor esteri guardano reputazione e corse disputate nel loro paese (${(G.exp[area]||0)} finora).`:area===G.sede.reg?'La tua regione: qui ti conoscono, la propensione è più alta.':`A ${list.length?spDist(list[0]):'?'} km circa dalla sede: più sei lontano, più servono risultati.`}</div><div class="cols1">${list.map(spRow).join('')||'<div class="note">Nessuno sponsor.</div>'}</div>`;
- else if(G.spTab==='mine')body=`<div class="cols1">${contracts.map(c=>{const sp=SP(c.sid),v=Math.min(c.obj.n,Math.round(contractProg(c)));return`<button class="card crow" data-act="sponsor" data-v="${sp.id}">${spLogo(sp)}<div style="min-width:0"><div class="nm">${esc(sp.name)} <span class="chip ${c.slot==='main'?'cat':''}">${SLOTS[c.slot].lab}</span></div>
-   <div class="tags"><span>${eur(c.amount)}/anno · ${c.from===c.end?c.from:c.from+'–'+c.end}${c.from>SEASON?' · inizia nel '+c.from:''}</span></div>
-   ${c.pen?`<div class="tags"><span class="chip red">Clausola: rimborso ${eurk(c.pen)} se manchi l'obiettivo</span></div>`:''}${activeIn(c,SEASON)?`<div class="cobj"><span>${esc(c.obj.txt)}${c.bonus?` · bonus ${eurk(c.bonus)}`:''}</span><div class="bar ${c.done?'e':''}"><i style="width:${v/c.obj.n*100}%"></i></div><small>${c.done?'Raggiunto':v+'/'+c.obj.n}</small></div>`:''}</div>
-   <div class="sat"><small>Soddisfazione</small><b>${c.sat}%</b></div></button>`}).join('')||'<div class="note">Nessun contratto.</div>'}</div>`;
- else body=`<div class="cols1">${G.offers.map(o=>{const sp=SP(o.sid),wk=Math.max(0,o.exp-absWeek());return`<div class="card orow">${spLogo(sp)}<div style="min-width:0"><div class="nm">${esc(sp.name)} ${o.renew?'<span class="chip u23">Rinnovo</span>':''}</div><div class="tags"><span>${SLOTS[o.slot].lab} · ${eur(o.amount)}/anno · ${o.years} ${o.years>1?'anni':'anno'} dal ${o.from}</span><span>· ${esc(sp.city)}, ${spDist(sp)} km</span>${G.phase==='season'?`<span>· scade tra ${wk} settiman${wk===1?'a':'e'}</span>`:''}</div>${o.pen?`<div class="tags"><span class="chip red">Clausola di rimborso ${eurk(o.pen)}</span><span>obiettivo: ${esc(o.obj.txt)}</span></div>`:''}</div>
-   <div class="row"><button class="btn ghost sm" data-act="offno" data-v="${o.id}">Rifiuta</button><button class="btn primary sm" data-act="offyes" data-v="${o.id}">Accetta</button></div></div>`}).join('')||'<div class="note">Nessuna proposta in arrivo. Più cresce la reputazione, più sponsor si fanno avanti da soli.</div>'}</div>`;
+ if(G.spTab==='area')body=`<div class="note">${isForeign(area)?`Gli sponsor esteri guardano reputazione e corse disputate nel loro paese (${(G.exp[area]||0)} finora).`:area===G.sede.reg?'La tua regione: qui ti conoscono, la propensione è più alta.':`A ${list.length?spDist(list[0]):'?'} km circa dalla sede: più sei lontano, più servono risultati.`}</div>${spTable(list)}`;
+ else if(G.spTab==='mine')body=contractTable(contracts);
+ else body=offerTable(G.offers);
  $('#view').innerHTML=`<div class="spgrid">
  <div class="col"><div class="card pad"><div class="sec-h"><h3>${ic('pin',18)} ${esc(G.sede.city)}, ${REGIONS[G.sede.reg].n}</h3><span class="eyebrow">più scuro = più interessati</span></div>
   ${spMapSVG()}

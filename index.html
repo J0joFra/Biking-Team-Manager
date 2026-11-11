@@ -101,7 +101,9 @@ main.view.enter{animation:enter .22s ease-out}
 @keyframes enter{from{transform:translateY(6px)}to{transform:none}}
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--rail);padding-bottom:env(safe-area-inset-bottom,0px)}
 .tabin{display:grid;grid-template-columns:repeat(7,1fr);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
-.tabs button{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px 7px;color:var(--rail-ink);font-family:var(--f-display);font-weight:600;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase}
+.seg{overflow-x:auto;scrollbar-width:none;max-width:100%}.seg::-webkit-scrollbar{display:none}.seg button{flex-shrink:0}
+.tabs button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tabs button{min-width:0;position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px 7px;color:var(--rail-ink);font-family:var(--f-display);font-weight:600;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase}
 .tabs button[aria-current="true"]{color:var(--rail-on)}
 .tabs button[aria-current="true"] .ic{color:var(--amber)}
 .badge{position:absolute;top:4px;right:calc(50% - 20px);min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--danger);color:#fff;font-size:11px;font-family:var(--f-body);display:grid;place-items:center}
@@ -633,6 +635,25 @@ tr.clk:hover td{background:var(--sunk)}
  .hero h2{font-size:24px}
  .btn.big{min-height:44px;font-size:16px}
  .kv b{font-size:19px}
+}
+/* TELEFONO IN ORIZZONTALE: schermi bassi */
+@media (orientation:landscape) and (max-height:500px){
+ .toasts{top:auto;bottom:calc(66px + env(safe-area-inset-bottom,0px));left:auto;right:max(12px,env(safe-area-inset-right,0px));transform:none;width:min(46vw,340px);align-items:flex-end}
+ .toast{padding:7px 12px;font-size:12.5px;text-align:left}
+ .tabs button{padding:3px 2px;font-size:9.5px;gap:1px}
+ .tabs .ic{width:19px;height:19px}
+ .tabin{padding-top:4px}
+ .badge{top:1px}
+ .kv{gap:6px}.kv>div{padding:6px 9px;border-radius:10px}.kv small{font-size:10px}.kv b{font-size:17px}
+ .teamhead{margin-bottom:8px;gap:8px}.teamhead svg{width:34px;height:34px}.teamname{font-size:20px}
+ .sec{margin-bottom:10px}
+ .seg button{padding-block:7px;font-size:12.5px;white-space:nowrap}
+ .spgrid .kv.kv4{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .hero{padding:12px 14px}.hero h2{font-size:21px}
+ .sheet .ph h2{font-size:19px}.sheet .ph{padding-block:8px 6px}
+ .pkgrid{gap:8px}.pk{padding:9px;gap:6px}.pkh b{font-size:15px}
+ .momc{padding:10px;gap:8px;border-radius:14px}.momh b{font-size:18px}.mi{width:36px;height:36px;font-size:18px}.momb{min-height:52px;padding:9px}
+ .mknews{display:none}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>

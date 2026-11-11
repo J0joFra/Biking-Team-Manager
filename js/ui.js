@@ -322,7 +322,7 @@ function renderMarket(){
   <div class="kv kv4"><div><small>Cassa</small><b>${eurk(G.cash)}</b></div><div><small>Saldo a fine stagione</small><b class="${proj<0?'neg':''}">${eurk(proj)}</b></div><div><small>Monte ingaggi</small><b>${eurk(payroll())}</b></div><div><small>Rosa ${w.off?SEASON+1:SEASON}</small><b>${w.off?nextRoster():myRoster()}/${myCat().max}</b></div></div>
   <div class="banner ${w.now||w.next?'':'closed'}"><span class="chip ${w.now||w.next?'u23':''}">${w.now||w.next?'Aperto':'Chiuso'}</span><span>${w.label}</span></div>
   ${expiringAlert()}
-  ${news.length?`<div class="card pad"><div class="eyebrow">Notizie di mercato</div>${news.map(n=>`<div class="note">• ${esc(n.t)}</div>`).join('')}</div>`:''}
+  ${news.length?`<div class="card pad mknews"><div class="eyebrow">Notizie di mercato</div>${news.map(n=>`<div class="note">• ${esc(n.t)}</div>`).join('')}</div>`:''}
  </div>
  <div class="sec">
   <div class="seg">${subs.map(([k,l])=>`<button data-act="mksub" data-v="${k}" aria-pressed="${mk.sub===k}">${l}</button>`).join('')}</div>
@@ -474,7 +474,7 @@ function groupsDisplay(S){
 }
 function updateRaceUI(){
  const S=LIVE.S;if(!S)return;
- const lead=S.clusters.length?S.clusters[0].front:S.len,k2g=Math.max(0,S.len-lead);
+ const lead=S.clusters.length?S.clusters[0].front:0,k2g=Math.max(0,S.len-lead);
  $('#k2g').innerHTML=`${km1(k2g)}<small>km all'arrivo</small>`;
  $('#rt').textContent=fmtT(S.t);
  $('#ravg').textContent=S.t>60?(lead/(S.t/3600)).toFixed(1).replace('.',',')+' km/h':'—';

@@ -64,7 +64,7 @@ renderHome=function(){
  _renderHomeA();
  const last=(G.awards||[]).slice(-1)[0];
  if(G.phase!=='season'&&last&&last.s===SEASON){
-  const h=$('#view .hero');if(h)h.insertAdjacentHTML('afterend',`<button class="banner awb" data-act="awshow">${trophySvg('#D4A017',26)}<span><b>Premiazioni ${SEASON}</b>: ${last.list.filter(a=>a.me).length} coppe ai tuoi corridori</span></button>`);
+  const h=$('#view .hero');if(h)h.insertAdjacentHTML('afterend',`<button class="banner awb" data-act="awshow">${trophySvg('#D4A017',26)}<span><b>Premiazioni ${SEASON}</b>: ${last.list.filter(a=>a.me).length+(last.teams||[]).filter(a=>a.me).length} coppe per la tua squadra</span></button>`);
   if(G.awSeen!==SEASON){G.awSeen=SEASON;save();awardsSheet(last)}
  }
 };
@@ -75,3 +75,42 @@ clubCareer=function(){
  return _clubCareerA()+(A.length?`<div class="sec-h" style="margin-top:14px"><h2>Albo d'oro</h2><span class="eyebrow">coppe di fine stagione</span></div>${A.map(s=>`<div class="eyebrow" style="margin:8px 0 4px">${s.s}</div>${awardsGrid(s.list)}`).join('')}`:'');
 };
 document.addEventListener('click',e=>{if(e.target.closest('[data-act="awshow"]')&&G)awardsSheet((G.awards||[]).slice(-1)[0])});
+
+/* ---------- premi di squadra ---------- */
+const TAWARDS=[
+ ['tc','Trofeo a squadre','Più punti UCI in assoluto','#D4A017',80000,6],
+ ['tw','Squadra più vincente','Più vittorie in stagione','#C2185B',40000,3],
+ ['cwt','Migliore WorldTeam','Prima tra le WorldTeam','#1D4ED1',60000,4],
+ ['cpro','Migliore ProTeam','Prima tra le ProTeam','#0E7490',40000,3],
+ ['cconti','Migliore Continental','Prima tra le Continental','#23804A',25000,3],
+ ['tgi','Miglior vivaio','Più punti dagli Under 23','#7C3AED',20000,2]
+];
+function computeTeamAwards(){
+ const teams=G.teams.filter(t=>t.riders.length),rs=t=>t.riders.map(RID).filter(Boolean);
+ const pts=t=>teamPoints(t),wins=t=>rs(t).reduce((a,r)=>a+r.wins,0),u23=t=>rs(t).filter(r=>r.age<=22).reduce((a,r)=>a+r.pts,0);
+ const best=(arr,v)=>arr.filter(t=>v(t)>0).sort((a,b)=>v(b)-v(a)||pts(b)-pts(a))[0];
+ const out=[],push=(k,t,v)=>{if(t)out.push({k,tid:t.id,name:t.id==='t0'?G.name:t.name,me:t.id==='t0',v})};
+ const a=best(teams,pts);push('tc',a,a?`${pts(a)} punti`:'');
+ const w=best(teams,wins);push('tw',w,w?`${wins(w)} vittorie`:'');
+ for(const[k,tier]of [['cwt','wt'],['cpro','pro'],['cconti','conti']]){const t=best(teams.filter(x=>tierOfTeam(x)===tier||(tier==='conti'&&tierOfTeam(x)==='dev')),pts);push(k,t,t?`${pts(t)} punti`:'')}
+ const g=best(teams,u23);push('tgi',g,g?`${u23(g)} punti U23`:'');
+ for(const x of out)if(x.me){const T=TAWARDS.find(y=>y[0]===x.k);G.cash+=T[4];G.rep=clamp(G.rep+T[5],0,100);x.cash=T[4];for(const c of G.contracts)if(activeIn(c,SEASON))c.sat=Math.min(100,c.sat+T[5]);addNews(`${T[1]} ${SEASON}!`)}
+ const last=(G.awards||[]).slice(-1)[0];if(last&&last.s===SEASON)last.teams=out;
+ return out.filter(x=>x.me);
+}
+const _computeAwardsT=computeAwards;
+computeAwards=function(){const m=_computeAwardsT();return m.concat(computeTeamAwards())};
+function teamAwardsGrid(list){return`<div class="awgrid">${list.map(a=>{const T=TAWARDS.find(x=>x[0]===a.k);return`<div class="card aw ${a.me?'me':''}">${trophySvg(T[3])}<div><small>${T[1]}</small><b>${esc(a.name)}</b><span>${esc(a.v)}</span>${a.me?`<span class="chip amber">Tuo · +${eurk(a.cash||T[4])}</span>`:''}</div></div>`}).join('')}</div>`}
+const _awardsGridT=awardsGrid;
+awardsSheet=function(A){
+ if(!A)return;
+ const mine=A.list.filter(a=>a.me).length+(A.teams||[]).filter(a=>a.me).length;
+ openSheet(sheetHead(`Premiazioni ${A.s}`,'Le coppe della stagione',mine?`${mine} coppe per la tua squadra`:'Nessuna coppa per i tuoi: sarà per la prossima')+
+ `<div class="pb wrap">${A.teams&&A.teams.length?`<div class="sec-h"><h3>Squadre</h3></div>${teamAwardsGrid(A.teams)}`:''}<div class="sec-h" style="margin-top:12px"><h3>Corridori</h3></div>${_awardsGridT(A.list)}</div><div class="pf"><div class="wrap fr"><button class="btn primary" data-act="close">Continua</button></div></div>`,'wide');
+};
+const _clubCareerT=clubCareer;
+clubCareer=function(){
+ let h=_clubCareerT();
+ for(const s of (G.awards||[]))if(s.teams&&s.teams.length)h=h.replace(`<div class="eyebrow" style="margin:8px 0 4px">${s.s}</div>`,`<div class="eyebrow" style="margin:8px 0 4px">${s.s}</div>${teamAwardsGrid(s.teams)}<div style="height:6px"></div>`);
+ return h;
+};

@@ -72,6 +72,7 @@ function momShow(ev){
  const S=LIVE.S;LIVE.mo=ev;LIVE.mom.last=S.t;LIVE.mom.done[ev.k]=S.t;
  LIVE.wasPlaying=LIVE.playing;LIVE.playing=false;buzz(60);
  const ds=stB('ds'),rec=ds>0.15?(R()<0.55+0.45*ds?ev.rec:rint(0,ev.o.length-1)):-1;
+ {const old=$('#mom');if(old)old.remove();clearInterval(LIVE.moTimer)}
  const box=document.createElement('div');box.id='mom';box.className='mom';
  box.innerHTML=`<div class="momc"><div class="momh"><span class="mi">${ev.ico}</span><div><b>${esc(ev.t)}</b><small>${ev.s}</small></div></div>
   <div class="momo">${ev.o.map((o,i)=>`<button class="momb ${i===rec?'rec':''}" data-act="momgo" data-v="${i}"><b>${esc(o.l)}</b><small>${esc(o.d)}</small>${i===rec?'<span class="chip amber">Consiglio del DS</span>':''}</button>`).join('')}</div>

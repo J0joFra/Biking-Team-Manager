@@ -66,7 +66,7 @@ function spTable(list){
  if(!list.length)return'<div class="note">Nessuno sponsor.</div>';
  return DT(TH([['Sponsor'],['Tipo','hm'],['Km','r hs'],['Main','r'],['Propensione','r']]),list.map(s=>{
   const c=myContract(s),it=interest(s,'partner'),off=G.offers.find(o=>o.sid===s.id);
-  const st=c?`<span class="pill reg">${SLOTS[c.slot].lab}</span>`:off?'<span class="pill inv">Proposta</span>':it.p<=0?`<span class="lockt">${ic('lock',12)} rep. ${s.req}</span>`:`${Math.round(it.p*100)}% ${miniBar(it.p*100)}`;
+  const st=c?`<span class="pill reg">${({main:'Main',co:'Co',partner:'Partner'})[c.slot]}</span>`:off?'<span class="pill inv">Proposta</span>':it.p<=0?`<span class="lockt">${ic('lock',12)} rep. ${s.req}</span>`:`${Math.round(it.p*100)}% ${miniBar(it.p*100)}`;
   return`<tr data-act="sponsor" data-v="${s.id}"><td><b>${esc(s.name)}</b><div class="tm">${sectorLab(s)} · ${esc(s.city)}</div></td><td class="hm"><span class="chip ${s.size==='internazionale'||s.size==='nazionale'?'amber':''}">${SPONSOR_SIZE[s.size].lab}</span></td><td class="r hs">${spDist(s)}</td><td class="r">${eurk(amountFor(s,'main'))}</td><td class="r">${st}</td></tr>`}).join(''));
 }
 function contractTable(list){

@@ -763,6 +763,24 @@ tr.clk:hover td{background:var(--sunk)}
 .rbody > div:has(#radio){display:none}
 @media (max-width:960px){.t.dt.withg .hs{display:none}}
 .teamhead{display:flex;align-items:center;gap:10px}.thstat{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-family:var(--f-mono);font-size:12.5px;color:var(--muted);white-space:nowrap}
+:root{--globe-sea:#DCE8F3;--globe-land:#EEF0EC}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--globe-sea:#1B2735;--globe-land:#2A302B}}
+:root[data-theme="dark"]{--globe-sea:#1B2735;--globe-land:#2A302B}
+.spgrid2{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+@media (orientation:landscape) and (min-width:600px){.spgrid2{grid-template-columns:minmax(220px,0.8fr) minmax(0,1.5fr);align-items:start}}
+.globecol{display:flex;flex-direction:column;gap:6px;align-items:center}
+.globebox{width:100%;aspect-ratio:1;max-height:min(240px,calc(100dvh - var(--toph,52px) - 190px));display:flex;justify-content:center}
+#globe{touch-action:none;cursor:grab;border-radius:50%;max-height:100%}
+.glegend{display:flex;gap:10px;font-size:11px;color:var(--muted)}.glegend span{display:inline-flex;align-items:center;gap:2px}.glegend i{display:inline-block;width:12px;height:9px;border-radius:2px}
+.regs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;width:100%}
+.reg{position:relative;display:flex;align-items:center;justify-content:center;gap:2px;height:26px;border-radius:6px;background:var(--hc);font-family:var(--f-display);font-weight:700;font-size:11.5px;color:#14321F;border:2px solid transparent}
+.reg.sel{border-color:var(--accent)}.reg i{position:absolute;top:-4px;right:-3px;min-width:13px;height:13px;border-radius:7px;background:var(--accent);color:#fff;font-style:normal;font-size:9px;display:grid;place-items:center}
+.finkpi{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);flex-wrap:wrap}.finkpi b{color:var(--ink)}
+.slotsrow{display:inline-flex;gap:8px;margin-left:6px}.slotsrow span{white-space:nowrap}
+.badge2{display:inline-grid;place-items:center;min-width:16px;height:16px;border-radius:8px;background:var(--danger);color:#fff;font-size:10px;padding:0 4px}
+.fintabs{max-width:320px}
+.rmeta{display:inline-flex;align-items:center;gap:3px}
+.col > *{flex-shrink:0}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -802,3 +820,8 @@ tr.clk:hover td{background:var(--sunk)}
 <script src="js/nav.js"></script>
 <script src="js/fix.js"></script>
 <script src="js/livefx.js"></script>
+<script src="js/vendor/d3-array.min.js"></script>
+<script src="js/vendor/d3-geo.min.js"></script>
+<script src="js/vendor/topojson-client.min.js"></script>
+<script src="js/vendor/world.js"></script>
+<script src="js/finance.js"></script>

@@ -60,7 +60,7 @@ function fitView(){
  const kids=[...v.children];let i=0;while(i<kids.length&&isHead(kids[i]))i++;
  const rest=kids.slice(i);if(!rest.length)return;
  const w=document.createElement('div');w.className='vscroll';rest.forEach(k=>w.appendChild(k));v.appendChild(w);
- if(rest.length===1&&rest[0].matches('.homegrid,.basegrid,.spgrid,.futgrid,.negbox'))w.classList.add('gridfill');
+ if(rest.length===1&&rest[0].matches('.homegrid,.basegrid,.spgrid,.futgrid,.negbox,.mailgrid'))w.classList.add('gridfill');
 }
 let fitQ=false;
 new MutationObserver(()=>{if(fitQ)return;fitQ=true;requestAnimationFrame(()=>{fitQ=false;fitView()})}).observe($('#view'),{childList:true});

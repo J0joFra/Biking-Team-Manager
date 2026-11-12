@@ -728,6 +728,17 @@ tr.clk:hover td{background:var(--sunk)}
  body.appfit main.view>.sec{gap:6px}
  body.appfit main.view .seg button{padding-block:6px}
 }
+
+.mailgrid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+@media (orientation:landscape) and (min-width:600px){.mailgrid{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:start}}
+.t.dt.mailt tr.sel td{background:var(--accent-soft)}.udot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.mailread h2{font-size:20px;margin:4px 0 10px}
+.basegrid.one{grid-template-columns:minmax(0,1fr)!important}
+@media (orientation:landscape) and (max-height:520px){
+ .tabs button{padding:1px 1px;font-size:8.5px;gap:0;line-height:1.1}
+ .tabs .ic{width:16px;height:16px}
+ .tabin{gap:0;padding-top:2px;overflow-y:auto;max-height:100dvh;scrollbar-width:none}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -764,3 +775,4 @@ tr.clk:hover td{background:var(--sunk)}
 <script src="js/awards.js"></script>
 <script src="js/tables.js"></script>
 <script src="js/dash.js"></script>
+<script src="js/nav.js"></script>

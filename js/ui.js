@@ -33,15 +33,16 @@ function rotBanner(){let off=false;try{off=localStorage.getItem('amm-rot')==='1'
 
 /* ---------- shell ---------- */
 const TABS=[['home','Home','home'],['cal','Corse','cal'],['team','Squadra','team'],['market','Mercato','market'],['spon','Finanze','spon'],['base','Strutture','base'],['rank','Classifica','rank']];
+const VIEWS={home:()=>renderHome(),cal:()=>renderCal(),team:()=>renderTeam(),market:()=>renderMarket(),spon:()=>renderSponsor(),base:()=>renderBase(),rank:()=>renderRank()};
 function render(){
  if(MENU){renderMenu();return}
  if(NEWG||!G){renderIntro();return}
  $('#top').hidden=false;$('#tabs').hidden=false;
  renderTop();
  const unread=G.inbox.filter(m=>!m.read).length,offs=G.offers.length;
- $('#tabs').innerHTML=`<div class="tabin">${TABS.map(([k,l,i])=>`<button data-act="tab" data-v="${k}" aria-current="${G.tab===k}">${ic(i,22)}<span>${l}</span>${k==='home'&&unread?`<b class="badge">${unread}</b>`:''}${k==='spon'&&offs?`<b class="badge">${offs}</b>`:''}</button>`).join('')}</div>`;
+ $('#tabs').innerHTML=`<div class="tabin">${TABS.map(([k,l,i])=>`<button data-act="tab" data-v="${k}" aria-current="${G.tab===k}">${ic(i,22)}<span>${l}</span>${k==='mail'&&unread?`<b class="badge">${unread}</b>`:''}${k==='market'&&(G.bids||[]).length?`<b class="badge">${G.bids.length}</b>`:''}${k==='spon'&&offs?`<b class="badge">${offs}</b>`:''}</button>`).join('')}</div>`;
  const v=$('#view');
- ({home:renderHome,cal:renderCal,team:renderTeam,market:renderMarket,spon:renderSponsor,base:renderBase,rank:renderRank})[G.tab]();
+ (VIEWS[G.tab]||VIEWS.home)();
  v.classList.remove('enter');void v.offsetWidth;v.classList.add('enter');
 }
 function renderTop(){

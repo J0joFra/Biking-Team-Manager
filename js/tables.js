@@ -57,7 +57,7 @@ function calTable(list,past){
  for(const r of list){
   if(r.w!==lw){lw=r.w;rows+=`<tr class="wkr ${r.w===G.week?'now':''}" ${r.w===G.week?'id="wknow"':''}><td colspan="2">Sett. ${r.w} · ${weekLab(r.w)}${r.w===G.week?' · adesso':''}</td></tr>`}
   const s=raceState(r);
-  rows+=`<tr data-act="race" data-v="${r.id}" class="${past?'past':''}"><td><span class="rcn">${flagSvg(r.ctry,18)}${raceIc(r)}<b>${esc(r.name)}</b></span><div class="mt">${raceChips(r)}</div></td><td class="r"><span class="pill ${s.cls}">${s.t}</span></td></tr>`;
+  rows+=`<tr data-act="race" data-v="${r.id}" class="${past?'past':''}"><td><div class="rline">${flagSvg(r.ctry,18)}<b class="rn1">${esc(r.name)}</b><span class="mt">${raceChips(r)}</span></div></td><td class="r"><span class="pill ${s.cls}">${s.t}</span></td></tr>`;
  }
  return DT('',rows,'cal');
 }
@@ -71,9 +71,8 @@ function spTable(list){
 }
 function contractTable(list){
  if(!list.length)return'<div class="note">Nessun contratto.</div>';
- return DT(TH([['Sponsor'],['Ruolo'],['€/anno','r'],['Anni','r hs'],['Obiettivo'],['Soddisf.','r']]),list.map(c=>{const sp=SP(c.sid),v=Math.min(c.obj.n,Math.round(contractProg(c)));
-  return`<tr data-act="sponsor" data-v="${sp.id}"><td><b>${esc(sp.name)}</b>${c.pen?`<div class="tm"><span class="chip red">Penale ${eurk(c.pen)}</span></div>`:''}</td><td>${SLOTS[c.slot].lab}</td><td class="r">${eurk(c.amount)}</td><td class="r hs">${c.from===c.end?c.from:c.from+'–'+String(c.end).slice(2)}</td>
-  <td>${activeIn(c,SEASON)?`<div class="tm">${esc(c.obj.txt)}</div>${miniBar(v,c.obj.n,c.done?'ok':'')} <small>${c.done?'fatto':v+'/'+c.obj.n}</small>`:'<span class="tm">dal '+c.from+'</span>'}</td><td class="r"><b>${c.sat}%</b></td></tr>`}).join(''));
+ return DT(TH([['Sponsor'],['Ruolo'],['€/anno','r'],['Anni','r hs'],['Soddisf.','r']]),list.map(c=>{const sp=SP(c.sid);
+  return`<tr data-act="sponsor" data-v="${sp.id}"><td><span class="pc">${spLogo(sp,24)}<b>${esc(sp.name)}</b>${c.pen?` <span class="chip red" title="Penale se manchi l'obiettivo">${eurk(c.pen)}</span>`:''}</span></td><td class="nowrap">${({main:ic2('cap',13),co:ic2('free',13),partner:ic2('team',13)})[c.slot]} ${SLOTS[c.slot].lab}</td><td class="r">${eurk(c.amount)}</td><td class="r hs">${c.from===c.end?c.from:c.from+'–'+String(c.end).slice(2)}</td><td class="r">${moodIc({mood:c.sat},16)} <b>${c.sat}%</b></td></tr>`}).join(''));
 }
 function offerTable(list){
  if(!list.length)return'<div class="note">Nessuna proposta in arrivo.</div>';

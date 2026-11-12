@@ -50,3 +50,28 @@ document.addEventListener('click',e=>{
  else if(a==='mail'){e.stopImmediatePropagation();G.mailSel=t.dataset.v;G.tab='mail';closeSheet();render()}
 },true);
 if(G){if(G.teamView==='palm'||G.teamView==='allen')G.teamView='ruoli';render()}
+
+/* ---------- icone in Posta e Palmarès ---------- */
+const MAIL_IC={DS:['ic2','flag'],Sponsor:['ic','spon'],Mercato:['ic','market'],Medico:['ic2','injury'],Amministrazione:['ic2','euro'],Scuola:['ic2','svil'],Preparatore:['ic2','bike'],Organizzatori:['ic2','calendar']};
+function fromIc(f){if(f==='Federazione')return flagSvg('ITA',14);const m=MAIL_IC[f];return m?(m[0]==='ic'?ic(m[1],14):ic2(m[1],14)):ic('mail',14)}
+function newsIc(t){return/Traguardo/.test(t)?ic2('trophy',13):/Pacchetto/.test(t)?ic2('calendar',13):/infortun/i.test(t)?ic2('injury',13):/arriva|Firmato|Ingaggiat|rinnova|svincolat|passa a|cessione/i.test(t)?ic('market',13):/livello/i.test(t)?ic2('svil',13):/Centro|Galleria|Velodromo|medico|hospitality/i.test(t)?ic('base',13):/sponsor|Accordo/i.test(t)?ic('spon',13):ic2('radio',13)}
+const _renderMailI=renderMail;
+renderMail=function(){
+ _renderMailI();
+ document.querySelectorAll('#view .t.dt.mailt tr[data-act="mailsel"]').forEach(tr=>{const td=tr.children[1];if(td&&!td.querySelector('svg')){const f=td.textContent.trim();td.innerHTML=`<span class="mfrom" title="${esc(f)}">${fromIc(f)}<span class="hs">${esc(f)}</span></span>`}});
+ const rd=$('#view .mailread .eyebrow');if(rd){const f=rd.textContent.split(' · ')[0];rd.insertAdjacentHTML('afterbegin',fromIc(f)+' ')}
+ const cols=document.querySelectorAll('#view .mailgrid .col');const nt=cols[0]&&[...cols[0].querySelectorAll('.t.dt')][1];
+ if(nt)nt.querySelectorAll('td').forEach(td=>{td.innerHTML=`<span class="pc">${newsIc(td.textContent)}<span>${td.innerHTML}</span></span>`});
+};
+const PALM_IC={'Stagione per stagione':['ic2','calendar'],'I più vincenti':['ic2','trophy'],'Medaglie in nazionale':['ic2','flag'],'I corridori in rosa':['ic2','team'],'Le vittorie più importanti':['ic2','cap'],'Tutte le vittorie':['ic2','finish']};
+const PALM_KV={'Vittorie totali':'trophy','Podi':'cap','Stagioni':'calendar','Medaglie in nazionale':'flag'};
+const _renderPalmI=renderPalm;
+renderPalm=function(){
+ _renderPalmI();
+ const v=$('#view');
+ v.querySelectorAll('h3').forEach(h=>{const m=PALM_IC[h.textContent.trim()];if(m&&!h.querySelector('svg'))h.insertAdjacentHTML('afterbegin',ic2(m[1],16)+' ')});
+ v.querySelectorAll('.kv small').forEach(s=>{const k=PALM_KV[s.textContent.trim()];if(k)s.insertAdjacentHTML('afterbegin',ic2(k,12)+' ')});
+ const idx={};for(const r of Object.values(G.riders))idx[r.name]=r;
+ v.querySelectorAll('table.t td').forEach(td=>{if(td.querySelector('.av'))return;const first=td.firstChild&&td.firstChild.nodeType===3?td.firstChild.textContent.trim():'';const r=idx[first];if(r)td.firstChild.replaceWith(Object.assign(document.createElement('span'),{innerHTML:`${avatar(r,22)} ${flagSvg(r.nat,14)} <b>${esc(r.name)}</b>`,className:'pc'}))});
+ v.querySelectorAll('.note').forEach(n=>{if(/^•/.test(n.textContent.trim())){n.innerHTML=n.innerHTML.replace(/^\s*•\s*/,'');n.insertAdjacentHTML('afterbegin',`<span class="achic on" style="width:18px;height:18px;margin-right:4px">${ic2('trophy',11)}</span>`);n.classList.add('pnote')}});
+};

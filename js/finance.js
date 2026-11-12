@@ -51,7 +51,7 @@ function globeEvents(){
  cv.onpointerup=e=>{const was=drag;drag=null;if(!was||moved>6||!GLOBE.proj)return;
   const r=cv.getBoundingClientRect(),ll=GLOBE.proj.invert([e.clientX-r.left,e.clientY-r.top]);if(!ll)return;
   const f=worldFeatures().find(x=>N_ISO[x.id]&&d3.geoContains(x,ll));if(!f)return;
-  const code=N_ISO[f.id];G.spArea=code==='ITA'?(REGIONS[G.spArea]?G.spArea:G.sede.reg):code;G.spCity=null;G.spTab='area';save();renderSponsor();globeFocus(code)};
+  const code=N_ISO[f.id];G.spArea=code;G.spCity=null;G.spTab='area';save();renderSponsor();globeFocus(code)};
 }
 /* ---------- regioni italiane come bottoni ---------- */
 function regionChips(){
@@ -61,18 +61,18 @@ function regionChips(){
 /* ---------- pagina Finanze ---------- */
 function slotsRow(){const sv=G.phase==='season'?SEASON:SEASON+1;return`<span class="slotsrow" title="Ruoli occupati ${sv}">${['main','co','partner'].map(k=>`<span>${SLOTS[k].lab.split(' ')[0]} <b>${slotUsed(k,sv)}/${SLOTS[k].cap}</b></span>`).join('')}</span>`}
 renderSponsor=function(){
- G.finTab=G.finTab||'bil';G.spArea=G.spArea||G.sede.reg;G.spTab=G.spTab||'area';
+ G.finTab=G.finTab||'bil';if(!G.spArea||REGIONS[G.spArea])G.spArea='ITA';G.spTab=G.spTab||'area';
  const tabs=`<div class="toolbar"><div class="seg fintabs">${[['bil','euro','Bilancio'],['spon','spon','Sponsor']].map(([k,i,l])=>`<button data-act="fintab" data-v="${k}" aria-pressed="${G.finTab===k}">${i==='spon'?ic(i,15):ic2(i,15)} ${l}${k==='spon'&&G.offers.length?` <b class="badge2">${G.offers.length}</b>`:''}</button>`).join('')}</div>
   <span class="finkpi">${ic2('contract',13)} ${SEASON+1}: <b>${eurk(incomeIn(SEASON+1))}</b> ${slotsRow()}</span></div>`;
  if(G.finTab==='bil'){$('#view').innerHTML=tabs+finTable();return}
- const area=G.spArea,ita=!isForeign(area);
- const list=G.sponsors.filter(s=>s.area===area).sort((a,b)=>(myContract(b)?1:0)-(myContract(a)?1:0)||interest(b).p-interest(a).p||b.pot-a.pot);
- const contracts=G.contracts.filter(c=>c.end>=SEASON).sort((a,b)=>['main','co','partner'].indexOf(a.slot)-['main','co','partner'].indexOf(b.slot)||b.amount-a.amount);
- const sub=[['area',`${ita?flagSvg('ITA',14)+' '+esc(REGIONS[area].n):flagSvg(area,14)+' '+esc(FOREIGN[area].n)}`],['mine',`${ic2('contract',13)} Contratti ${contracts.length}`],['offers',`${ic2('inbox',13)} Proposte ${G.offers.length}`]];
+ const area=G.spArea,ita=area==='ITA';
+ const list=G.sponsors.filter(s=>ita?!!REGIONS[s.area]:s.area===area).sort((a,b)=>(myContract(b)?1:0)-(myContract(a)?1:0)||interest(b).p-interest(a).p||b.pot-a.pot).slice(0,40);
+ const contracts=G.contracts.filter(c=>(activeIn(c,SEASON)&&!c.done&&G.phase==='season')||(c.from>SEASON&&G.phase!=='season')||(G.phase!=='season'&&activeIn(c,SEASON+1))).sort((a,b)=>['main','co','partner'].indexOf(a.slot)-['main','co','partner'].indexOf(b.slot)||b.amount-a.amount);
+ const sub=[['area',`${flagSvg(area,14)} ${ita?'Italia':esc(FOREIGN[area].n)}`],['mine',`${ic2('contract',13)} Contratti ${contracts.length}`],['offers',`${ic2('inbox',13)} Proposte ${G.offers.length}`]];
  const body=G.spTab==='mine'?contractTable(contracts):G.spTab==='offers'?offerTable(G.offers):(isForeign(area)&&!areaOpen(area)?`<div class="msg no">${ic('lock',13)} ${esc(FOREIGN[area].n)}: serve più reputazione</div>`:'')+spTable(list);
  $('#view').innerHTML=tabs+`<div class="spgrid2"><div class="col globecol"><div class="globebox"><canvas id="globe" aria-label="Mappamondo degli sponsor"></canvas></div>
   <div class="glegend"><span><i style="background:${heatCol(0.05,true)}"></i><i style="background:${heatCol(0.3,true)}"></i><i style="background:${heatCol(0.6,true)}"></i> interesse</span><span><i style="background:#C9CFC7"></i> ${ic('lock',10)}</span></div>
-  ${ita?regionChips():''}</div>
+  </div>
   <div class="col"><div class="seg sm">${sub.map(([k,l])=>`<button data-act="sptab" data-v="${k}" aria-pressed="${G.spTab===k}">${l}</button>`).join('')}</div>${body}</div></div>`;
  requestAnimationFrame(()=>{drawGlobe();globeEvents();document.querySelectorAll('#view .spgrid2 > .col').forEach(c=>c.scrollTop=0)});
 };

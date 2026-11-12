@@ -141,7 +141,7 @@ function weeklyOffers(force){
 }
 function acceptOffer(o){
  const s=SP(o.sid);
- if(!o.renew&&slotUsed(o.slot,o.from)>=SLOTS[o.slot].cap)return{ok:false,msg:`Non c'è più posto da ${SLOTS[o.slot].lab.toLowerCase()}.`};
+ if(slotUsed(o.slot,o.from)>=SLOTS[o.slot].cap)return{ok:false,msg:`Non c'è più posto da ${SLOTS[o.slot].lab.toLowerCase()}.`};
  G.offers=G.offers.filter(x=>x!==o);
  const c=signContract(s,o.slot,o.amount,o.years,o.from,o.pen?{obj:o.obj,pen:o.pen}:{});
  mail('Sponsor',`Accordo con ${s.name}`,`${SLOTS[o.slot].lab} dal ${c.from} al ${c.end}: ${eur(c.amount)} l'anno.\nObiettivo stagionale: ${c.obj.txt} (bonus ${eur(c.bonus)}).${c.pen?`\nClausola di rimborso: ${eur(c.pen)} se manchi l'obiettivo.`:''}`);

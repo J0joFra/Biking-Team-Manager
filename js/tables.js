@@ -64,9 +64,9 @@ function calTable(list,past){
 /* sponsor */
 function spTable(list){
  if(!list.length)return'<div class="note">Nessuno sponsor.</div>';
- return DT(TH([['Sponsor'],['Tipo','hm'],['Km','r hs'],['Main','r'],['Propensione','r']]),list.map(s=>{
+ return DT(TH([['Sponsor'],['Tipo','hm'],['Km','r hs'],['Main','r'],['%','r']]),list.map(s=>{
   const c=myContract(s),it=interest(s,'partner'),off=G.offers.find(o=>o.sid===s.id);
-  const st=c?`<span class="pill reg">${({main:'Main',co:'Co',partner:'Partner'})[c.slot]}</span>`:off?'<span class="pill inv">Proposta</span>':it.p<=0?`<span class="lockt">${ic('lock',12)} rep. ${s.req}</span>`:`${Math.round(it.p*100)}% ${miniBar(it.p*100)}`;
+  const st=c?`<span class="pill reg nowrap" title="${SLOTS[c.slot].lab}">${ic2('contract',11)} ${({main:'Main',co:'Co',partner:'Part.'})[c.slot]}</span>`:off?'<span class="pill inv">Proposta</span>':it.p<=0?`<span class="lockt">${ic('lock',12)} rep. ${s.req}</span>`:`${Math.round(it.p*100)}% ${miniBar(it.p*100)}`;
   return`<tr data-act="sponsor" data-v="${s.id}"><td><b>${esc(s.name)}</b><div class="tm">${sectorLab(s)} · ${esc(s.city)}</div></td><td class="hm"><span class="chip ${s.size==='internazionale'||s.size==='nazionale'?'amber':''}">${SPONSOR_SIZE[s.size].lab}</span></td><td class="r hs">${spDist(s)}</td><td class="r">${eurk(amountFor(s,'main'))}</td><td class="r">${st}</td></tr>`}).join(''));
 }
 function contractTable(list){
@@ -85,24 +85,24 @@ function offerTable(list){
 staffView=function(){
  const T=staffT(),pool=staffPool().filter(s=>STF.role==='all'||s.role===STF.role).sort((a,b)=>b.q-a.q);
  const cur=DT(TH([['Ruolo'],['Nome'],['Qualità','r'],['Stipendio','r hs'],['Fino al','r hs'],['']]),Object.keys(STAFF_R).map(k=>{const s=T[k],R0=STAFF_R[k];
-  return`<tr><td><b>${R0.lab}</b><div class="tm">${R0.eff}</div></td><td>${s?esc(s.name):'<span class="tm">posto libero</span>'}</td><td class="r">${s?`<b>${s.q}</b> ${miniBar(s.q)}`:'—'}</td><td class="r hs">${s?eurk(s.sal):''}</td><td class="r hs">${s?s.cEnd:''}</td>
+  return`<tr><td><span class="pc"><span class="stic">${ic(R0.ico,16)}</span><span><b>${R0.lab}</b><div class="tm">${R0.eff}</div></span></span></td><td>${s?staffCell(s):'<span class="tm">posto libero</span>'}</td><td class="r">${s?`<b>${s.q}</b> ${miniBar(s.q)}`:'—'}</td><td class="r hs">${s?eurk(s.sal):''}</td><td class="r hs">${s?s.cEnd:''}</td>
   <td class="r">${s?`<button class="chip" data-act="stfire" data-v="${k}">Libera</button>`:`<button class="btn sm" data-act="strole" data-v="${k}">Cerca</button>`}</td></tr>`}).join(''));
  const cand=pool.length?DT(TH([['Ruolo'],['Nome'],['Età','r hs'],['Qualità','r'],['Rispetto al tuo','r hm'],['Stipendio','r'],['']]),pool.map(s=>{const lock=G.rep<staffWants(s),cmp=T[s.role]?s.q-T[s.role].q:null;
-  return`<tr><td>${STAFF_R[s.role].lab}</td><td><b>${esc(s.name)}</b></td><td class="r hs">${s.age}</td><td class="r"><b>${s.q}</b> ${miniBar(s.q)}</td><td class="r hm ${cmp===null?'':cmp>0?'pos':'neg'}">${cmp===null?'posto libero':(cmp>0?'+':'')+cmp}</td><td class="r">${eurk(Math.round(s.sal*(STF.years>=3?0.93:1)/500)*500)}</td>
+  return`<tr><td><span class="pc"><span class="stic">${ic(STAFF_R[s.role].ico,15)}</span>${STAFF_R[s.role].lab}</span></td><td>${staffCell(s)}</td><td class="r hs">${s.age}</td><td class="r"><b>${s.q}</b> ${miniBar(s.q)}</td><td class="r hm ${cmp===null?'':cmp>0?'pos':'neg'}">${cmp===null?'posto libero':(cmp>0?'+':'')+cmp}</td><td class="r">${eurk(Math.round(s.sal*(STF.years>=3?0.93:1)/500)*500)}</td>
   <td class="r"><button class="btn sm ${lock?'':'primary'}" data-act="sthire" data-v="${s.id}" ${lock?'disabled':''}>${lock?ic('lock',12)+' rep. '+staffWants(s):'Ingaggia'}</button></td></tr>`}).join('')):'<div class="note">Nessun candidato: nuovi nomi a giugno e a inizio stagione.</div>';
- return`<div class="sec"><div class="sec-h"><h2>Il tuo staff</h2><span class="eyebrow">${eurk(staffCost())}/anno</span></div>${cur}</div>
- <div class="sec"><div class="sec-h"><h2>Sul mercato</h2><div class="seg sm stdur">${[1,2,3].map(y=>`<button data-act="styears" data-v="${y}" aria-pressed="${STF.years===y}">${y} ${y>1?'anni':'anno'}</button>`).join('')}</div></div>
+ return`<div class="sec"><div class="sec-h"><h2>${ic('staff',18)} Il tuo staff</h2><span class="eyebrow">${eurk(staffCost())}/anno</span></div>${cur}</div>
+ <div class="sec"><div class="sec-h"><h2>${ic('market',18)} Sul mercato</h2><div class="seg sm stdur">${[1,2,3].map(y=>`<button data-act="styears" data-v="${y}" aria-pressed="${STF.years===y}">${y} ${y>1?'anni':'anno'}</button>`).join('')}</div></div>
   <div class="chips" style="margin-bottom:8px">${[['all','Tutti'],...Object.entries(STAFF_R).map(([k,v])=>[k,v.lab])].map(([k,l])=>`<button class="fchip" data-act="strole" data-v="${k}" aria-pressed="${STF.role===k}">${l}</button>`).join('')}</div>${cand}</div>`;
 };
 /* club */
 clubPage=function(){
  const C=club(),got=ACH.filter(a=>C.ach[a[0]]).length;
  const facs=DT(TH([['Struttura'],['Livello'],['Effetto','hm'],['Manutenzione','r hs'],['']]),Object.keys(FAC).map(k=>{const F=FAC[k],l=facLv(k),b=C.build&&C.build.k===k?C.build:null,nx=l+1;
-  return`<tr><td><b>${F.lab}</b></td><td><span class="lv">${'●'.repeat(l)}${'○'.repeat(3-l)}</span></td><td class="hm tm">${l?F.eff(l):F.d}</td><td class="r hs">${l?eurk(FAC_UP[l]):'—'}</td>
+  return`<tr><td><span class="pc"><span class="stic ${l?'on':''}">${ic(F.ico,16)}</span><b>${F.lab}</b></span></td><td><span class="lv">${'●'.repeat(l)}${'○'.repeat(3-l)}</span></td><td class="hm tm">${l?F.eff(l):F.d}</td><td class="r hs">${l?eurk(FAC_UP[l]):'—'}</td>
   <td class="r">${b?`<span class="chip amber">Cantiere · ${b.done-absWeek()} sett.</span>`:nx<=3?`<button class="btn sm" data-act="facb" data-v="${k}" ${C.build||G.cash<FAC_COST[nx]?'disabled':''}>${l?'+1':'Costruisci'} · ${eurk(FAC_COST[nx])}</button>`:'<span class="chip u23">Completo</span>'}</td></tr>`}).join(''));
- const ach=DT(TH([['Traguardo'],['Sponsor','r'],['Premio','r hs'],['','r']]),ACH.map(a=>{const ok=C.ach[a[0]];return`<tr class="${ok?'okr':''}"><td>${ic(ok?'check':'lock',13)} ${a[1]}</td><td class="r">+${a[3]}%</td><td class="r hs">${a[4]?eurk(a[4]):'—'}</td><td class="r tm">${ok?ok.s:''}</td></tr>`}).join(''));
- return`<div class="clubtop"><div><div class="sec-h"><h3>Centro sportivo</h3><span class="eyebrow">${eurk(facUpkeep())}/anno</span></div>${facs}</div>
-  <div><div class="sec-h"><h3>Traguardi</h3><span class="eyebrow">${got}/${ACH.length} · sponsor +${Math.round((C.spMul-1)*100)}%</span></div>${ach}</div></div>`;
+ const ach=DT(TH([['Traguardo'],['Sponsor','r'],['Premio','r hs'],['','r']]),ACH.map(a=>{const ok=C.ach[a[0]];return`<tr class="${ok?'okr':''}"><td><span class="pc"><span class="achic ${ok?'on':''}">${ic2('trophy',14)}</span>${a[1]}</span></td><td class="r">+${a[3]}%</td><td class="r hs">${a[4]?eurk(a[4]):'—'}</td><td class="r tm">${ok?ok.s:''}</td></tr>`}).join(''));
+ return`<div class="clubtop"><div><div class="sec-h"><h3>${ic('base',18)} Centro sportivo</h3><span class="eyebrow">${eurk(facUpkeep())}/anno</span></div>${facs}</div>
+  <div><div class="sec-h"><h3>${ic2('trophy',18)} Traguardi</h3><span class="eyebrow">${got}/${ACH.length} · sponsor +${Math.round((C.spMul-1)*100)}%</span></div>${ach}</div></div>`;
 };
 /* pacchetti della dirigenza */
 pkgHero=function(){
@@ -123,3 +123,6 @@ function guideToTable(){
 }
 const _helpSheetT=helpSheet;helpSheet=function(){_helpSheetT();guideToTable()};
 const _guideSheetT=guideSheet;guideSheet=function(){_guideSheetT();guideToTable()};
+
+/* avatar dello staff (dal nome, sempre uguale) */
+function staffCell(s){const f=(NAMES_F[s.nat]||[]).includes(s.name.split(' ')[0]);return personCell({id:s.id,name:s.name,nat:s.nat,age:s.age,team:'t0',f})}

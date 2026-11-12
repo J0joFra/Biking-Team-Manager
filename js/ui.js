@@ -234,7 +234,7 @@ function renderBase(){
   <div class="camps">${CAMPS.map(L=>{const ok=G.phase==='season'&&G.week+1<=L.to;return`<div class="card camp"><div class="cm"><b>${L.name}</b><span class="note">${L.place}</span></div><div class="ca"><span class="alt">${L.alt} m</span><span class="note">${eur(L.cost)} a corridore/settimana · ${weekLab(L.from)}–${weekLab(Math.min(L.to,52))}</span></div><button class="btn" data-act="campbook" data-v="${L.id}" ${ok?'':'disabled'}>Prenota</button></div>`}).join('')}</div>
   ${camps.length?`<div class="card tbl"><table class="t">${camps.map(c=>{const L=CAMPS.find(x=>x.id===c.loc);return`<tr><td>${esc(L.name)} <div class="tm">${c.riders.length} corridori · ${c.weeks} settimane</div></td><td>${weekLab(c.from)}–${weekLab(c.to)}</td><td class="r">${c.done?'Concluso':c.from<=G.week?'In corso':`<button class="chip" data-act="campcancel" data-v="${c.id}">Annulla</button>`}</td></tr>`}).join('')}</table></div>`:''}
  </div>
- <div class="col"><div class="sec-h"><h2>Scuola juniores</h2><span class="eyebrow">${A.level?`livello ${A.level}/5`:'da costruire'}</span></div>
+ <div class="col"><div class="sec-h"><h2>${ic2('svil',18)} Scuola juniores</h2><span class="eyebrow">${A.level?`livello ${A.level}/5`:'da costruire'}</span></div>
   <div class="card pad stack">
    <div class="levels">${[1,2,3,4,5].map(i=>`<i class="${i<=A.level?'on':''}"></i>`).join('')}</div>
    <div class="note">${A.level?`Posti ${js.length}/${acadCap()} · ${1+A.level} nuovi ragazzi a stagione · costo ${eur(academyCost())}/anno. Più alto il livello, più talento e più crescita.`:'Una scuola tua: ogni anno arrivano ragazzi di 16–17 anni da far crescere. A 18 anni puoi farli passare in squadra.'}</div>

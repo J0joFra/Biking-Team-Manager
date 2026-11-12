@@ -69,7 +69,7 @@ function chipRow(items,act,cur,extra=''){return`<div class="rchips">${items.map(
 function renderTactic(){
  const{RC,mode,c,plan}=TAC,race=RC.race,singles=race.mode==='singles';
  const keys=[];
- {const wx=makeWeather(RC.race,RC.stage);keys.push(`<li><b>Meteo</b>: ${esc(wxText(wx))}${wxEffects(wx).length?' — '+wxEffects(wx).join(', '):''}</li>`)}
+ {const wx=makeWeather(RC.race,RC.stage);keys.push(`<li><b>Meteo</b>: ${wxChip(wx)}</li>`)}
  c.climbs.forEach(cb=>keys.push(`<li><b>km ${Math.round(cb.start)}</b> ${esc(cb.name)}: ${km1(cb.len)} km al ${cb.avg.toFixed(1).replace('.',',')}%${cb.top>=c.len-0.2?' (arrivo in salita)':` · a ${Math.round(c.len-cb.top)} km dall'arrivo`}</li>`));
  if(c.secN)keys.push(`<li><b>${c.secN} settori</b> di ${c.type==='sterrato'?'sterrato':'pavé'}</li>`);
  if(c.pts)keys.push(`<li><b>${c.laps} giri</b>: traguardi a punti ogni 2 giri, arrivo doppio</li>`);
@@ -94,7 +94,7 @@ function renderTactic(){
    return`<tr class="${isL?'sel':''}"><td>${personCell(r)}<div class="tm pcs">${ARCH[r.arch].lab} · adatto ${Math.round(avgSuit(r,race))}${r.id===race.cap?' · capitano':''}${RC.stageRace&&RC.stage>0?' · '+gcGapTxt(RC,r.id):''}</div></td>
    <td class="c">${rad(isL,'taclead',r.id)}</td><td class="c">${isL?'':rad(isL2,'taclead2',isL2?'':r.id)}</td><td>${task}</td><td>${atk}</td></tr>`}).join(''),'tac')}</div>`;
  }
- openSheet(sheetHead(`Tattica · ${esc(race.name)}${st?' · '+st:''}`,singles?'Piano dei singoli':'Il piano di corsa',`${TYPE_LAB[c.type]} · ${km1(c.len)} km · tempo massimo +${Math.round((TIME_CUT[c.type]||0.15)*100)}%. In corsa puoi cambiare tutto con gli ordini radio.`,false)+
+ openSheet(sheetHead(`Tattica · ${esc(race.name)}${st?' · '+st:''}`,singles?'Piano dei singoli':'Il piano di corsa',`${TYPE_LAB[c.type]} · ${km1(c.len)} km · tempo massimo +${Math.round((TIME_CUT[c.type]||0.15)*100)}%`,false)+
  `<div class="pb wrap"><div class="tacgrid"><div class="stack"><div><div class="eyebrow">Percorso</div><div class="card pad" style="padding:8px">${profileSVG(c,320,60)}</div>${DT('',keys.map(k=>k.replace(/^<li><b>(.*?)<\/b>:?\s*(.*)<\/li>$/,'<tr><td class="nowrap"><b>$1</b></td><td class="tm">$2</td></tr>')).join(''),'tac')}</div></div>
  <div class="stack">${right}</div></div>${below}</div>
  <div class="pf"><div class="wrap fr"><button class="btn ghost" data-act="tacreset">Piano consigliato</button>${RC.stage===0?'<button class="btn ghost" data-act="tacback">Convocazioni</button>':''}<span style="flex:1"></span><button class="btn primary big" data-act="tacgo">${mode==='sim'?'Simula la corsa':RC.stage===0?'Via!':'Via alla tappa'}</button></div></div>`,'wide');

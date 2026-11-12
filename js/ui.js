@@ -417,24 +417,24 @@ function renderTTIntro(){
  const c=LIVE.course;
  $('#race').innerHTML=`<div class="race-grid"><section class="rcol rl"><div class="race-h"><div class="wrap"><div class="eyebrow">${esc(LIVE.RC.race.name)} · ${stageTitle()}</div>
   <div class="rh1"><h2>${TYPE_LAB[c.type]} individuale · ${km1(c.len)} km</h2></div><div class="prof"><canvas id="pc"></canvas></div></div></div></section>
-  <section class="rcol rr"><div class="wrap rbody"><div class="note">Nella cronometro ognuno parte da solo: niente scia, contano soglia e aerodinamica (CRO). Gli ordini radio non servono.</div><button class="btn primary big" data-act="tt">Via alla cronometro</button></div></section></div>`;
+  <section class="rcol rr"><div class="wrap rbody"><div class="note">${ic2('crono',14)} Niente scia: contano soglia e posizione (CRO).</div><button class="btn primary big" data-act="tt">Via alla cronometro</button></div></section></div>`;
  drawProfile();
 }
 function renderRaceSkeleton(){
  const c=LIVE.course,RC=LIVE.RC;
  $('#race').innerHTML=`<div class="race-grid"><section class="rcol rl"><div class="race-h"><div class="wrap">
-  <div class="eyebrow">${esc(RC.race.name)} · ${stageTitle()} · ${TYPE_LAB[c.type]}${c.shortened?' · accorciata per maltempo':''} ${wxChip(LIVE.S&&LIVE.S.wx)}</div>
-  <div class="kmbig"><div class="k" id="k2g">0<small>km all'arrivo</small></div>
-   <div class="o"><div>Tempo<b id="rt">0'00"</b></div><div>Media<b id="ravg">—</b></div><div>Pendenza<b id="rgr">0%</b></div></div></div>
+  <div class="eyebrow rhead"><span title="${TYPE_LAB[c.type]}">${typeIc(c.type,14)}</span> ${esc(RC.race.name)}${RC.stageRace?' · '+stageTitle():''}${c.shortened?' · <span title="Accorciata per maltempo">✂</span>':''} ${wxChip(LIVE.S&&LIVE.S.wx)}</div>
+  <div class="kmbig"><div class="k" id="k2g">0<small>km</small></div>
+   <div class="o"><div title="Tempo">${ic2('crono',14)}<b id="rt">0'00"</b></div><div title="Media">${ic2('speed',14)}<b id="ravg">—</b></div><div title="Pendenza">${ic2('grade',14)}<b id="rgr">0%</b></div></div></div>
   <div class="nextp" id="nextp"></div>
   <div id="tvbar"></div>
   <div class="prof"><canvas id="pc"></canvas><button class="chip zoom" data-act="zoom" id="zbtn">Zoom</button></div>
  </div></div>
  <div class="wrap rbody">
-  <div><div class="eyebrow">Situazione corsa</div><div class="card groups" id="grps"></div></div>
-  <div><div class="eyebrow">Radio corsa</div><div class="card radio" id="radio"></div></div>
+  <div><div class="eyebrow">${ic2('team',12)} Gruppi</div><div class="card groups" id="grps"></div></div>
+  <div><div class="eyebrow">${ic2('radio',12)} Radio</div><div class="card radio" id="radio"></div></div>
  </div></section>
- <section class="rcol rr"><div class="wrap rbody"><div><div class="eyebrow">Consigli dell'ammiraglia</div><div class="tips" id="tips"></div></div><div><div class="eyebrow">I tuoi corridori · ordini radio</div><div id="tbbox"></div><div class="card" id="mine"></div></div></div></section></div>
+ <section class="rcol rr"><div class="wrap rbody"><div><div class="eyebrow">${ic2('flag',12)} Ammiraglia</div><div class="tips" id="tips"></div></div><div><div class="eyebrow">${ic2('bike',12)} La tua squadra</div><div id="tbbox"></div><div class="card" id="mine"></div></div></div></section></div>
  <div class="ctrl"><div class="wrap">
   <button class="btn play" data-act="play" id="playb" aria-label="Pausa">❚❚</button>
   <div class="sp" id="spd">${[[25,'1×'],[75,'3×'],[250,'10×']].map(([v,l])=>`<button data-act="speed" data-v="${v}" aria-pressed="${LIVE.speed===v}">${l}</button>`).join('')}</div>
@@ -468,7 +468,7 @@ function groupsDisplay(S){
 function updateRaceUI(){
  const S=LIVE.S;if(!S)return;
  const lead=S.clusters.length?S.clusters[0].front:0,k2g=Math.max(0,S.len-lead);
- $('#k2g').innerHTML=`${km1(k2g)}<small>km all'arrivo</small>`;
+ $('#k2g').innerHTML=`${km1(k2g)}<small>km</small>`;
  $('#rt').textContent=fmtT(S.t);
  $('#ravg').textContent=S.t>60?(lead/(S.t/3600)).toFixed(1).replace('.',',')+' km/h':'—';
  const i=gi(S,lead),gr=S.course.g[i];$('#rgr').textContent=(gr>0?'+':'')+gr.toFixed(1).replace('.',',')+'%'+(S.course.surf[i]===1?' · pavé':S.course.surf[i]===2?' · sterrato':'');
@@ -494,7 +494,7 @@ function renderMine(full){
  const mine=S.riders.filter(x=>x.isMe),box=$('#mine'),myPlan=mine.length?S.plans[mine[0].team]:null,capId=myPlan&&myPlan.lead&&myPlan.lead.id;
  if(full||box.children.length!==mine.length){
   box.innerHTML=mine.map(x=>`<div class="mr" id="m_${x.id}"><div class="l1">${avatar(x.r,24)}<span class="nm">${esc(x.r.name)}</span>${x.id===capId?`<span class="chip amber">${S.ctx&&S.ctx.capId&&LIVE&&LIVE.RC&&LIVE.RC.race.cap!==x.id?'Punta':'Capitano'}</span>`:''}${S.ctx&&S.ctx.lead2===x.id?'<span class="chip u23">Seconda punta</span>':''}<span class="where" id="w_${x.id}"></span></div>
-   <div class="bars"><div><span>Energia</span><div class="bar e"><i id="be_${x.id}"></i></div></div><div><span>Riserva scatti</span><div class="bar w"><i id="bw_${x.id}"></i></div></div><div class="mono pwv" id="pw_${x.id}"></div></div>
+   <div class="bars"><div><span class="bi" title="Energia">${ic2('battery',14)}</span><div class="bar e"><i id="be_${x.id}"></i></div></div><div><span class="bi" title="Riserva scatti">${ic2('velocista',13)}</span><div class="bar w"><i id="bw_${x.id}"></i></div></div><div class="mono pwv" id="pw_${x.id}"></div></div>
    <div class="orders">${ORD.map(([k,l])=>`<button data-act="order" data-id="${x.id}" data-v="${k}" class="${k==='scatta'?'atk':''}">${l}</button>`).join('')}</div></div>`).join('');
  }
  const gd=S.clusters.length?groupsDisplay(S):[];

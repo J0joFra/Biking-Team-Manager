@@ -240,12 +240,7 @@ main.view.enter{animation:enter .22s ease-out}
 .pag .pr:first-of-type{border-top:0}.pag .pr small{grid-column:2;font-size:11.5px;color:var(--muted)}
 .pgv{grid-row:span 2;display:grid;place-items:center;height:34px;border-radius:9px;background:var(--sunk);font-family:var(--f-mono);font-size:16px}
 .pgv.hi{background:var(--ok-soft);color:var(--ok)}.pgv.lo{background:color-mix(in srgb,var(--danger) 15%,transparent);color:var(--danger)}
-.note.clip{cursor:pointer}
-.note.clip:not(.open){font-size:0;line-height:0;display:inline-flex;align-items:center;gap:4px;padding:3px 9px 3px 6px;border-radius:999px;background:var(--sunk);width:max-content;max-width:100%;margin:0}
-.note.clip:not(.open) *{display:none}
-.note.clip:not(.open)::before{content:"i";display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--muted);color:var(--surface);font:700 11px/1 var(--f-body)}
-.note.clip:not(.open)::after{content:"Info";font:600 12px/1.2 var(--f-body);color:var(--muted)}
-.note.clip.open{display:block}
+.note.clip{display:none!important}
 .pkhero{gap:10px;margin-bottom:14px}
 .pkgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
 @media (max-width:640px){.pkgrid{grid-template-columns:minmax(0,1fr)}}
@@ -280,7 +275,7 @@ main.view.enter{animation:enter .22s ease-out}
 .gm{display:flex;flex-direction:column}
 .grr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
 .grr:first-child{border-top:0}
-.gnm{text-align:left;min-width:0}.gnm b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gnm small{font-size:11.5px;color:var(--muted)}
+.gnm{text-align:left;min-width:0;display:flex;align-items:center;gap:8px}.gnm>span{min-width:0}.gnm b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gnm small{font-size:11.5px;color:var(--muted)}
 .gsc{font-size:13px;color:var(--muted)}
 .gsw{display:flex;gap:3px}.gsw button{width:30px;height:30px;border-radius:8px;background:var(--sunk);font-weight:700;font-size:13px}
 .gsw button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
@@ -707,6 +702,31 @@ tr.clk:hover td{background:var(--sunk)}
  .pkgrid{gap:8px}.pk{padding:9px;gap:6px}.pkh b{font-size:15px}
  .momc{padding:10px;gap:8px;border-radius:14px}.momh b{font-size:18px}.mi{width:36px;height:36px;font-size:18px}.momb{min-height:52px;padding:9px}
  .mknews{display:none}
+}
+
+/* ORIZZONTALE: niente scorrimento della pagina, i pannelli scorrono al loro interno */
+@media (orientation:landscape) and (min-width:600px){
+ body.appfit{overflow:hidden;height:100dvh}
+ body.appfit main.view{height:calc(100dvh - var(--toph,52px));overflow:hidden;display:flex;flex-direction:column;gap:8px;padding-block:8px!important}
+ body.appfit main.view>*{flex:none;margin-bottom:0}
+ body.appfit main.view>.vscroll{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:10px;padding-bottom:6px}
+ body.appfit main.view>.vscroll>*{flex:none}
+ body.appfit .vscroll.gridfill>*{flex:1;min-height:0;height:100%}
+ body.appfit .vscroll.gridfill>*>.col,body.appfit .vscroll.gridfill>*>div{overflow:auto;min-height:0;max-height:100%;overscroll-behavior:contain}
+ body.appfit .teamhead{margin-bottom:0}
+ body.appfit .sec{margin-bottom:0}
+}
+@media (orientation:landscape) and (min-width:800px){
+ .homegrid.three{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) minmax(0,1fr)}
+}
+@media (orientation:landscape) and (max-height:520px){
+ body.appfit main.view>.kv>div,body.appfit main.view>.sec>.kv>div{display:flex;align-items:baseline;gap:6px;padding:4px 10px}
+ body.appfit main.view>.kv b,body.appfit main.view>.sec>.kv b{font-size:15px}
+ body.appfit main.view>.kv small,body.appfit main.view>.sec>.kv small{font-size:9.5px}
+ body.appfit .teamhead .eyebrow{display:none}body.appfit .teamhead svg{width:24px;height:24px}body.appfit .teamname{font-size:17px}
+ body.appfit main.view .banner{padding:6px 10px;font-size:12.5px}
+ body.appfit main.view>.sec{gap:6px}
+ body.appfit main.view .seg button{padding-block:6px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>

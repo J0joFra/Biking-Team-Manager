@@ -48,3 +48,32 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-act="gotra
 /* info: le spiegazioni lunghe diventano un'icona da toccare */
 clipNotes=function(root){if(!root)return;root.querySelectorAll('.note:not(.gtx):not(.clip):not([data-keep])').forEach(n=>{if(n.closest('.mailbody,.guide,.gtab,.momc'))return;if(n.textContent.trim().length>60){n.classList.add('clip');n.setAttribute('role','button');n.title='Mostra la spiegazione'}})};
 if(G)render();
+
+/* ---------- layout a pannelli fissi in orizzontale ---------- */
+clipNotes=function(root){if(!root||root.id!=='view')return;root.querySelectorAll('.note:not(.gtx):not(.clip):not([data-keep])').forEach(n=>{if(n.closest('.mailbody,.guide,.gtab,.momc'))return;if(n.textContent.trim().length>70)n.classList.add('clip')})};
+const isHead=el=>el.matches('.teamhead,.kv,.seg,.toolbar,.banner,.rkside,.rkseg,.note')||(el.matches('.sec')&&!!el.querySelector(':scope>.kv'));
+function fitView(){
+ const v=$('#view'),on=!!G&&!MENU&&!NEWG;
+ document.body.classList.toggle('appfit',on);
+ if(!on||!v||v.querySelector(':scope>.vscroll'))return;
+ const top=$('#top');if(top&&!top.hidden)document.documentElement.style.setProperty('--toph',top.offsetHeight+'px');
+ const kids=[...v.children];let i=0;while(i<kids.length&&isHead(kids[i]))i++;
+ const rest=kids.slice(i);if(!rest.length)return;
+ const w=document.createElement('div');w.className='vscroll';rest.forEach(k=>w.appendChild(k));v.appendChild(w);
+ if(rest.length===1&&rest[0].matches('.homegrid,.basegrid,.spgrid,.futgrid,.negbox'))w.classList.add('gridfill');
+}
+let fitQ=false;
+new MutationObserver(()=>{if(fitQ)return;fitQ=true;requestAnimationFrame(()=>{fitQ=false;fitView()})}).observe($('#view'),{childList:true});
+window.addEventListener('resize',()=>{const top=$('#top');if(top&&!top.hidden)document.documentElement.style.setProperty('--toph',top.offsetHeight+'px')});
+/* Home su tre colonne: prossima corsa · classifica e finanze · posta e risultati */
+const _renderHomeF=renderHome;
+renderHome=function(){
+ _renderHomeF();
+ const g=$('#view .homegrid');if(!g||G.phase!=='season')return;
+ const cols=g.querySelectorAll(':scope>.col');if(cols.length<2)return;
+ const mid=document.createElement('div');mid.className='col';
+ [...cols[1].children].filter(el=>/Classifica|Finanze/.test((el.querySelector('h3')||{}).textContent||'')).forEach(el=>mid.appendChild(el));
+ if(mid.children.length&&innerWidth>=800&&innerWidth>innerHeight){g.insertBefore(mid,cols[1]);g.classList.add('three')}
+ else if(mid.children.length)cols[1].prepend(...mid.children);
+};
+if(G)render();

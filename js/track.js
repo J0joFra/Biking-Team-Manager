@@ -122,7 +122,7 @@ function renderTrackConv(){
  `<div class="pb wrap"><div class="card tbl dtw"><table class="t dt trk">
   <tr class="th"><td>Corridore</td>${race.disc.map(k=>`<td class="c" title="${esc(DISC[k].d)}">${TK_SHORT[k]}</td>`).join('')}</tr>
   <tr class="th sub"><td>Scelti</td>${race.disc.map(k=>{const n=TSEL.sel[k].length,need=k==='tp'?4:DISC[k].max;return`<td class="c ${k==='tp'&&n&&n!==4?'neg':''}">${n}/${need}${k==='tp'?'*':''}</td>`}).join('')}</tr>
-  ${rs.slice().sort((a,b)=>Math.max(...race.disc.map(k=>trackScore(b,k)))-Math.max(...race.disc.map(k=>trackScore(a,k)))).map(r=>`<tr><td><b>${esc(r.name)}</b><div class="tm">${ARCH[r.arch].lab} · ${r.age} anni</div></td>${race.disc.map(k=>{const on=TSEL.sel[k].includes(r.id),sc=trackScore(r,k),best=Math.max(...rs.map(x=>trackScore(x,k)));return`<td class="c"><button class="tkc ${sc>=best-3?'best':''}" data-act="tksel" data-k="${k}" data-v="${r.id}" aria-pressed="${on}">${on?'✓ ':''}${sc}</button></td>`}).join('')}</tr>`).join('')}
+  ${rs.slice().sort((a,b)=>Math.max(...race.disc.map(k=>trackScore(b,k)))-Math.max(...race.disc.map(k=>trackScore(a,k)))).map(r=>`<tr><td>${personCell(r)}<div class="tm pcs">${ic2(r.arch,11)} ${ARCH[r.arch].lab} · ${r.age} anni</div></td>${race.disc.map(k=>{const on=TSEL.sel[k].includes(r.id),sc=trackScore(r,k),best=Math.max(...rs.map(x=>trackScore(x,k)));return`<td class="c"><button class="tkc ${sc>=best-3?'best':''}" data-act="tksel" data-k="${k}" data-v="${r.id}" aria-pressed="${on}">${on?'✓ ':''}${sc}</button></td>`}).join('')}</tr>`).join('')}
   </table></div>
   <div class="note">Tocca il valore per far correre il corridore in quella specialità (può farne più di una). ${race.disc.includes('tp')?'* Inseguimento a squadre: servono 4 corridori.':''}</div>
   ${race.flag==='ita'?'<div class="note">Campionato italiano: solo corridori italiani.</div>':''}</div>
@@ -131,7 +131,7 @@ function renderTrackConv(){
 function trackResultSheet(race){
  const R=race.result;
  openSheet(sheetHead('Pista · risultati',esc(race.name),R.mine?`I tuoi: ${R.mine.slice(0,4).map(m=>`${esc(m.name.split(' ').slice(-1)[0])} ${ord(m.pos)} (${DISC[m.k].short})`).join(' · ')}${R.prize?` · premi ${eurk(R.prize)}`:''}`:'')+
- `<div class="pb wrap"><div class="trackgrid">${Object.entries(R.disc).map(([k,l])=>`<div class="card pad"><div class="sec-h"><h3>${DISC[k].lab}</h3></div><table class="t">${l.map((x,i)=>`<tr class="${x.me?'me':''}"><td class="n">${i+1}</td><td>${esc(x.name)} <span class="tm">${esc(x.team)}</span></td><td class="r">${fmtTrack(k,x.v)}</td></tr>`).join('')}</table></div>`).join('')}</div></div>
+ `<div class="pb wrap"><div class="trackgrid">${Object.entries(R.disc).map(([k,l])=>`<div class="card pad"><div class="sec-h"><h3>${DISC[k].lab}</h3></div><table class="t">${l.map((x,i)=>`<tr class="${x.me?'me':''}"><td class="n">${i+1}</td><td>${(()=>{const rr=k!=='tp'&&Object.values(G.riders).find(q=>q.name===x.name);return rr?personCell(rr):esc(x.name)})()} <span class="tm">${esc(x.team)}</span></td><td class="r">${fmtTrack(k,x.v)}</td></tr>`).join('')}</table></div>`).join('')}</div></div>
  <div class="pf"><div class="wrap fr"><button class="btn primary" data-act="close">Continua</button></div></div>`,'wide');
 }
 const _raceSheetK=raceSheet;

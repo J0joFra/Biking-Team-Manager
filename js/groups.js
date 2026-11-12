@@ -115,7 +115,7 @@ function renderGroups(){
   ${jolly.length?`<div class="card pad stack" style="margin-top:12px"><div class="sec-h" style="margin:0"><h3>Jolly</h3><span class="eyebrow">senza gruppo · corrono ovunque</span></div><div class="gm">${jolly.map(r=>gRiderRow(r,null)).join('')}</div></div>`:''}`;
 }
 function gRiderRow(r,spec){
- return`<div class="grr"><button class="gnm" data-act="rider" data-v="${r.id}"><b>${esc(r.name)}</b><small>${ARCH[r.arch].lab} · ${r.age} anni${r.role?' · '+ROLES[r.role].lab:''}</small></button>${spec?`<span class="mono gsc" title="Rendimento nella specialità">${gScore(r,spec)}</span>`:''}
+ return`<div class="grr"><button class="gnm" data-act="rider" data-v="${r.id}">${avatar(r,26)}<span><b>${flagSvg(r.nat,14)} ${esc(r.name)}</b><small>${ic2(r.arch,11)} ${ARCH[r.arch].lab} · ${r.age} anni${r.role?' · '+ROLES[r.role].lab:''}</small></span></button>${spec?`<span class="mono gsc" title="Rendimento nella specialità">${gScore(r,spec)}</span>`:''}
   <div class="gsw">${groups().map(g=>`<button data-act="gset" data-id="${r.id}" data-v="${g.id}" aria-pressed="${r.grp===g.id}" aria-label="Sposta nel gruppo ${g.id}">${g.id}</button>`).join('')}<button data-act="gset" data-id="${r.id}" data-v="" aria-pressed="${!r.grp}" aria-label="Jolly">J</button></div></div>`;
 }
 document.addEventListener('click',e=>{

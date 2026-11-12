@@ -21,7 +21,7 @@ function groups(){
   for(const r of Object.values(G.riders))if(r.grp){r.sq=map[r.grp]?[map[r.grp]]:[];delete r.grp}
   g=G.groups={on:g.length>0,active:[...new Set(Object.values(map).filter(Boolean))]};
  }
- return g||(G.groups={on:false,active:[]});
+ g=g||(G.groups={on:false,active:[]});g.caps=g.caps||{};return g;
 }
 const sqOn=()=>{const g=groups();return g.on&&g.active.length>0};
 const sqOf=r=>(r.sq||[]).filter(k=>groups().active.includes(k));
@@ -30,7 +30,7 @@ function gChip(k,s=12){return GSPEC[k]?`<span class="gchip" style="background:${
 function sqChips(r){return sqOn()?sqOf(r).map(k=>gChip(k,11)).join(''):''}
 function sqToggle(r,k){
  r.sq=sqOf(r);const i=r.sq.indexOf(k);
- if(i>=0){r.sq.splice(i,1);return true}
+ if(i>=0){r.sq.splice(i,1);if(groups().caps[k]===r.id)delete groups().caps[k];return true}
  if(r.sq.length>=SQ_MAX){toast(`${r.name.split(' ').slice(-1)[0]} è già in ${SQ_MAX} gruppi`,'bad');return false}
  r.sq.push(k);return true;
 }
@@ -50,8 +50,12 @@ function autoGroups(){
  while(guard++<200){let added=false;
   for(const k of A){if(cnt[k]>=target)continue;const c=rs.filter(r=>r.sq.length<SQ_MAX&&!r.sq.includes(k)).sort((a,b)=>val(b,k)-val(a,k))[0];if(c){c.sq.push(k);cnt[k]++;added=true}}
   if(!added)break}
+ /* capitano di ogni gruppo: il migliore nella specialità */
+ g.caps={};for(const k of A){const b=rs.filter(r=>r.sq.includes(k)).sort((a,b)=>gScore(b,k)-gScore(a,k))[0];if(b)g.caps[k]=b.id}
  save();
 }
+function setGroupCap(r,k){const g=groups();if(!sqOf(r).includes(k)){if(!sqToggle(r,k))return false}if(g.caps[k]===r.id)delete g.caps[k];else g.caps[k]=r.id;save();return true}
+function groupCap(k){const id=groups().caps[k];const r=id&&RID(id);return r&&r.team==='t0'&&sqOf(r).includes(k)?r:null}
 /* gruppo che corre una corsa: scelto a mano o in base al terreno */
 function raceSpecK(r){return r.tier==='track'?'pista':raceSpec(r)}
 function raceGroup(race){
@@ -81,14 +85,14 @@ suggest=function(){
  const score=r=>avgSuit(r,race)-r.fat*0.45-(r.days>65?12:0)+altEff(r,race.w)*300+roleBonus(r,race);
  const members=all.filter(r=>sqOf(r).includes(g));
  SEL.missing=members.filter(r=>whyCant(r,race)).map(r=>({r,why:whyCant(r,race)}));
- const okM=members.filter(r=>!whyCant(r,race)).sort((a,b)=>score(b)-score(a)).slice(0,size);
+ const gc=groupCap(g),okM=members.filter(r=>!whyCant(r,race)).sort((a,b)=>(b===gc)-(a===gc)||score(b)-score(a)).slice(0,size);
  const others=all.filter(r=>!members.includes(r)&&!whyCant(r,race)).sort((a,b)=>score(b)-score(a)+(sqOf(a).length?0:0));
  const fill=others.slice(0,Math.max(0,size-okM.length));
  const pickd=okM.concat(fill);
  SEL.ids=new Set(pickd.map(r=>r.id));SEL.subs=new Set(fill.map(r=>r.id));
  const sp=raceSpec(race),by=(a,b)=>avgSuit(b,race)-avgSuit(a,race);
  const capC=pickd.filter(r=>r.role==='cap'&&r.spec===sp).sort(by)[0]||pickd.filter(r=>r.role==='cap').sort(by)[0]||pickd.slice().sort(by)[0];
- SEL.cap=capC?capC.id:null;
+ SEL.cap=gc&&SEL.ids.has(gc.id)?gc.id:capC?capC.id:null;
 };
 function grpRow(race){
  if(!sqOn())return'';

@@ -103,7 +103,11 @@ function decorateResults(root){
   if(tr.dataset.deco)return;const td=tr.children[1];if(!td||td.querySelector('.av'))return;
   const nm=(td.firstChild&&td.firstChild.nodeType===3?td.firstChild.textContent:'').trim();if(!nm)return;
   const r=NAMEIDX()[nm];
-  if(r){td.innerHTML=td.innerHTML.replace(esc(r.name),`${avatar(r,22)}${flagSvg(r.nat,14)} <b>${esc(r.name)}</b>`);td.classList.add('rescell');tr.dataset.deco=1}
+  if(r){td.innerHTML=td.innerHTML.replace(esc(r.name),`<span class="avh h-${CAT_CLS[catOf(r)]||'el'}">${avatar(r,22)}</span> ${flagSvg(r.nat,14)} <b>${esc(r.name)}</b>`);td.classList.add('rescell');tr.dataset.deco=1}
+  /* medaglie, maglie delle squadre, km in fuga */
+  const n=tr.querySelector('td.n');if(n&&/^[123]$/.test(n.textContent.trim()))n.innerHTML=`<span class="medal m${n.textContent.trim()}">${n.textContent.trim()}</span>`;
+  td.querySelectorAll('.tm').forEach(t=>{const sh=t.textContent.trim(),tm=G.teams.find(x=>x.short===sh);if(tm&&!t.querySelector('svg'))t.innerHTML=`<span class="tjer">${tm.id==='t0'?myJersey(14):jersey(tm.color,'#fff',14)} ${esc(sh)}</span>`;
+   const km=sh.match(/^(\d+) km in fuga$/);if(km)t.innerHTML=`<span class="tjer" title="km in fuga">${ic2('go',12)} ${km[1]} km</span>`});
  });
 }
 jerLine=function(j){

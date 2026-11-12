@@ -58,7 +58,7 @@ function riderRanking(){
  rs.sort((a,b)=>val(b)-val(a)||ovr(b)-ovr(a));
  const show=r=>k==='wins'?`${r.wins} V`:k==='ovr'?ovr(r):k==='young'?`${ovr(r)} → ${projOvr(r)}`:k==='days'?`${r.days} gg`:`${r.pts} pt`;
  const top=rs.slice(0,40),mine=rs.map((r,i)=>({r,i})).filter(o=>o.r.team==='t0'&&o.i>=40);
- const tr=(r,i)=>`<tr class="${r.team==='t0'?'me':''}" data-act="rider" data-v="${r.id}" style="cursor:pointer"><td class="n">${i+1}</td><td>${personCell(r)}<div class="tm pcs">${archIc(r,12)} ${esc(TEAM(r.team).short)} · ${catOf(r)}</div></td><td class="r">${show(r)}</td></tr>`;
+ const tr=(r,i)=>`<tr class="${r.team==='t0'?'me':''}" data-act="rider" data-v="${r.id}" style="cursor:pointer"><td class="n">${i+1}</td><td>${personCell(r)}<div class="tm pcs">${archIc(r,12)} ${esc(TEAM(r.team).short)}</div></td><td class="r">${show(r)}</td></tr>`;
  return`<div class="toolbar"><div class="chips">${RK_SORT.map(([s,l])=>`<button class="fchip" data-act="rksort" data-v="${s}" aria-pressed="${k===s}">${l}</button>`).join('')}</div>
   <div class="seg sm" style="max-width:300px">${[['all','Tutti'],['cat','Mia categoria']].map(([s,l])=>`<button data-act="rkscope" data-v="${s}" aria-pressed="${scope===s}">${l}</button>`).join('')}</div></div>
   <div class="card tbl"><table class="t">${top.map((r,i)=>tr(r,i)).join('')}${mine.length?`<tr><td colspan="3" class="tm" style="text-align:center">…</td></tr>${mine.map(o=>tr(o.r,o.i)).join('')}`:''}</table></div>`;

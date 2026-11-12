@@ -24,7 +24,7 @@ function riderTable(list,opts={}){
  return DT(TH([['Corridore'],['','c'],['Val','r'],['Età','r hs'],['SAL','r hs'],['PIA','r hs'],['CRO','r hs'],['VOL','r hs'],['Forma'],['','c'],['Gg','r hm'],['V','r']]),
  list.map(r=>{const s=stats(r),tr=trend(r);
   const ics=(injured(r)?`<span class="ii neg" title="Infortunato">${ic2('injury',13)}</span>`:'')+(inCamp(r,G.week,G.week)?`<span class="ii" title="In altura">${ic2('alt',13)}</span>`:'')+(r.cEnd===SEASON&&!r.renewed&&!r.leavingTo&&r.team==='t0'?`<span class="ii neg" title="Contratto in scadenza">${ic2('contract',13)}</span>`:'')+(r.natB&&r.natB[1]>=G.week?`<span class="ii" title="In nazionale">${flagSvg(r.nat,14)}</span>`:'');
-  return`<tr data-act="rider" data-v="${r.id}"><td>${personCell(r,` ${ics}`)}<div class="tm pcs">${catOf(r)}${r.role?' · '+ROLES[r.role].lab:''}${(r.role==='cap'||r.role==='luog')&&r.spec?' · '+SPEC[r.spec]:''}</div></td>
+  return`<tr data-act="rider" data-v="${r.id}"><td>${personCell(r,` ${ics}`)}</td>
   <td class="c">${archIc(r)}${roleIc(r)}</td>
   <td class="r"><b class="ov ${ovr(r)>=75?'hi':''}">${ovr(r)}</b>${opts.trend&&tr.t?`<small class="tr ${tr.c}">${tr.t}</small>`:''}</td><td class="r hs">${r.age}</td>
   <td class="r hs">${s.sal}</td><td class="r hs">${s.pia}</td><td class="r hs">${s.cro}</td><td class="r hs">${s.vol}</td>
@@ -48,7 +48,7 @@ function mkTable(list){
  return DT(TH([['Val','r'],['Corridore'],['Età','r'],['Squadra','hm'],['SAL','r hs'],['PIA','r hs'],['CRO','r hs'],['VOL','r hs'],['Costo','r']]),
  list.map(r=>{const s=stats(r),i=mkInfo(r),pot=r.age<=22?'★'.repeat(1+Math.round((r.pot||0)*4)):'';
   const team=r.team==='t0'?'Mio':r.team==='fa'?'Svincolato':r.team==='jr'?'Juniores':`${esc(TEAM(r.team).short)} · ${r.cEnd}`;
-  return`<tr data-act="neg" data-v="${r.id}"><td class="r"><b class="ov ${ovr(r)>=75?'hi':''}">${ovr(r)}</b></td><td>${personCell(r)}<div class="tm pcs">${archIc(r,13)} ${r.junior?'Juniores':catOf(r)}${pot?` · <span class="stars">${pot}</span>`:''}</div></td>
+  return`<tr data-act="neg" data-v="${r.id}"><td class="r"><b class="ov ${ovr(r)>=75?'hi':''}">${ovr(r)}</b></td><td>${personCell(r)}${pot?` <span class="stars">${pot}</span>`:''}</td>
   <td class="r">${r.age}</td><td class="hm">${team}</td><td class="r hs">${s.sal}</td><td class="r hs">${s.pia}</td><td class="r hs">${s.cro}</td><td class="r hs">${s.vol}</td><td class="r"><b>${i.pr}</b><div class="tm">${esc(i.sm)}</div></td></tr>`}).join(''));
 }
 /* calendario */

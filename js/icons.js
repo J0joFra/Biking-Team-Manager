@@ -65,4 +65,5 @@ function fitBar(r){const c=r.form*(1-r.fat/260)*(1+altEff(r,G.week)),p=clamp((c-
 function typeIc(t,s=15){return`<span class="tic" title="${TYPE_LAB[t]||t}">${ic2(t,s)}</span>`}
 function raceIc(r,s=15){return r.tier==='track'?typeIc('pista',s):r.stages.length>1?`<span class="tic" title="${r.stages.length} tappe">${ic2('tappe',s)}</span>`:typeIc(r.stages[0].t,s)}
 /* cella "persona": avatar + bandiera + nome */
-function personCell(r,extra=''){return`<span class="pc">${avatar(r,30)}<span class="pcn"><span class="pcl">${flagSvg(r.nat,16)} <b>${esc(r.name)}</b>${extra}</span></span></span>`}
+const CAT_CLS={Elite:'el',U23:'u23',Rookie:'rk',Juniores:'jr'};
+function personCell(r,extra=''){const c=r.team?catOf(r):'';return`<span class="pc"><span class="avh h-${CAT_CLS[c]||'el'}" title="${esc(c)}">${avatar(r,30)}</span><span class="pcn"><span class="pcl">${flagSvg(r.nat,16)} <b>${esc(r.name)}</b>${extra}</span></span></span>`}

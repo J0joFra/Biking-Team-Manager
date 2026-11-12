@@ -28,9 +28,27 @@ renderHome=function(){
  v.querySelectorAll('[data-act]').forEach(b=>{const m=ACT_IC[b.dataset.act];if(m&&b.tagName==='BUTTON'&&!b.querySelector('svg'))b.insertAdjacentHTML('afterbegin',(m[0]==='ic'?ic(m[1],16):ic2(m[1],16))+' ')});
  v.querySelectorAll('.hero .eyebrow').forEach(e=>{if(!e.querySelector('svg'))e.insertAdjacentHTML('afterbegin',ic2('calendar',12)+' ')});
  v.querySelectorAll('h3').forEach(h=>{if(/Obiettivi/.test(h.textContent)&&!h.querySelector('svg'))h.insertAdjacentHTML('afterbegin',ic2('flag',15)+' ')});
- /* prossima corsa: bandiera */
- const h2=v.querySelector('.hero h2');const nx=nextMyRace();if(h2&&nx&&/Prossima/.test(h2.textContent)&&!h2.querySelector('svg'))h2.innerHTML=`${flagSvg(nx.ctry,22)} ${esc(nx.name)} <span class="tm">S${nx.w}</span>`;
+ if(G.phase==='season'&&!v.querySelector('.pkhero'))homeRebuild(v);
 };
+/* Home in stagione: settimana compatta a sinistra, classifica e obiettivi a destra */
+function homeRebuild(v){
+ const banners=[...v.querySelectorAll('.banner')].filter(b=>!b.closest('.hero'));
+ const pend=myPending(),nx=nextMyRace(),norm=pend.filter(r=>r.tier!=='jun'&&r.tier!=='naz'),spec=pend.filter(r=>r.tier==='jun'||r.tier==='naz');
+ const rl=r=>`<div class="rline">${flagSvg(r.ctry,18)}<b class="rn1" title="${esc(r.name)}">${esc(r.name)}</b><span class="chip cls">${r.lab}</span>${r.stages.length>1?`<span class="tm nowrap">${ic2('tappe',13)}${r.stages.length}</span>`:typeIc(r.stages[0].t,14)}</div>`;
+ let rows='';
+ if(norm.length)rows=DT('',norm.map(r=>`<tr><td>${rl(r)}</td><td class="r"><button class="btn primary sm" data-act="convoca" data-v="${r.id}" title="Convocazioni">${ic('team',15)}</button></td></tr>`).join(''),'hrace');
+ else if(!pend.length&&nx)rows=DT('',`<tr data-act="race" data-v="${nx.id}"><td>${rl(nx)}</td><td class="r tm nowrap">${ic2('clockw',12)} ${nx.w-G.week} sett.</td></tr>`,'hrace');
+ else if(!pend.length)rows=`<div class="note">${ic2('calendar',13)} Nessuna corsa in programma.</div>`;
+ const btns=pend.length?'':`${nx?`<button class="btn sm" data-act="advnext" title="Vai alla prossima corsa">${ic2('finish',14)} S${nx.w}</button>`:`<button class="btn sm" data-act="tab" data-v="cal">${ic('cal',14)}</button>`}<button class="btn primary sm" data-act="adv1">${ic2('go',14)} Avanza</button>`;
+ const wk=`<div class="card pad wkcard ${pend.length?'go':''}"><div class="wkh">${ic2(pend.length?'flag':'calendar',15)}<b>Settimana ${G.week}</b><span class="tm">${weekLab(G.week)}</span><span style="flex:1"></span>${btns}</div>${rows}${spec.map(r=>r.tier==='jun'?jrHero(r):natHero(r)).join('')}</div>`;
+ const objs=G.contracts.filter(c=>activeIn(c,SEASON)).sort((a,b)=>b.amount-a.amount).slice(0,6).map(c=>{const s=SP(c.sid),val=Math.min(c.obj.n,Math.round(contractProg(c)));
+  return`<tr class="${c.done?'okr':''}" data-act="tab" data-v="spon"><td><span class="pc">${spLogo(s,20)}<b>${esc(s.name)}</b><span class="tm sub">${esc(c.obj.txt)}</span></span></td><td style="width:22%">${miniBar(val,c.obj.n,c.done?'ok':'')}</td><td class="r">${val}/${c.obj.n}</td><td class="r"><b>${c.done?ic('check',14):eurk(c.bonus)}</b></td></tr>`}).join('');
+ const obj=`<div><div class="sec-h"><h3>${ic2('flag',15)} Obiettivi sponsor</h3><span class="chip">${sponsorSat()}%</span></div>${objs?DT('',objs,'hobj'):`<div class="note">${ic('spon',13)} Nessuno sponsor attivo.</div>`}</div>`;
+ const g=document.createElement('div');g.className='homegrid';
+ g.innerHTML=`<div class="col hc1">${wk}</div><div class="col hc2">${standMini()}${obj}</div>`;
+ const c1=g.firstChild;banners.forEach(b=>c1.appendChild(b));c1.insertAdjacentHTML('beforeend',trainMini());
+ v.innerHTML='';v.appendChild(g);
+}
 /* ---------- Mercato: offerte ricevute in tabella ---------- */
 bidsList=function(){
  const bs=(G.bids||[]).filter(b=>RID(b.rid)&&RID(b.rid).team==='t0'),listed=ME().riders.map(RID).filter(r=>r.listed);
@@ -73,3 +91,36 @@ renderBase=function(){_renderBaseP();const v=$('#view');
  v.querySelectorAll('h3').forEach(h=>{if(/squadr/i.test(h.textContent)&&!h.querySelector('svg'))h.insertAdjacentHTML('afterbegin',ic('team',16)+' ')});
 };
 if(G)render();
+/* ---------- Gara dal vivo: icone su ordini, comandi e momenti ---------- */
+IC2.bell='<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>';
+IC2.ffwd='<path d="M3 6l8 6-8 6zM12 6l8 6-8 6z"/>';
+const ORD_IC={auto:'contract',ruota:'bike',copri:'free',tira:'speed',scatta:'velocista',scorta:'shield'};
+const _renderMineP=renderMine;
+renderMine=function(full){_renderMineP(full);const b=$('#mine .orders button');if(!b||b.querySelector('svg'))return;
+ document.querySelectorAll('#mine .orders button').forEach(x=>{x.title=x.textContent;x.innerHTML=`${ic2(ORD_IC[x.dataset.v]||'bike',15)}<small>${x.textContent}</small>`})};
+function momswHtml(){return`${ic2('bell',15)}<small>${LIVE.noMom?'off':'on'}</small>`}
+const _renderRaceSkeletonP=renderRaceSkeleton;
+renderRaceSkeleton=function(){_renderRaceSkeletonP();const c=$('#race .ctrl .wrap');if(!c)return;
+ const m=c.querySelector('[data-act="momsw"]');if(m){m.innerHTML=momswHtml();m.classList.add('icb')}
+ const j=c.querySelector('[data-act="jump"]');if(j){j.innerHTML=`${ic2('finish',15)}<small>Finale</small>`;j.classList.add('icb');j.title='Salta al finale'}
+ const e=c.querySelector('[data-act="end"]');if(e){e.innerHTML=`${ic2('ffwd',15)}<small>Fine</small>`;e.classList.add('icb');e.title='Simula fino all\'arrivo'}
+ const p=$('#playb');if(p)p.title='Pausa'};
+document.addEventListener('click',e=>{const t=e.target.closest('[data-act="momsw"]');if(t&&LIVE)t.innerHTML=momswHtml()});
+const MOM_IC=[[/coper|ruota|rialza|aspett|lascia|gestisce|calma|tranquill|risparm/i,'battery'],[/treno|tira|ritmo|insiste|forza|tenere|tiene/i,'speed'],[/scatt|attacc|manda|risponde|prova|vai|anticip/i,'velocista'],[/chiude|insegu|riporta|gregario|compagn/i,'shield'],[/cambi|bici|ammiraglia|medic/i,'injury']];
+const _momShowP=momShow;
+momShow=function(ev){_momShowP(ev);document.querySelectorAll('#mom .momb').forEach(b=>{const t=(b.querySelector('b')||b).textContent,m=MOM_IC.find(([re])=>re.test(t));const h=b.querySelector('b');if(h&&!h.querySelector('svg'))h.insertAdjacentHTML('afterbegin',ic2(m?m[1]:'go',16)+' ');
+ const ch=b.querySelector('.chip.amber');if(ch)ch.innerHTML=`${ic2('cap',11)} DS`})};
+/* ---------- Tattica pre-gara: icone su sezioni e pulsanti ---------- */
+const _renderTacticP=renderTactic;
+renderTactic=function(){_renderTacticP();const s=$('#sheet');if(!s)return;
+ s.querySelectorAll('.pb .eyebrow').forEach(e=>{const t=e.textContent.trim();if(e.querySelector('svg'))return;
+  if(/^Percorso/.test(t))e.innerHTML=`${ic2('montagna',12)} Percorso`;
+  else if(/Obiettivo/.test(t))e.innerHTML=`${ic2('flag',12)} Obiettivo`;
+  else if(/Piano dei corridori/.test(t))e.innerHTML=`${ic('team',12)} Compiti`;
+  else if(/Piano dei singoli/.test(t))e.innerHTML=`${ic2('bike',12)} Ognuno per sé`});
+ const B=(a,h,tt)=>{const b=s.querySelector(`.pf [data-act="${a}"]`);if(b){b.innerHTML=h;if(tt)b.title=tt}};
+ B('tacreset',`${ic2('cap',15)} Consigliato`,'Piano consigliato');B('tacback',`${ic('team',15)} Convocati`);
+ const g=s.querySelector('.pf [data-act="tacgo"]');if(g&&!g.querySelector('svg'))g.insertAdjacentHTML('afterbegin',ic2('go',16)+' ');
+ /* sotto-righe: archetipo già nell'icona → solo l'adattamento come numero colorato */
+ s.querySelectorAll('.t.tac .tm.sub, .t.tac .pcs').forEach(x=>{const m=x.textContent.match(/adatto (\d+)/);if(!m)return;const v=+m[1],cap=/capitano/.test(x.textContent),gap=(x.textContent.split(' · ').find(p=>/^[+−-]|^a |'/.test(p.trim()))||'');
+  x.innerHTML=`<span class="suit ${v>=70?'pos':v<55?'neg':''}" title="Adattamento al percorso">${ic2('chart',11)}${v}</span>${cap?` ${ic2('cap',11)}`:''}${gap?` <span class="tm">${esc(gap.trim())}</span>`:''}`})};

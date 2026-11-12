@@ -40,6 +40,7 @@ function openTactic(RC,mode){
  if(!RC.tactic||RC.tacStage!==RC.stage){TAC.obj=suggestObj(c,lead);applyObj()}
  renderTactic();
 }
+const OBJ_IC={volata:'velocista',attacco:'montagna',fuga:'go',attesa:'shield'},ROLE_IC={scorta:'shield',tira:'speed',fuga:'go',copri:'free',gruppo:'bike'};
 const OBJ={volata:{lab:'Volata',d:'Squadra compatta, treno nel finale: la punta fa lo sprint'},attacco:{lab:'Attacco',d:'Selezione in salita o sul pavé: la punta attacca nel momento scelto'},fuga:{lab:'Fuga',d:'Due uomini in fuga da lontano, la punta aspetta coperta'},attesa:{lab:'Attesa',d:'Corsa coperta: si controllano i rivali senza rischi'}};
 const ROLE_BTN=[['scorta','Scorta'],['tira','Tira'],['fuga','Fuga'],['copri','Copri'],['gruppo','Libero']];
 const ROLE_HELP={scorta:'resta con la punta e la riporta sotto',tira:'tira per la punta nel finale',fuga:'prova ad andare in fuga',copri:'risponde agli scatti dei rivali',gruppo:'resta coperto e si gioca le sue carte',vicino:'resta entro 1\' dalla testa'};
@@ -69,10 +70,10 @@ function chipRow(items,act,cur,extra=''){return`<div class="rchips">${items.map(
 function renderTactic(){
  const{RC,mode,c,plan}=TAC,race=RC.race,singles=race.mode==='singles';
  const keys=[];
- {const wx=makeWeather(RC.race,RC.stage);keys.push(`<li><b>Meteo</b>: ${wxChip(wx)}</li>`)}
- c.climbs.forEach(cb=>keys.push(`<li><b>km ${Math.round(cb.start)}</b> ${esc(cb.name)}: ${km1(cb.len)} km al ${cb.avg.toFixed(1).replace('.',',')}%${cb.top>=c.len-0.2?' (arrivo in salita)':` · a ${Math.round(c.len-cb.top)} km dall'arrivo`}</li>`));
- if(c.secN)keys.push(`<li><b>${c.secN} settori</b> di ${c.type==='sterrato'?'sterrato':'pavé'}</li>`);
- if(c.pts)keys.push(`<li><b>${c.laps} giri</b>: traguardi a punti ogni 2 giri, arrivo doppio</li>`);
+ {const wx=makeWeather(RC.race,RC.stage);keys.push(`<li><b>${wxIcon(wx.k,16)}</b>: ${wxChip(wx)}</li>`)}
+ c.climbs.forEach(cb=>keys.push(`<li><b>${ic2('montagna',13)} ${Math.round(cb.start)}</b> ${esc(cb.name)} · ${km1(cb.len)} km ${cb.avg.toFixed(1).replace('.',',')}%${cb.top>=c.len-0.2?` ${ic2('finish',12)}`:` · ${ic2('finish',12)} −${Math.round(c.len-cb.top)}`}</li>`));
+ if(c.secN)keys.push(`<li><b>${ic2(c.type==='sterrato'?'sterrato':'pave',13)} ${c.secN}</b> settori</li>`);
+ if(c.pts)keys.push(`<li><b>${ic2('circuito',13)} ${c.laps}</b> giri · punti ogni 2</li>`);
  const st=RC.stageRace?(race.stages[RC.stage].t==='prologo'?'Prologo':`Tappa ${RC.stage+(race.stages[0].t==='prologo'?0:1)}`):'';
  const riders=race.sel.filter(id=>!RC.out.has(id)).map(RID).sort((a,b)=>avgSuit(b,race)-avgSuit(a,race));
  const mom=atkMoments(c);
@@ -86,12 +87,12 @@ function renderTactic(){
  }else{
   const lead=RID(TAC.lead),lead2=TAC.lead2?RID(TAC.lead2):null;
   const atkOn=TAC.obj!=='attesa',atk2On=lead2&&TAC.obj!=='volata';
-  right=`<div><div class="eyebrow">1 · Obiettivo della corsa</div>${DT('',Object.keys(OBJ).map(k=>`<tr data-act="tacobj" data-v="${k}" class="${TAC.obj===k?'sel':''}"><td style="width:28px"><span class="radio ${TAC.obj===k?'on':''}"></span></td><td><b>${OBJ[k].lab}</b></td><td class="tm">${OBJ[k].d}</td></tr>`).join(''),'tac')}</div>
+  right=`<div><div class="eyebrow">1 · Obiettivo della corsa</div>${DT('',Object.keys(OBJ).map(k=>`<tr data-act="tacobj" data-v="${k}" class="${TAC.obj===k?'sel':''}"><td style="width:28px"><span class="radio ${TAC.obj===k?'on':''}"></span></td><td><b>${ic2(OBJ_IC[k],15)} ${OBJ[k].lab}</b></td><td class="tm hs">${OBJ[k].d}</td></tr>`).join(''),'tac')}</div>
 `;
   below=`<div style="margin-top:12px"><div class="eyebrow">2 · Piano dei corridori</div>${DT(TH([['Corridore'],['Punta','c'],['2ª','c'],['Compito'],['Attacco']]),riders.map(r=>{const isL=r.id===TAC.lead,isL2=r.id===TAC.lead2,p=plan[r.id]||{move:'gruppo'};
-   const task=isL?'<b class="pos">Punta</b>':isL2?'<b>Seconda punta</b>':sel('tacrole',p.move,ROLE_BTN,r.id);
+   const task=isL?`<b class="pos">${ic2('cap',14)} Punta</b>`:isL2?`<b>${ic2('cap',14)} 2ª punta</b>`:`<span class="rolebtns">${ROLE_BTN.map(([k,l])=>`<button data-act="tacrole" data-id="${r.id}" data-v="${k}" aria-pressed="${p.move===k}" title="${l}${ROLE_HELP[k]?': '+ROLE_HELP[k]:''}">${ic2(ROLE_IC[k],14)}<small>${l}</small></button>`).join('')}</span>`;
    const atk=isL&&atkOn?sel('tacatk',TAC.atk,mom):isL2&&atk2On?sel('tacatk2',TAC.atk2||'k10|mid',mom):'<span class="tm">—</span>';
-   return`<tr class="${isL?'sel':''}"><td>${personCell(r)}<div class="tm pcs">${ARCH[r.arch].lab} · adatto ${Math.round(avgSuit(r,race))}${r.id===race.cap?' · capitano':''}${RC.stageRace&&RC.stage>0?' · '+gcGapTxt(RC,r.id):''}</div></td>
+   return`<tr class="${isL?'sel':''}"><td>${personCell(r)}<div class="tm pcs">${ic2(r.arch,11)} ${ARCH[r.arch].lab} · adatto ${Math.round(avgSuit(r,race))}${r.id===race.cap?' · capitano':''}${RC.stageRace&&RC.stage>0?' · '+gcGapTxt(RC,r.id):''}</div></td>
    <td class="c">${rad(isL,'taclead',r.id)}</td><td class="c">${isL?'':rad(isL2,'taclead2',isL2?'':r.id)}</td><td>${task}</td><td>${atk}</td></tr>`}).join(''),'tac')}</div>`;
  }
  openSheet(sheetHead(`Tattica · ${esc(race.name)}${st?' · '+st:''}`,singles?'Piano dei singoli':'Il piano di corsa',`${TYPE_LAB[c.type]} · ${km1(c.len)} km · tempo massimo +${Math.round((TIME_CUT[c.type]||0.15)*100)}%`,false)+

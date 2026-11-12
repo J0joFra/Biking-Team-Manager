@@ -23,21 +23,31 @@ renderHome=function(){
 /* ---------- Squadra: una sola Rosa divisa per ruolo ---------- */
 function riderRow(r,opts={}){return riderTable([r],opts).replace(/^[\s\S]*?<\/tr>/,'').replace(/<\/table><\/div>$/,'')}
 function rosaTable(rs){
- const head=riderTable(rs.slice(0,1));const th=head.match(/<tr class="th">[\s\S]*?<\/tr>/)[0];
+ const head=riderTable(rs.slice(0,1));let th=head.match(/<tr class="th">[\s\S]*?<\/tr>/)[0];
+ const on=sqOn(),A=on?groups().active:[];
+ if(on)th=th.replace(/<\/tr>$/,`<td class="c">Gruppi</td></tr>`);
+ const gcell=r=>{const m=sqOf(r);return`<td class="gcell">${A.map(k=>`<button class="gtg" data-act="gtog" data-id="${r.id}" data-v="${k}" aria-pressed="${m.includes(k)}" style="--gc:${GSPEC_COL[k]}" title="${GSPEC[k]} · ${gScore(r,k)}">${ic2(GSPEC_IC[k],12)}</button>`).join('')}</td>`};
+ const cols=12+(on?1:0);
  const body=ROLE_ORD.map(k=>{const g=rs.filter(r=>r.role===k).sort((a,b)=>ovr(b)-ovr(a));if(!g.length)return'';
-  return`<tr class="wkr"><td colspan="12">${ROLES[k].lab} · ${g.length}</td></tr>`+g.map(r=>riderTable([r],{trend:true}).match(/<tr data-act="rider"[\s\S]*?<\/tr>/)[0]).join('')}).join('');
- return`<div class="card tbl dtw"><table class="t dt">${th}${body}</table></div>`;
+  return`<tr class="wkr"><td colspan="${cols}">${ROLES[k].lab} · ${g.length}</td></tr>`+g.map(r=>{let row=riderTable([r],{trend:true}).match(/<tr data-act="rider"[\s\S]*?<\/tr>/)[0];if(on)row=row.replace(/<\/tr>$/,gcell(r)+'</tr>');return row}).join('')}).join('');
+ return`<div class="card tbl dtw"><table class="t dt ${on?'withg':''}">${th}${body}</table></div>`;
+}
+function groupsBar(){
+ const g=groups(),A=g.active;
+ return`<div class="toolbar gbar"><span class="eyebrow">Gruppi</span><div class="seg sm">${[[0,'Off'],[1,'On']].map(([v,l])=>`<button data-act="gon" data-v="${v}" aria-pressed="${!!g.on===!!v}">${l}</button>`).join('')}</div>
+ ${g.on?`<div class="chips">${Object.keys(GSPEC).map(k=>{const n=ME().riders.map(RID).filter(r=>sqOf(r).includes(k)).length;return`<button class="fchip" data-act="gspec" data-v="${k}" aria-pressed="${A.includes(k)}" title="${GSPEC[k]}">${gChip(k)}${A.includes(k)?` ${n}`:''}</button>`}).join('')}</div><button class="btn sm" data-act="gauto">Auto</button>`:''}</div>`;
 }
 function covStrip(){return`<div class="kv covs">${coverage().map(({k,best})=>`<div><small>${SPEC[k]}</small><b class="${best.v<60?'neg':best.v>=75?'pos':''}">${best.v}</b><span class="tm">${esc(best.r.name.split(' ').slice(-1)[0])}</span></div>`).join('')}</div>`}
 const _renderTeamX=renderTeam;
 renderTeam=function(){
- if(!['rosa','gruppi','futuro'].includes(G.teamView))G.teamView='rosa';
+ if(!['rosa','futuro'].includes(G.teamView))G.teamView='rosa';
  _renderTeamX();
  /* riepilogo senza ripetere il monte ingaggi (è in Mercato e Finanze) */
- const kv=$('#view > .kv');if(kv){const c=[...kv.children].find(d=>/ingaggi/i.test(d.textContent));if(c)c.remove();kv.classList.remove('kv4')}
+ const kv=$('#view > .kv'),th=$('#view .teamhead');
+ if(kv&&th){const rs=ME().riders.map(RID);th.insertAdjacentHTML('beforeend',`<span class="thstat">${ic2('team',13)} ${rs.length}/${myCat().max} · ${(rs.reduce((a,r)=>a+r.age,0)/rs.length).toFixed(1)} anni · ${ic2('trophy',13)} ${rs.reduce((a,r)=>a+r.wins,0)}</span>`);kv.remove()}
  if(G.teamView==='rosa'){autoRoles();const rs=ME().riders.map(RID);
   const seg=$('#view .teamseg');let n=seg?seg.nextElementSibling:null;while(n){const x=n.nextElementSibling;n.remove();n=x}
-  $('#view').insertAdjacentHTML('beforeend',covStrip()+rosaTable(rs));
+  $('#view').insertAdjacentHTML('beforeend',groupsBar()+covStrip()+rosaTable(rs));
  }
 };
 /* ---------- riepiloghi in alto: niente doppioni della barra superiore ---------- */

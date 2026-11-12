@@ -67,10 +67,11 @@ function renderTeam(){
  const rs=ME().riders.map(RID),v=G.teamView||'ruoli',ms=mainSponsor();
  const head=`<div class="teamhead">${myJersey(46)}<div style="min-width:0"><div class="eyebrow">Nome ufficiale ${SEASON} · ${myCat().lab} · ${esc(G.sede.city)}</div><h2 class="teamname">${ms?`<span class="msp">${esc(ms.name)}</span> `:''}${esc(G.name)}</h2></div></div>
  <div class="kv kv4"><div><small>Corridori</small><b>${rs.length}/${myCat().max}</b></div><div><small>Età media</small><b>${(rs.reduce((a,r)=>a+r.age,0)/rs.length).toFixed(1)}</b></div><div><small>Monte ingaggi</small><b>${eurk(payroll())}</b></div><div><small>Vittorie</small><b>${rs.reduce((a,r)=>a+r.wins,0)}</b></div></div>
- <div class="seg teamseg">${[['ruoli','Ruoli'],['gruppi','Gruppi'],['futuro','Prospetti'],['rosa','Rosa'],['palm','Palmarès']].map(([k,l])=>`<button data-act="teamview" data-v="${k}" aria-pressed="${v===k}">${l}</button>`).join('')}</div>`;
+ <div class="seg teamseg">${[['ruoli','Ruoli'],['allen','Allenamento'],['gruppi','Gruppi'],['futuro','Prospetti'],['rosa','Rosa'],['palm','Palmarès']].map(([k,l])=>`<button data-act="teamview" data-v="${k}" aria-pressed="${v===k}">${l}</button>`).join('')}</div>`;
  let body='';
  if(v==='palm')body=renderTeamPalm();
  else if(v==='gruppi')body=renderGroups();
+ else if(v==='allen')body=trainCard()+(G.camps.length?`<div class="sec-h" style="margin-top:12px"><h3>Ritiri in altura</h3><button class="chip" data-act="tab" data-v="base">Club ›</button></div>`:'');
  else if(v==='ruoli'){
   const cov=coverage();
   body=`<div class="card pad"><div class="sec-h" style="margin-bottom:6px"><h3>Copertura dei terreni</h3><span class="eyebrow">il migliore per ogni specialità</span></div>

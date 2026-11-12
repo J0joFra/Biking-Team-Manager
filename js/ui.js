@@ -32,7 +32,7 @@ let ROT='';
 function rotBanner(){let off=false;try{off=localStorage.getItem('amm-rot')==='1'}catch(e){}ROT=off?'':`<div class="banner rotate"><span style="flex:1">Ammiraglia è pensata in orizzontale: gira il telefono per avere corsa e ordini affiancati.</span><button class="chip" data-act="rotok">Ok</button></div>`}
 
 /* ---------- shell ---------- */
-const TABS=[['home','Home','home'],['cal','Corse','cal'],['team','Squadra','team'],['market','Mercato','market'],['spon','Sponsor','spon'],['base','Strutture','base'],['rank','Classifica','rank']];
+const TABS=[['home','Home','home'],['cal','Corse','cal'],['team','Squadra','team'],['market','Mercato','market'],['spon','Finanze','spon'],['base','Strutture','base'],['rank','Classifica','rank']];
 function render(){
  if(MENU){renderMenu();return}
  if(NEWG||!G){renderIntro();return}
@@ -83,7 +83,7 @@ function renderHome(){
    <div class="note">Prima di ripartire: rinnovi degli sponsor, mercato e promozioni dalla scuola juniores.</div>
    <div class="row">${L&&L.ok?`<button class="btn primary big" data-act="nextseason" data-v="up">Diventa ${CAT[L.to].lab} e passa al ${SEASON+1}</button><button class="btn ghost" data-act="nextseason" data-v="">Resta ${myCat().lab}</button>`:`<button class="btn primary big" data-act="nextseason" data-v="">Passa al ${SEASON+1}</button>`}<button class="btn ghost" data-act="tab" data-v="spon">Sponsor${G.offers.length?` (${G.offers.length})`:''}</button></div></div>`;
  }else if(pend.length){
-  hero=`<div class="hero card go"><div class="eyebrow">Questa settimana</div>${pend.map(r=>r.tier==='jun'?jrHero(r):r.tier==='naz'?natHero(r):`<div class="herorace"><div style="min-width:0"><h2>${esc(r.name)}</h2><div class="mt">${raceChips(r)}</div></div><button class="btn primary big" data-act="convoca" data-v="${r.id}">Convocazioni</button></div>`).join('')}</div>`;
+  hero=`<div class="hero card go"><div class="eyebrow">Questa settimana</div>${pend.map(r=>r.tier==='jun'?jrHero(r):r.tier==='naz'?natHero(r):`<div class="herorace"><div style="min-width:0"><h2>${flagSvg(r.ctry,24)} ${esc(r.name)}</h2><div class="mt">${raceChips(r)}</div></div><button class="btn primary big" data-act="convoca" data-v="${r.id}">Convocazioni</button></div>`).join('')}</div>`;
  }else{
   hero=`<div class="hero card"><div class="eyebrow">Settimana ${G.week} · ${weekLab(G.week)}</div>
    <h2>${nx?`Prossima corsa: ${esc(nx.name)}`:'Nessuna corsa in programma'}</h2>
@@ -97,7 +97,7 @@ function renderHome(){
  const proj=projected();
  $('#view').innerHTML=`${ROT}<div class="homegrid">
   <div class="col">${callupBanner()}${hero}
-   ${G.phase==='season'?trainCard():''}
+   ${G.phase==='season'?trainMini():''}
    ${G.offers.length?`<button class="banner" data-act="tab" data-v="spon">${ic('spon',18)}<span><b>${G.offers.length} propost${G.offers.length>1?'e':'a'} di sponsorizzazione</b> da valutare</span></button>`:''}
    <div><div class="sec-h"><h3>Obiettivi degli sponsor</h3><span class="eyebrow">${sponsorSat()}% soddisfatti</span></div>${objs?DT('',objs):'<div class="note">Nessuno sponsor attivo.</div>'}</div>
    <div class="kv kv4"><div><small>Saldo a fine stagione</small><b class="${proj<0?'neg':''}">${eurk(proj)}</b></div><div><small>Classifica</small><b>${myCatRank()}ª</b></div><div><small>Punti</small><b>${teamPoints(ME())}</b></div><div><small>Rosa</small><b>${myRoster()}/${myCat().max}</b></div></div>
@@ -339,11 +339,11 @@ function renderRank(){
  const tr=teamRanking(tier);
  const riders=Object.values(G.riders).filter(r=>r.pts>0&&G.teams.some(t=>t.id===r.team)).sort((a,b)=>b.pts-a.pts).slice(0,30);
  const u23=riders.length?Object.values(G.riders).filter(r=>r.pts>0&&r.age<=22&&G.teams.some(t=>t.id===r.team)).sort((a,b)=>b.pts-a.pts).slice(0,10):[];
- const row=(r,i)=>`<tr class="${r.team==='t0'?'me':''}"><td class="n">${i+1}</td><td>${esc(r.name)} <div class="tm">${esc(TEAM(r.team).name)} · ${catOf(r)}</div></td><td class="r">${r.wins?r.wins+'V · ':''}${r.pts}</td></tr>`;
+ const row=(r,i)=>`<tr class="${r.team==='t0'?'me':''}" data-act="rider" data-v="${r.id}"><td class="n">${i+1}</td><td>${personCell(r)}<div class="tm pcs">${esc(TEAM(r.team).short)} · ${catOf(r)}</div></td><td class="r">${r.wins?r.wins+'V · ':''}${r.pts}</td></tr>`;
  const lab=t=>({wt:'WorldTeam',pro:'ProTeam',conti:'Continental',dev:'Development U23'})[tierOfTeam(t)];
  $('#view').innerHTML=`<div class="toolbar"><div class="chips">${[['mine','La mia categoria'],['wt','WorldTeam'],['pro','ProTeam'],['conti','Continental'],['all','Tutte']].map(([k,l])=>`<button class="fchip" data-act="rankf" data-v="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div></div>
  <div class="basegrid"><div class="col"><div class="sec-h"><h2>Squadre</h2><span class="eyebrow">punti UCI ${SEASON}</span></div>
-  <div class="card tbl"><table class="t">${tr.map((o,i)=>`<tr class="${o.t.id==='t0'?'me':''}"><td class="n">${i+1}</td><td>${esc(o.t.name)} <div class="tm">${lab(o.t)}</div></td><td class="r">${o.p}</td></tr>`).join('')}</table></div></div>
+  <div class="card tbl"><table class="t">${tr.map((o,i)=>`<tr class="${o.t.id==='t0'?'me':''}"><td class="n">${i+1}</td><td><span class="pc">${o.t.id==='t0'?myJersey(24):jersey(o.t.color,'#ffffff',24)}<span><b>${esc(o.t.name)}</b> ${flagSvg(o.t.nats?o.t.nats[0]:'ITA',14)}<div class="tm">${lab(o.t)}</div></span></span></td><td class="r">${o.p}</td></tr>`).join('')}</table></div></div>
  <div class="col"><div class="sec-h"><h2>Corridori</h2><span class="eyebrow">top 30</span></div>${riders.length?`<div class="card tbl"><table class="t">${riders.map(row).join('')}</table></div>`:'<div class="note">La classifica si riempie con le prime corse.</div>'}
   ${u23.length?`<div class="sec-h" style="margin-top:14px"><h2>Under 23</h2></div><div class="card tbl"><table class="t">${u23.map(row).join('')}</table></div>`:''}
   ${G.history.length?`<div class="sec-h" style="margin-top:14px"><h2>Albo della squadra</h2></div><div class="card tbl"><table class="t">${G.history.slice().reverse().map(h=>`<tr><td class="n">${h.season}</td><td>${CAT[h.cat].lab} · ${h.rank}ª · ${h.wins} vittorie</td><td class="r">${h.pts??"—"} pt</td></tr>`).join('')}</table></div>`:''}
@@ -376,7 +376,7 @@ function renderConvoca(){
  `<div class="pb"><div class="wrap">${DT(TH([[''],['Corridore'],['Forma'],['Fatica','r'],['Gg','r hs'],['Adatto'],['Cap.','r']]),rs.map(r=>{
    const why=whyCant(r,race),on=SEL.ids.has(r.id),c=condOf(r),fit=Math.round(avgSuit(r,race)),ae=altEff(r,race.w);
    return`<tr class="${why?'off':''} ${on?'sel':''}"><td><input type="checkbox" id="p_${r.id}" data-act="pick" data-v="${r.id}" ${on?'checked':''} ${why?'disabled':''} aria-label="Convoca ${esc(r.name)}"></td>
-    <td><label for="p_${r.id}"><span class="nm"><b>${esc(r.name)}</b> <span class="chip ${r.age<=22?'u23':''}">${catOf(r)}</span>${r.role?` <span class="chip ${r.role==='cap'?'amber':''}">${ROLES[r.role].lab}${(r.role==='cap'||r.role==='luog')&&r.spec?' · '+SPEC[r.spec]:''}</span>`:''}</span><div class="tm">${ARCH[r.arch].lab}${ae>0?` · altura +${(ae*100).toFixed(1)}%`:''}${why?` · <span class="neg">${why}</span>`:''}</div></label></td>
+    <td><label for="p_${r.id}"><span class="nm">${avatar(r,26)} ${flagSvg(r.nat,14)} <b>${esc(r.name)}</b> <span class="chip ${r.age<=22?'u23':''}">${catOf(r)}</span>${r.role?` <span class="chip ${r.role==='cap'?'amber':''}">${ROLES[r.role].lab}${(r.role==='cap'||r.role==='luog')&&r.spec?' · '+SPEC[r.spec]:''}</span>`:''}</span><div class="tm">${archIc(r,12)} ${ARCH[r.arch].lab}${ae>0?` · altura +${(ae*100).toFixed(1)}%`:''}${why?` · <span class="neg">${why}</span>`:''}</div></label></td>
     <td><span class="cond" style="--c:${c.c}">${c.t}</span></td><td class="r">${Math.round(r.fat)}${recDays(r)?`<div class="tm">${recDays(r)} gg</div>`:''}</td><td class="r hs ${r.days>65?'neg':''}">${r.days}</td>
     <td class="nowrap">${miniBar(fit)} <b>${fit}</b></td><td class="r"><button class="star" data-act="cap" data-v="${r.id}" aria-pressed="${SEL.cap===r.id}" ${!on?'disabled':''} title="Capitano">C</button></td></tr>`}).join(''),'conv')}
   <div class="note" style="margin-top:8px">C = capitano: la squadra lavora per lui. La proposta del DS segue i ruoli: per questa corsa (${SPEC[raceSpec(race)].toLowerCase()}) propone il capitano con quella specialità.</div></div></div>
@@ -492,7 +492,7 @@ function renderMine(full){
  const S=LIVE.S;if(!S)return;
  const mine=S.riders.filter(x=>x.isMe),box=$('#mine'),myPlan=mine.length?S.plans[mine[0].team]:null,capId=myPlan&&myPlan.lead&&myPlan.lead.id;
  if(full||box.children.length!==mine.length){
-  box.innerHTML=mine.map(x=>`<div class="mr" id="m_${x.id}"><div class="l1"><span class="nm">${esc(x.r.name)}</span>${x.id===capId?`<span class="chip amber">${S.ctx&&S.ctx.capId&&LIVE&&LIVE.RC&&LIVE.RC.race.cap!==x.id?'Punta':'Capitano'}</span>`:''}${S.ctx&&S.ctx.lead2===x.id?'<span class="chip u23">Seconda punta</span>':''}<span class="where" id="w_${x.id}"></span></div>
+  box.innerHTML=mine.map(x=>`<div class="mr" id="m_${x.id}"><div class="l1">${avatar(x.r,24)}<span class="nm">${esc(x.r.name)}</span>${x.id===capId?`<span class="chip amber">${S.ctx&&S.ctx.capId&&LIVE&&LIVE.RC&&LIVE.RC.race.cap!==x.id?'Punta':'Capitano'}</span>`:''}${S.ctx&&S.ctx.lead2===x.id?'<span class="chip u23">Seconda punta</span>':''}<span class="where" id="w_${x.id}"></span></div>
    <div class="bars"><div><span>Energia</span><div class="bar e"><i id="be_${x.id}"></i></div></div><div><span>Riserva scatti</span><div class="bar w"><i id="bw_${x.id}"></i></div></div><div class="mono pwv" id="pw_${x.id}"></div></div>
    <div class="orders">${ORD.map(([k,l])=>`<button data-act="order" data-id="${x.id}" data-v="${k}" class="${k==='scatta'?'atk':''}">${l}</button>`).join('')}</div></div>`).join('');
  }

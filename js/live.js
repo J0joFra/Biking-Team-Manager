@@ -137,7 +137,7 @@ showStageResult=function(){
  const g=LIVE&&LIVE.grades;if(!g||!g.length)return;
  const col=$('#sheet .negbox > div');if(!col)return;
  col.insertAdjacentHTML('afterbegin',`<div class="card pad pag"><div class="sec-h" style="margin:0 0 6px"><h3>Pagelle</h3><span class="eyebrow">migliore: ${esc(g[0].name.split(' ').slice(-1)[0])}</span></div>
-  ${g.map(x=>`<div class="pr"><b class="pgv ${x.v>=7.5?'hi':x.v<5.5?'lo':''}">${String(x.v).replace('.',',')}</b><span>${esc(x.name)}${x.lead?' <span class="chip amber">C</span>':''}</span><small>${esc(x.why)}${x.xp?` <span class="xpc">+${x.xp} XP</span>`:''}</small></div>`).join('')}</div>`);
+  ${g.map(x=>`<div class="pr"><b class="pgv ${x.v>=7.5?'hi':x.v<5.5?'lo':''}">${String(x.v).replace('.',',')}</b><span>${RID(x.id)?avatar(RID(x.id),22)+' ':''}${esc(x.name)}${x.lead?' <span class="chip amber">C</span>':''}</span><small>${esc(x.why)}${x.xp?` <span class="xpc">+${x.xp} XP</span>`:''}</small></div>`).join('')}</div>`);
  LIVE.grades=null;
 };
 document.addEventListener('click',e=>{

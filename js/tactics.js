@@ -91,7 +91,7 @@ function renderTactic(){
   below=`<div style="margin-top:12px"><div class="eyebrow">2 · Piano dei corridori</div>${DT(TH([['Corridore'],['Punta','c'],['2ª','c'],['Compito'],['Attacco']]),riders.map(r=>{const isL=r.id===TAC.lead,isL2=r.id===TAC.lead2,p=plan[r.id]||{move:'gruppo'};
    const task=isL?'<b class="pos">Punta</b>':isL2?'<b>Seconda punta</b>':sel('tacrole',p.move,ROLE_BTN,r.id);
    const atk=isL&&atkOn?sel('tacatk',TAC.atk,mom):isL2&&atk2On?sel('tacatk2',TAC.atk2||'k10|mid',mom):'<span class="tm">—</span>';
-   return`<tr class="${isL?'sel':''}"><td><b>${esc(r.name)}</b><div class="tm">${ARCH[r.arch].lab} · adatto ${Math.round(avgSuit(r,race))}${r.id===race.cap?' · capitano':''}${RC.stageRace&&RC.stage>0?' · '+gcGapTxt(RC,r.id):''}</div></td>
+   return`<tr class="${isL?'sel':''}"><td>${personCell(r)}<div class="tm pcs">${ARCH[r.arch].lab} · adatto ${Math.round(avgSuit(r,race))}${r.id===race.cap?' · capitano':''}${RC.stageRace&&RC.stage>0?' · '+gcGapTxt(RC,r.id):''}</div></td>
    <td class="c">${rad(isL,'taclead',r.id)}</td><td class="c">${isL?'':rad(isL2,'taclead2',isL2?'':r.id)}</td><td>${task}</td><td>${atk}</td></tr>`}).join(''),'tac')}</div>`;
  }
  openSheet(sheetHead(`Tattica · ${esc(race.name)}${st?' · '+st:''}`,singles?'Piano dei singoli':'Il piano di corsa',`${TYPE_LAB[c.type]} · ${km1(c.len)} km · tempo massimo +${Math.round((TIME_CUT[c.type]||0.15)*100)}%. In corsa puoi cambiare tutto con gli ordini radio.`,false)+

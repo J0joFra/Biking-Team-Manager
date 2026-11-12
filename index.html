@@ -151,6 +151,21 @@ main.view.enter{animation:enter .22s ease-out}
 .recent .rn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
 
 /* calendario */
+/* GRAFICA */
+.flag{display:inline-block;vertical-align:-2px;border-radius:2px;flex:none}
+.av{display:inline-block;vertical-align:middle;border-radius:50%;flex:none}
+.pc{display:inline-flex;align-items:center;gap:8px;min-width:0;max-width:100%}.pcn{min-width:0}.pcl{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.t.dt .pcs{padding-left:38px}
+.ic2{display:inline-block;vertical-align:middle;flex:none}
+.aic{color:var(--muted);display:inline-flex}.ric{display:inline-flex;margin-left:3px;color:var(--muted)}.ric.r_cap{color:var(--amber)}.ric.r_luog{color:#A8A29E}.ric.r_free{color:var(--accent)}.ric.r_svil{color:var(--ok)}
+.tic{display:inline-flex;color:var(--muted)}.rcn{display:inline-flex;align-items:center;gap:6px}
+.ii{display:inline-flex;margin-left:2px;color:var(--muted)}.ii.neg{color:var(--danger)}
+.fit2{display:inline-block;width:52px;height:7px;border-radius:4px;background:var(--sunk);overflow:hidden;vertical-align:middle}.fit2 i{display:block;height:100%}
+.dashrow{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);text-align:left;font-size:14px}.dashrow span:nth-child(2){flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dashrow .go{color:var(--muted);font-size:20px}
+.phav{position:relative;flex:none;margin-right:10px}.phfl{position:absolute;right:-4px;bottom:0}
+.sheet .ph{align-items:center}
+.herorace h2 .flag{vertical-align:0}
+.recent .flag{margin-right:6px}
 /* TABELLE */
 .dtw{overflow-x:auto}
 .t.dt{width:100%;border-collapse:collapse}
@@ -225,7 +240,11 @@ main.view.enter{animation:enter .22s ease-out}
 .pag .pr:first-of-type{border-top:0}.pag .pr small{grid-column:2;font-size:11.5px;color:var(--muted)}
 .pgv{grid-row:span 2;display:grid;place-items:center;height:34px;border-radius:9px;background:var(--sunk);font-family:var(--f-mono);font-size:16px}
 .pgv.hi{background:var(--ok-soft);color:var(--ok)}.pgv.lo{background:color-mix(in srgb,var(--danger) 15%,transparent);color:var(--danger)}
-.note.clip{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+.note.clip{cursor:pointer}
+.note.clip:not(.open){font-size:0;line-height:0;display:inline-flex;align-items:center;gap:4px;padding:3px 9px 3px 6px;border-radius:999px;background:var(--sunk);width:max-content;max-width:100%;margin:0}
+.note.clip:not(.open) *{display:none}
+.note.clip:not(.open)::before{content:"i";display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--muted);color:var(--surface);font:700 11px/1 var(--f-body)}
+.note.clip:not(.open)::after{content:"Info";font:600 12px/1.2 var(--f-body);color:var(--muted)}
 .note.clip.open{display:block}
 .pkhero{gap:10px;margin-bottom:14px}
 .pkgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
@@ -414,7 +433,7 @@ table.t{width:100%;border-collapse:collapse;font-size:14px}
 .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
 .mr{padding:10px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
 .mr:last-child{border-bottom:0}
-.mr .l1{display:flex;align-items:baseline;gap:8px}
+.mr .l1{display:flex;align-items:center;gap:8px}
 .mr .l1 .nm{font-weight:700;font-size:15.5px}
 .mr .l1 .where{margin-left:auto;font-size:13px;color:var(--muted);text-align:right}
 .mr .bars{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:center;font-size:11.5px;color:var(--muted)}
@@ -700,6 +719,7 @@ tr.clk:hover td{background:var(--sunk)}
 <div class="toasts" id="toasts" aria-live="polite"></div>
 <div class="busy" id="busy" hidden><div class="busybox"><div class="spin"></div><div id="busytxt"></div></div></div>
 <script src="js/data.js"></script>
+<script src="js/icons.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/game.js"></script>
 <script src="js/sponsor.js"></script>
@@ -723,3 +743,4 @@ tr.clk:hover td{background:var(--sunk)}
 <script src="js/career.js"></script>
 <script src="js/awards.js"></script>
 <script src="js/tables.js"></script>
+<script src="js/dash.js"></script>

@@ -21,13 +21,14 @@ function riderFlags(r){
 /* rosa */
 function riderTable(list,opts={}){
  if(!list.length)return'<div class="note">Nessun corridore.</div>';
- return DT(TH([['Val','r'],['Corridore'],['Ruolo','hm'],['Età','r'],['SAL','r hs'],['PIA','r hs'],['CRO','r hs'],['VOL','r hs'],['Forma'],['Gg','r'],['V','r']]),
- list.map(r=>{const s=stats(r),c=condOf(r),tr=trend(r);
-  return`<tr data-act="rider" data-v="${r.id}"><td class="r"><b class="ov ${ovr(r)>=75?'hi':''}">${ovr(r)}</b>${opts.trend&&tr.t?`<small class="tr ${tr.c}">${tr.t}</small>`:''}</td>
-  <td><b>${esc(r.name)}</b> <span class="chip ${r.age<=22?'u23':''}">${catOf(r)}</span>${r.grp&&typeof gChip==='function'?' '+gChip(r.grp):''}<div class="tm">${ARCH[r.arch].lab}${(r.role==='cap'||r.role==='luog')&&r.spec?' · '+SPEC[r.spec]:''} ${riderFlags(r)}</div></td>
-  <td class="hm">${r.role?ROLES[r.role].lab:''}</td><td class="r">${r.age}</td>
+ return DT(TH([['Corridore'],['','c'],['Val','r'],['Età','r hs'],['SAL','r hs'],['PIA','r hs'],['CRO','r hs'],['VOL','r hs'],['Forma'],['','c'],['Gg','r hm'],['V','r']]),
+ list.map(r=>{const s=stats(r),tr=trend(r);
+  const ics=(injured(r)?`<span class="ii neg" title="Infortunato">${ic2('injury',13)}</span>`:'')+(inCamp(r,G.week,G.week)?`<span class="ii" title="In altura">${ic2('alt',13)}</span>`:'')+(r.cEnd===SEASON&&!r.renewed&&!r.leavingTo&&r.team==='t0'?`<span class="ii neg" title="Contratto in scadenza">${ic2('contract',13)}</span>`:'')+(r.natB&&r.natB[1]>=G.week?`<span class="ii" title="In nazionale">${flagSvg(r.nat,14)}</span>`:'');
+  return`<tr data-act="rider" data-v="${r.id}"><td>${personCell(r,` ${ics}`)}<div class="tm pcs">${catOf(r)}${r.role?' · '+ROLES[r.role].lab:''}${(r.role==='cap'||r.role==='luog')&&r.spec?' · '+SPEC[r.spec]:''}${r.grp&&typeof gChip==='function'?' '+gChip(r.grp):''}</div></td>
+  <td class="c">${archIc(r)}${roleIc(r)}</td>
+  <td class="r"><b class="ov ${ovr(r)>=75?'hi':''}">${ovr(r)}</b>${opts.trend&&tr.t?`<small class="tr ${tr.c}">${tr.t}</small>`:''}</td><td class="r hs">${r.age}</td>
   <td class="r hs">${s.sal}</td><td class="r hs">${s.pia}</td><td class="r hs">${s.cro}</td><td class="r hs">${s.vol}</td>
-  <td><span class="cond" style="--c:${c.c}">${c.t}</span>${recDays(r)?`<div class="tm">rec. ${recDays(r)} gg</div>`:''}</td><td class="r">${r.days}</td><td class="r">${r.wins||''}</td></tr>`}).join(''));
+  <td>${fitBar(r)}</td><td class="c">${moodIc(r)}</td><td class="r hm">${r.days}</td><td class="r">${r.wins||''}</td></tr>`}).join(''));
 }
 function covTable(cov){
  return DT(TH([['Specialità'],['Il migliore'],['Valore','r'],['']]),cov.map(({k,best})=>`<tr data-act="rider" data-v="${best.r.id}"><td>${SPEC[k]}</td><td>${esc(best.r.name)}</td><td class="r"><b class="${best.v<60?'neg':best.v>=75?'pos':''}">${best.v}</b></td><td style="width:30%">${miniBar(best.v)}</td></tr>`).join(''));
@@ -47,7 +48,7 @@ function mkTable(list){
  return DT(TH([['Val','r'],['Corridore'],['Età','r'],['Squadra','hm'],['SAL','r hs'],['PIA','r hs'],['CRO','r hs'],['VOL','r hs'],['Costo','r']]),
  list.map(r=>{const s=stats(r),i=mkInfo(r),pot=r.age<=22?'★'.repeat(1+Math.round((r.pot||0)*4)):'';
   const team=r.team==='t0'?'Mio':r.team==='fa'?'Svincolato':r.team==='jr'?'Juniores':`${esc(TEAM(r.team).short)} · ${r.cEnd}`;
-  return`<tr data-act="neg" data-v="${r.id}"><td class="r"><b class="ov ${ovr(r)>=75?'hi':''}">${ovr(r)}</b></td><td><b>${esc(r.name)}</b> <span class="chip ${r.age<=22||r.junior?'u23':''}">${r.junior?'Juniores':catOf(r)}</span><div class="tm">${ARCH[r.arch].lab}${pot?` · <span class="stars">${pot}</span>`:''}</div></td>
+  return`<tr data-act="neg" data-v="${r.id}"><td class="r"><b class="ov ${ovr(r)>=75?'hi':''}">${ovr(r)}</b></td><td>${personCell(r)}<div class="tm pcs">${archIc(r,13)} ${r.junior?'Juniores':catOf(r)}${pot?` · <span class="stars">${pot}</span>`:''}</div></td>
   <td class="r">${r.age}</td><td class="hm">${team}</td><td class="r hs">${s.sal}</td><td class="r hs">${s.pia}</td><td class="r hs">${s.cro}</td><td class="r hs">${s.vol}</td><td class="r"><b>${i.pr}</b><div class="tm">${esc(i.sm)}</div></td></tr>`}).join(''));
 }
 /* calendario */
@@ -56,7 +57,7 @@ function calTable(list,past){
  for(const r of list){
   if(r.w!==lw){lw=r.w;rows+=`<tr class="wkr ${r.w===G.week?'now':''}" ${r.w===G.week?'id="wknow"':''}><td colspan="2">Sett. ${r.w} · ${weekLab(r.w)}${r.w===G.week?' · adesso':''}</td></tr>`}
   const s=raceState(r);
-  rows+=`<tr data-act="race" data-v="${r.id}" class="${past?'past':''}"><td><b>${esc(r.name)}</b><div class="mt">${raceChips(r)}</div></td><td class="r"><span class="pill ${s.cls}">${s.t}</span></td></tr>`;
+  rows+=`<tr data-act="race" data-v="${r.id}" class="${past?'past':''}"><td><span class="rcn">${flagSvg(r.ctry,18)}${raceIc(r)}<b>${esc(r.name)}</b></span><div class="mt">${raceChips(r)}</div></td><td class="r"><span class="pill ${s.cls}">${s.t}</span></td></tr>`;
  }
  return DT('',rows,'cal');
 }
@@ -112,7 +113,7 @@ pkgHero=function(){
  <div class="note">Tocca un pacchetto per vedere le corse. Budget della dirigenza: ${eurk(P.budget)}.</div></div>`;
 };
 /* premi */
-awardsGrid=function(list){return DT(TH([['Coppa'],['Corridore'],['Squadra','hm'],['Motivo','r']]),list.map(a=>{const A=AWARDS.find(x=>x[0]===a.k);return`<tr class="${a.me?'me':''}" data-act="rider" data-v="${a.id}"><td>${trophySvg(A[3],18)} <b>${A[1]}</b></td><td>${esc(a.name)}${a.me&&a.cash?` <span class="chip amber">+${eurk(a.cash)}</span>`:''}</td><td class="hm">${esc(a.team)}</td><td class="r tm">${esc(a.v)}</td></tr>`}).join(''))};
+awardsGrid=function(list){return DT(TH([['Coppa'],['Corridore'],['Squadra','hm'],['Motivo','r']]),list.map(a=>{const A=AWARDS.find(x=>x[0]===a.k);return`<tr class="${a.me?'me':''}" data-act="rider" data-v="${a.id}"><td>${trophySvg(A[3],18)} <b>${A[1]}</b></td><td>${RID(a.id)?personCell(RID(a.id)):esc(a.name)}${a.me&&a.cash?` <span class="chip amber">+${eurk(a.cash)}</span>`:''}</td><td class="hm">${esc(a.team)}</td><td class="r tm">${esc(a.v)}</td></tr>`}).join(''))};
 teamAwardsGrid=function(list){return DT(TH([['Coppa'],['Squadra'],['Motivo','r']]),list.map(a=>{const T=TAWARDS.find(x=>x[0]===a.k);return`<tr class="${a.me?'me':''}"><td>${trophySvg(T[3],18)} <b>${T[1]}</b></td><td>${esc(a.name)}${a.me?` <span class="chip amber">+${eurk(a.cash||T[4])}</span>`:''}</td><td class="r tm">${esc(a.v)}</td></tr>`}).join(''))};
 /* guide: da riquadri a tabella Tema · Spiegazione */
 function guideToTable(){

@@ -74,3 +74,47 @@ const TORD_IC={prot:'shield',ritmo:'passista',risp:'battery',libero:'free'};
 refreshTeamBar=function(){const b=$('#teambar');if(!b)return;b.innerHTML=TEAM_ORD.map(([k,l,d])=>`<button data-act="tord" data-v="${k}" aria-pressed="${LIVE.tord===k}" title="${esc(d)}">${ic2(TORD_IC[k],15)}<b>${l}</b></button>`).join('')};
 /* etichette brevi per gli ordini di squadra */
 {const L={prot:'Proteggi',ritmo:'Ritmo',risp:'Risparmio',libero:'Liberi'};for(const o of TEAM_ORD)if(L[o[0]])o[1]=L[o[0]]}
+/* ---------- moto TV: bandierine, barra con icone ---------- */
+function tvFlag(g,code,x,y){
+ const f=FLAGS[code];const w=13,h=9;
+ if(!f||!['v','h','h2','esp','col','por','x','x2','sui'].includes(f[0])){g.fillStyle='#9AA3AF';g.fillRect(x,y,w,h);return}
+ const t=f[0];
+ if(t==='v'){for(let i=0;i<3;i++){g.fillStyle=f[1+i];g.fillRect(x+i*w/3,y,w/3+0.5,h)}}
+ else if(t==='h'){for(let i=0;i<3;i++){g.fillStyle=f[1+i];g.fillRect(x,y+i*h/3,w,h/3+0.5)}}
+ else if(t==='h2'){g.fillStyle=f[1];g.fillRect(x,y,w,h/2);g.fillStyle=f[2];g.fillRect(x,y+h/2,w,h/2)}
+ else if(t==='esp'){g.fillStyle=f[1];g.fillRect(x,y,w,h);g.fillStyle=f[2];g.fillRect(x,y+h/4,w,h/2)}
+ else if(t==='col'){g.fillStyle=f[1];g.fillRect(x,y,w,h/2);g.fillStyle=f[2];g.fillRect(x,y+h/2,w,h/4);g.fillStyle=f[3];g.fillRect(x,y+h*3/4,w,h/4)}
+ else if(t==='por'){g.fillStyle=f[1];g.fillRect(x,y,w*0.4,h);g.fillStyle=f[2];g.fillRect(x+w*0.4,y,w*0.6,h)}
+ else{g.fillStyle=f[1];g.fillRect(x,y,w,h);g.fillStyle=f[2];g.fillRect(x+w*0.3,y,2,h);g.fillRect(x,y+h/2-1,w,2)}
+ g.strokeStyle='rgba(0,0,0,.25)';g.lineWidth=0.5;g.strokeRect(x,y,w,h);
+}
+tvBar=function(){if(!LIVE||!LIVE.S)return'';const v=LIVE.view||'prof';
+ return`<div class="tvbar"><div class="seg sm">${[['prof','montagna','Profilo'],['tv','bike','TV']].map(([k,i,l])=>`<button data-act="tvview" data-v="${k}" aria-pressed="${v===k}">${ic2(i,13)} ${l}</button>`).join('')}</div>${v==='tv'?`<div class="seg sm">${[['head','flag','Testa'],['main','team','Gruppo'],['mine','shield','Miei']].map(([k,i,l])=>`<button data-act="tvcam" data-v="${k}" aria-pressed="${LIVE.camMode===k&&!LIVE.camId}">${ic2(i,13)} ${l}</button>`).join('')}</div><span class="tvhud" id="tvhud"></span>`:''}</div>`};
+const _updateRaceUIT=updateRaceUI;
+updateRaceUI=function(){_updateRaceUIT();const h=$('#tvhud'),d=LIVE&&LIVE.tvHud;if(!h||!d||LIVE.view!=='tv')return;
+ h.innerHTML=`<b>${esc(d.gname)}</b> ${ic2('team',12)}${d.n}${d.gap>0?` ${ic2('clockw',12)}${fmtGap(d.gap)}`:''} ${ic2('speed',12)}${d.v.toFixed(1).replace('.',',')} ${ic2('grade',12)}${d.gr>0?'+':''}${d.gr.toFixed(1).replace('.',',')}%${d.sf?' '+ic2(d.sf===1?'pave':'sterrato',12):''}`};
+
+/* ---------- risultati con avatar, bandiere e maglie ---------- */
+function resCell(id,team){const r=RID(id);if(!r)return'';return`<span class="pc">${avatar(r,22)}${flagSvg(r.nat,14)} <b>${esc(r.name)}</b> <span class="tm">${esc(TEAM(team||r.team).short)}</span></span>`}
+let _nIdx=null,_nIdxT=0;function NAMEIDX(){if(!_nIdx||Date.now()-_nIdxT>3000){_nIdx={};for(const q of Object.values(G.riders))_nIdx[q.name]=q;_nIdxT=Date.now()}return _nIdx}
+function decorateResults(root){
+ if(!root)return;
+ root.querySelectorAll('table.t tr').forEach(tr=>{
+  if(tr.dataset.deco)return;const td=tr.children[1];if(!td||td.querySelector('.av'))return;
+  const nm=(td.firstChild&&td.firstChild.nodeType===3?td.firstChild.textContent:'').trim();if(!nm)return;
+  const r=NAMEIDX()[nm];
+  if(r){td.innerHTML=td.innerHTML.replace(esc(r.name),`${avatar(r,22)}${flagSvg(r.nat,14)} <b>${esc(r.name)}</b>`);td.classList.add('rescell');tr.dataset.deco=1}
+ });
+}
+jerLine=function(j){
+ const L=[],J=(c,b)=>`<svg viewBox="0 0 40 40" width="16" height="16" aria-hidden="true"><path d="M13 5h14l9 6-4 7-4-2v20H12V16l-4 2-4-7z" fill="${c}" stroke="${b||'rgba(0,0,0,.25)'}" stroke-width="2"/></svg>`;
+ if(j.gc)L.push(`<span title="Classifica generale">${J('#F5C518')} ${esc(RID(j.gc).name)}</span>`);
+ if(j.pts)L.push(`<span title="Classifica a punti">${J('#23804A')} ${esc(RID(j.pts).name)}</span>`);
+ if(j.kom)L.push(`<span title="Gran premio della montagna">${J('#fff','#C2362C')} ${esc(RID(j.kom).name)}</span>`);
+ if(j.young)L.push(`<span title="Miglior giovane">${J('#F5F5F5')} ${esc(RID(j.young).name)}</span>`);
+ return L.join('');
+};
+for(const fn of ['showStageResult','showFinal','natFinalSheet','raceSheet','jrFinalSheet']){
+ if(typeof window[fn]!=='function')continue;const orig=window[fn];
+ window[fn]=function(...a){const out=orig.apply(this,a);decorateResults($('#sheet'));return out};
+}

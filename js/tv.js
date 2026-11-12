@@ -92,13 +92,13 @@ function drawTV(){
   if(cl.rs.length>12||cl===S.main)continue;
   const hx=X(cl.front*1000);if(hx<-40||hx>W+40)continue;
   const names=formation(S,cl).map(f=>f.x);
-  const lines=names.map(x=>({t:`${x.r.name.split(' ').slice(-1)[0]} ${x.isMe?'':tshort(x)}`.trim(),me:x.isMe,att:x.intent==='attack'}));
+  const lines=names.map(x=>({t:`${x.r.name.split(' ').slice(-1)[0]} ${x.isMe?'':tshort(x)}`.trim(),me:x.isMe,att:x.intent==='attack',nat:x.r.nat}));
   g.font='600 12px "Barlow Condensed", sans-serif';
-  const bw=Math.max(...lines.map(l=>g.measureText(l.t).width))+14,bh=lines.length*14+8;
+  const bw=Math.max(...lines.map(l=>g.measureText(l.t).width))+30,bh=lines.length*14+8;
   let bx=hx+12;if(bx+bw>W-4)bx=Math.max(4,hx-bw-14);
   const by=clamp(ry+6,30,H-bh-26);
   g.globalAlpha=0.9;g.fillStyle=col.line;g.fillRect(bx,by,bw,bh);g.globalAlpha=1;g.strokeStyle=col.ink;g.lineWidth=1;g.strokeRect(bx+0.5,by+0.5,bw-1,bh-1);
-  lines.forEach((l,i)=>{g.fillStyle=l.att?col.danger:l.me?col.ac:col.ink;g.fillText(l.t.toUpperCase(),bx+7,by+16+i*14)});
+  lines.forEach((l,i)=>{tvFlag(g,l.nat,bx+6,by+8+i*14);g.fillStyle=l.att?col.danger:l.me?col.ac:col.ink;g.fillText(l.t.toUpperCase(),bx+23,by+16+i*14)});
  }
  // gruppi fuori campo
  const gd=groupsDisplay(S);
@@ -109,8 +109,8 @@ function drawTV(){
  if(ahead)tag(ahead,true);if(behind)tag(behind,false);
  // intestazione
  const gname=(gd.find(o=>o.rs.includes(tgt.rs[0]))||{name:'Gruppo'}).name;
- g.fillStyle=col.ink;g.globalAlpha=0.85;g.fillRect(4,4,Math.min(W-8,310),22);g.globalAlpha=1;g.fillStyle=col.line;
- g.fillText(`MOTO TV · ${gname} (${tgt.rs.length}) · ${tg>0?fmtGap(tg)+' · ':''}${(tgt.v*3.6||0).toFixed(1).replace('.',',')} km/h · ${gr>0?'+':''}${gr.toFixed(1).replace('.',',')}%${sf===1?' · pavé':sf===2?' · sterrato':''}`,10,20);
+ LIVE.tvHud={gname,n:tgt.rs.length,gap:tg,v:tgt.v*3.6||0,gr,sf};
+ if(0)g.fillText(`MOTO TV · ${gname} (${tgt.rs.length}) · ${tg>0?fmtGap(tg)+' · ':''}${(tgt.v*3.6||0).toFixed(1).replace('.',',')} km/h · ${gr>0?'+':''}${gr.toFixed(1).replace('.',',')}%${sf===1?' · pavé':sf===2?' · sterrato':''}`,10,20);
 }
 const _drawProfileTV=drawProfile;
 drawProfile=function(){if(LIVE&&LIVE.view==='tv'&&LIVE.S)drawTV();else _drawProfileTV()};

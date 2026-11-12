@@ -24,7 +24,7 @@ function riderTable(list,opts={}){
  return DT(TH([['Corridore'],['','c'],['Val','r'],['Età','r hs'],['SAL','r hs'],['PIA','r hs'],['CRO','r hs'],['VOL','r hs'],['Forma'],['','c'],['Gg','r hm'],['V','r']]),
  list.map(r=>{const s=stats(r),tr=trend(r);
   const ics=(injured(r)?`<span class="ii neg" title="Infortunato">${ic2('injury',13)}</span>`:'')+(inCamp(r,G.week,G.week)?`<span class="ii" title="In altura">${ic2('alt',13)}</span>`:'')+(r.cEnd===SEASON&&!r.renewed&&!r.leavingTo&&r.team==='t0'?`<span class="ii neg" title="Contratto in scadenza">${ic2('contract',13)}</span>`:'')+(r.natB&&r.natB[1]>=G.week?`<span class="ii" title="In nazionale">${flagSvg(r.nat,14)}</span>`:'');
-  return`<tr data-act="rider" data-v="${r.id}"><td>${personCell(r,` ${ics}`)}<div class="tm pcs">${catOf(r)}${r.role?' · '+ROLES[r.role].lab:''}${(r.role==='cap'||r.role==='luog')&&r.spec?' · '+SPEC[r.spec]:''}${r.grp&&typeof gChip==='function'?' '+gChip(r.grp):''}</div></td>
+  return`<tr data-act="rider" data-v="${r.id}"><td>${personCell(r,` ${ics}`)}<div class="tm pcs">${catOf(r)}${r.role?' · '+ROLES[r.role].lab:''}${(r.role==='cap'||r.role==='luog')&&r.spec?' · '+SPEC[r.spec]:''}${typeof sqChips==='function'?' '+sqChips(r):''}</div></td>
   <td class="c">${archIc(r)}${roleIc(r)}</td>
   <td class="r"><b class="ov ${ovr(r)>=75?'hi':''}">${ovr(r)}</b>${opts.trend&&tr.t?`<small class="tr ${tr.c}">${tr.t}</small>`:''}</td><td class="r hs">${r.age}</td>
   <td class="r hs">${s.sal}</td><td class="r hs">${s.pia}</td><td class="r hs">${s.cro}</td><td class="r hs">${s.vol}</td>

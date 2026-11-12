@@ -77,3 +77,38 @@ renderRank=function(){
  document.addEventListener('click',e=>{if(lpDone&&e.target.closest('.gtg')){e.stopImmediatePropagation();e.preventDefault();lpDone=false}},true);
  document.addEventListener('contextmenu',e=>{const b=e.target.closest('.gtg');if(!b)return;e.preventDefault();const r=RID(b.dataset.id);if(r&&setGroupCap(r,b.dataset.v))renderTeam()});
 }
+
+/* ---------- Squadra: una sola riga di comandi sopra la tabella ---------- */
+function teamStats(){const rs=ME().riders.map(RID);return`<span class="thstat">${ic2('team',13)} ${rs.length}/${myCat().max} · <span title="Età media">${(rs.reduce((a,r)=>a+r.age,0)/rs.length).toFixed(1)}</span> · ${ic2('trophy',13)} ${rs.reduce((a,r)=>a+r.wins,0)}</span>`}
+function groupsCtl(){
+ const g=groups(),A=g.active,rs=ME().riders.map(RID);
+ const best=k=>{const b=rs.map(r=>({r,v:gScore(r,k)})).sort((a,b)=>b.v-a.v)[0];return b?`${b.r.name.split(' ').slice(-1)[0]} ${b.v}`:''};
+ return`<span class="gctl"><button class="gonbtn" data-act="gon" data-v="${g.on?0:1}" aria-pressed="${!!g.on}" title="Gruppi per specialità">${ic2('team',14)} Gruppi</button>${g.on?Object.keys(GSPEC).map(k=>{const n=rs.filter(r=>sqOf(r).includes(k)).length;const cap=groupCap(k);return`<button class="gspc" data-act="gspec" data-v="${k}" aria-pressed="${A.includes(k)}" title="${GSPEC[k]} · ${n} corridori${cap?' · capitano '+cap.name:''} · migliore: ${best(k)}">${gChip(k)}${A.includes(k)?`<b>${n}</b>`:''}</button>`}).join('')+`<button class="gonbtn" data-act="gauto" title="Distribuisci in automatico">${ic2('go',13)} Auto</button>`:''}</span>`;
+}
+const _renderTeamY=renderTeam;
+renderTeam=function(){
+ _renderTeamY();
+ const v=$('#view'),seg=v.querySelector('.teamseg');if(!seg)return;
+ v.querySelectorAll(':scope > .teamhead, :scope > .kv, :scope > .gbar, :scope > .covs').forEach(e=>e.remove());
+ const row=document.createElement('div');row.className='toolbar teamrow';
+ seg.classList.add('sm');row.appendChild(seg);
+ if(G.teamView==='rosa')row.insertAdjacentHTML('beforeend',groupsCtl());
+ row.insertAdjacentHTML('beforeend',teamStats());
+ v.prepend(row);
+ if(G.teamView==='futuro'){const h=[...v.querySelectorAll('h3')].find(x=>/Tutta la rosa nel tempo/.test(x.textContent));if(h){const c=h.closest('.card');if(c)c.remove()}}
+ const th=v.querySelector('.t.dt tr.th td');if(th&&G.teamView==='rosa')th.innerHTML=`Corridore <span class="hlg"><i class="h-el" title="Elite"></i><i class="h-u23" title="Under 23"></i><i class="h-rk" title="Rookie"></i></span>`;
+};
+/* nome ufficiale (con il main sponsor) nella barra in alto, dato che la Squadra non lo ripete più */
+const _renderTopY=renderTop;
+renderTop=function(){_renderTopY();const ms=mainSponsor(),tn=$('#top .tn');if(ms&&tn&&!tn.querySelector('.msp'))tn.innerHTML=`<span class="msp">${esc(ms.name)}</span> ${esc(G.name)}`};
+/* ---------- scheda corridore con icone ---------- */
+const RS_IC={'Valore':'cap','Soglia':'speed','W/kg':'montagna','Peso':'grade','Volata':'velocista','Potenziale':'svil',SAL:'montagna',PIA:'passista',CRO:'crono',VOL:'velocista',RES:'battery',REC:'clockw',
+ 'Condizione':'speed','Fatica · giorni':'battery','Contratto':'contract','Ruolo in squadra':'cap','Specialità':'flag','Carriera':'trophy','Palmarès':'trophy'};
+const _riderSheetY=riderSheet;
+riderSheet=function(id){
+ _riderSheetY(id);const r=RID(id);if(!r)return;const sh=$('#sheet');
+ sh.querySelectorAll('.kv small, .statrow small, .eyebrow, .sec-h h3').forEach(el=>{if(el.querySelector('svg'))return;const t=el.textContent.trim();const k=RS_IC[t]||(/^Risultati/.test(t)?'finish':null);if(k)el.insertAdjacentHTML('afterbegin',ic2(k,12)+' ')});
+ /* condizione: barra di forma e morale al posto delle parole */
+ const cond=[...sh.querySelectorAll('.eyebrow')].find(e=>/Condizione/.test(e.textContent));
+ if(cond&&cond.nextElementSibling)cond.nextElementSibling.insertAdjacentHTML('afterbegin',`${fitBar(r)} ${r.team==='t0'?moodIc(r,16):''} `);
+};

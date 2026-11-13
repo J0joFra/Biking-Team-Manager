@@ -330,3 +330,18 @@ callupSheet=function(){_callupSheetP3();const s=$('#sheet');if(!s)return;
  s.querySelectorAll('tr.th td').forEach(td=>{const k=td.textContent.trim();if(H[k]){td.title=k;td.innerHTML=H[k]}});
  s.querySelectorAll('.chip.u23, .chip.red').forEach(c=>{const t=c.textContent.trim();if(t==='Convocato'&&!c.querySelector('svg'))c.innerHTML=`${ic('check',11)} Convocato`;else if(t==='Rifiutata'&&!c.querySelector('svg'))c.innerHTML=`${ic2('elim',11)} Rifiutata`});
  const cl=s.querySelector('.pf [data-act="close"]');if(cl&&!cl.querySelector('svg'))cl.insertAdjacentHTML('afterbegin',ic('check',14)+' ')};
+/* ============================================================
+   GRUPPI e PISTA: icone
+   ============================================================ */
+function grpIcons(root){if(!root)return;
+ root.querySelectorAll('[data-act="racegrp"]:not([data-gi])').forEach(b=>{b.dataset.gi='1';const v=b.dataset.v;if(v==='auto'){b.title='Scelta automatica del gruppo';b.innerHTML=b.innerHTML.replace(/^Auto/,`${ic2('go',12)} Auto`)}else if(v==='all'){b.title='Tutta la rosa';b.innerHTML=`${ic('team',13)} Tutti`}else{const g=b.querySelector('.gchip');if(g&&b.getAttribute('aria-pressed')!=='true'){b.title=GSPEC[v];b.innerHTML='';b.appendChild(g)}}});
+ root.querySelectorAll('.chip').forEach(c=>{if(c.dataset.gi)return;const t=c.textContent.trim();if(t==='Sostituto'){c.dataset.gi='1';c.innerHTML=`${ic2('go',11)}${ic('team',11)}`}else if(t==='Rinforzo'){c.dataset.gi='1';c.innerHTML=`+${ic('team',11)}`}else if(t==='Tutti'){c.dataset.gi='1';c.title='Tutta la rosa';c.innerHTML=ic('team',11)}});
+ root.querySelectorAll('.subnote .tm').forEach(t=>{const m=t.textContent.match(/fuori: (\d+)/);if(m&&!t.dataset.gi){t.dataset.gi='1';t.innerHTML=`${ic2('elim',11)} ${m[1]}`}});
+ root.querySelectorAll('.eyebrow').forEach(e=>{if(e.textContent.trim()==='Chi corre'&&!e.querySelector('svg'))e.innerHTML=`${ic('team',11)} Chi corre`});
+ root.querySelectorAll('.chip').forEach(c=>{if(/^velodromo$/i.test(c.textContent.trim())&&!c.dataset.gi){c.dataset.gi='1';c.title='Velodromo';c.innerHTML=`${ic2('pista',12)}`}});
+}
+{let pend=false;new MutationObserver(()=>{if(!pend){pend=true;requestAnimationFrame(()=>{pend=false;if(G){grpIcons($('#view'));grpIcons($('#sheet'))}})}}).observe(document.body,{childList:true,subtree:true})}
+/* pista: risultati con medaglie a ogni specialità e convocazione con ruolo */
+const _renderTrackConvP3=renderTrackConv;
+renderTrackConv=function(){_renderTrackConvP3();const s=$('#sheet');if(!s)return;
+ s.querySelectorAll('button.tkc.best').forEach(b=>{if(!b.title)b.title='Tra i migliori per questa specialità'})};

@@ -279,3 +279,50 @@ trackResultSheet=function(race){
 };
 const _raceSheetT=raceSheet;
 raceSheet=function(id){const o=_raceSheetT(id);const r=G.races.find(x=>x.id===id);if(r&&r.tier==='track'&&!(r.status==='done'&&r.result&&r.result.track)){const pb=$('#sheet .stages');if(pb)pb.innerHTML=`<div class="sec-h"><h3>${ic2('pista',15)} Specialità</h3></div>`+DT('',r.disc.map(k=>`<tr title="${esc(DISC[k].d)}"><td><span class="pc"><span class="stic on">${dIc(k,14)}</span><b>${DISC[k].lab}</b><span class="tm sub">${esc(DISC[k].d.split(':')[0])}</span></span></td></tr>`).join(''))}return o};
+/* ============================================================
+   MERCATO: intestazione compatta a icone, tabella senza testi
+   ============================================================ */
+IC2.search='<circle cx="11" cy="11" r="6"/><path d="M16 16l5 5"/>';
+const MK_SH={bids:'Offerte',renew:'Rinnovi',fa:'Svincolati',others:'Squadre',jr:'Juniores'};
+const MK_TIP={bids:'Offerte delle altre squadre per i tuoi corridori',renew:'Contratti in scadenza: se non li rinnovi se ne vanno',fa:'Senza squadra: si firmano subito, senza indennizzo',others:'Acquisto con indennizzo da squadre di categoria pari o inferiore',jr:'Diciottenni: arrivano la prossima stagione come Rookie'};
+const _renderMarketQ=renderMarket;
+renderMarket=function(){
+ _renderMarketQ();
+ const v=$('#view');if(G.mk.sub==='staff')return;
+ const seg=[...v.querySelectorAll('.seg')].find(s=>s.querySelector('[data-act="mksub"]')),fil=v.querySelector('.filters');if(!seg)return;
+ seg.querySelectorAll('[data-act="mksub"]').forEach(b=>{const k=b.dataset.v,n=k==='bids'?(G.bids||[]).filter(x=>RID(x.rid)&&RID(x.rid).team==='t0').length:0;b.title=MK_TIP[k]||'';b.innerHTML=`${ic2(MK_IC[k]||'team',14)} ${MK_SH[k]||b.textContent}${n?` <b class="badge2">${n}</b>`:''}`});
+ const w=win(),open=w.now||w.next,proj=projected(),ex=ME().riders.map(RID).filter(r=>r.cEnd===SEASON&&!r.renewed&&!r.leavingTo).length;
+ const stat=`<div class="mkstat"><span class="kc ${open?'pos':'tm'}" title="${esc(w.label)}">${open?ic2('go',14):ic('lock',14)}<b>${open?'Aperto':'Chiuso'}</b></span><span class="kc" title="Saldo a fine stagione">${ic2('euro',14)}<b class="${proj<0?'neg':''}">${eurk(proj)}</b></span><span class="kc" title="Monte ingaggi">${ic2('contract',14)}<b>${eurk(payroll())}</b></span><span class="kc" title="Rosa ${w.off?SEASON+1:SEASON}">${ic('team',14)}<b>${w.off?nextRoster():myRoster()}/${myCat().max}</b></span>${ex?`<button class="kc neg" data-act="mksub" data-v="renew" title="Contratti in scadenza">${ic2('warn',14)}<b>${ex}</b></button>`:''}</div>`;
+ if(fil){const n=fil.querySelector('.note');if(n)n.outerHTML=`<span class="tm">${ic('team',12)} ${n.textContent.replace(/ corridori.*$/,'').trim()}</span>`;fil.querySelectorAll('select').forEach(s=>s.classList.add('tsel'))}
+ const bar=document.createElement('div');bar.className='toolbar mkbar';bar.appendChild(seg);
+ const bar2=document.createElement('div');bar2.className='toolbar mkbar2';bar2.innerHTML=stat;if(fil&&G.mk.sub!=='bids')bar2.appendChild(fil);
+ const body=[...v.querySelectorAll(':scope > .sec')].pop();const keep=body?[...body.children].filter(c=>!c.matches('.note')&&c!==seg&&c!==fil):[];
+ v.innerHTML='';v.appendChild(bar);v.appendChild(bar2);keep.forEach(c=>v.appendChild(c));
+};
+const COST_IC={indennizzo:['euro','Indennizzo alla squadra'],ingaggio:['contract','Ingaggio annuo'],'parametro zero':['free','Parametro zero: solo ingaggio'],richiesta:['contract','Richiesta per il rinnovo'],'firmato altrove':['go','Ha firmato altrove']};
+mkTable=function(list){
+ if(!list.length)return`<div class="note">${ic('team',13)} Nessun corridore.</div>`;
+ return DT(TH([['','r'],['Corridore'],['','r'],['Squadra','hm'],['SAL','r hs'],['PIA','r hs'],['CRO','r hs'],['VOL','r hs'],[ic2('euro',13),'r']]),
+ list.map(r=>{const s=stats(r),i=mkInfo(r),pot=r.age<=22?'★'.repeat(1+Math.round((r.pot||0)*4)):'',t=G.teams.find(x=>x.id===r.team);
+  const team=r.team==='t0'?`<span class="pc">${myJersey(16)}<span class="tm">${r.renewed?ic('check',11):''}${r.cEnd}</span></span>`:r.team==='fa'?`<span class="pc tm" title="Svincolato">${ic2('free',14)} libero</span>`:r.team==='jr'?`<span class="pc tm" title="Juniores">${ic2('svil',14)} jr</span>`:t?`<span class="pc">${tJer(t,16)}<b>${esc(t.short)}</b><span class="tm">'${String(r.cEnd).slice(2)}</span></span>`:'';
+  const c=COST_IC[i.sm];const cost=i.pr==='—'?`<span class="tm" title="${esc(i.sm)}">${ic('lock',13)}</span>`:`<span title="${esc(c?c[1]:i.sm)}">${c?`<span class="tm">${ic2(c[0],12)}</span> `:''}<b>${i.pr}</b></span>`;
+  return`<tr data-act="neg" data-v="${r.id}"><td class="r"><b class="ov ${ovr(r)>=75?'hi':''}">${ovr(r)}</b></td><td>${personCell(r)}${pot?` <span class="stars">${pot}</span>`:''}</td><td class="r tm">${r.age}</td><td class="hm">${team}</td><td class="r hs">${s.sal}</td><td class="r hs">${s.pia}</td><td class="r hs">${s.cro}</td><td class="r hs">${s.vol}</td><td class="r nowrap">${cost}</td></tr>`}).join(''));
+};
+/* scheda trattativa: etichette a icone */
+document.addEventListener('click',e=>{const t=e.target.closest('[data-act="neg"]');if(!t)return;requestAnimationFrame(()=>{const KI={Valore:'cap','W/kg':'speed',Potenziale:'svil',Età:'calendar',Ingaggio:'contract',Indennizzo:'euro'};document.querySelectorAll('#sheet .kv small').forEach(x=>{const k=x.textContent.trim();if(KI[k]&&!x.querySelector('svg'))x.innerHTML=`${ic2(KI[k],12)} ${k}`})})});
+/* ============================================================
+   STAFF: pulsanti e filtri a icone
+   ============================================================ */
+const _renderStaffQ=renderStaff;
+renderStaff=function(){_renderStaffQ();const v=$('#view');
+ v.querySelectorAll('[data-act="stfire"]').forEach(b=>{b.className='btn ghost sm';b.title='Libera';b.innerHTML=ic2('elim',14)});
+ v.querySelectorAll('button.btn[data-act="strole"]').forEach(b=>{b.title='Cerca sul mercato';b.innerHTML=`${ic2('search',14)} Cerca`});
+ v.querySelectorAll('[data-act="sthire"]').forEach(b=>{if(!b.disabled){b.innerHTML=`${ic2('contract',14)} Ingaggia`}});
+ v.querySelectorAll('.fchip[data-act="strole"]').forEach(b=>{const k=b.dataset.v;if(b.querySelector('svg'))return;if(k==='all')b.insertAdjacentHTML('afterbegin',ic('staff',13)+' ');else if(STAFF_R[k]){b.title=b.textContent;b.innerHTML=ic(STAFF_R[k].ico,14)+(G._stfRole===k||STF.role===k?' '+b.textContent:'')}});
+ v.querySelectorAll('[data-act="styears"]').forEach(b=>{if(!b.querySelector('svg'))b.insertAdjacentHTML('afterbegin',ic2('calendar',12)+' ')});
+ v.querySelectorAll('th, tr.th td').forEach(td=>{const k=td.textContent.trim();if(k==='Rispetto al tuo')td.textContent='±';else if(k==='Stipendio')td.innerHTML=ic2('euro',12);else if(k==='Fino al')td.innerHTML=ic2('calendar',12);else if(k==='Qualità')td.innerHTML=ic2('cap',12)});
+ v.querySelectorAll('td.r.hm').forEach(td=>{if(td.textContent.trim()==='posto libero')td.innerHTML=`<span class="tm" title="Posto libero">${ic2('free',13)}</span>`});
+ v.querySelectorAll('td .tm').forEach(x=>{if(x.textContent.trim()==='posto libero')x.innerHTML=`${ic2('free',12)} libero`});
+};
+/* i comandi dello staff restano nella pagina Staff (prima ridisegnavano il Mercato) */
+document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(!t||!G||G.tab!=='staff')return;if(['strole','styears','sthire','stfire'].includes(t.dataset.act)){if(G.mk.sub==='staff')G.mk.sub='fa';const vs=$('#view .vscroll'),sc=vs?vs.scrollTop:0;renderStaff();const v2=$('#view .vscroll');if(v2)v2.scrollTop=sc}});

@@ -190,3 +190,47 @@ renderConvoca=function(){
 };
 const _renderCalP3b=renderCal;
 renderCal=function(){_renderCalP3b();document.querySelectorAll('#view tr.wkr td').forEach(td=>{if(td.dataset.ci)return;td.dataset.ci='1';const now=/adesso/i.test(td.textContent);td.innerHTML=`${ic2(now?'flag':'calendar',11)} ${td.innerHTML.replace(/\s*·\s*adesso/i,'')}${now?` <span class="chip u23">${ic2('go',10)} ora</span>`:''}`})};
+/* ============================================================
+   MERCATO: trattativa e cessione a icone
+   ============================================================ */
+const PROM_IC={cap:'cap',lib:'free',greg:'gregario'},CL_IC={win:'trophy',pts:'chart',prog:'calendar',alt:'alt',exit:'go',noexit:'lock'};
+const NEG_IC={renew:'contract',sign:'free',buy:'euro',pre:'svil'};
+const _renderNegP3=renderNeg;
+renderNeg=function(){
+ _renderNegP3();const s=$('#sheet'),r=NEG&&RID(NEG.id);if(!s||!r)return;
+ const eb=s.querySelector('.ph .eyebrow');if(eb&&!eb.dataset.ni){eb.dataset.ni='1';eb.insertAdjacentHTML('afterbegin',ic2(NEG_IC[NEG.mode]||'market',12)+' ')}
+ const sub=s.querySelector('.ph .note');const t=G.teams.find(x=>x.id===r.team);
+ if(sub&&!sub.dataset.ni){sub.dataset.ni='1';sub.innerHTML=`<span class="mkstat"><span class="kc">${archIc(r,12)}<b>${catOf(r)}</b></span><span class="kc" title="Età">${ic2('calendar',12)}<b>${r.age}</b></span><span class="kc">${flagSvg(r.nat,14)}<b>${r.nat}</b></span>${t?`<span class="kc">${tJer(t,14)}<b>${esc(t.id==='t0'?G.name:t.short)}</b></span>`:r.team==='fa'?`<span class="kc">${ic2('free',12)}<b>Svincolato</b></span>`:r.team==='jr'?`<span class="kc">${ic2('svil',12)}<b>Juniores</b></span>`:''}</span>`}
+ s.querySelectorAll('.pb .note').forEach(n=>{if(n.dataset.ni)return;const x=n.textContent.trim();let m;
+  if((m=x.match(/^(Contratto attuale|Contratto con .+?): (€\s?[\d.]+) l'anno fino al (\d{4})$/))){n.dataset.ni='1';n.outerHTML=`<div class="mkstat"><span class="kc" title="${esc(m[1])}">${ic2('contract',12)}<b>${eurk(r.sal)}</b>/anno</span><span class="kc" title="Scadenza">${ic2('calendar',12)}<b>${m[3]}</b></span></div>`}
+  else if(/^(Uno dei corridori più importanti|Corridore importante|Non è tra i leader)/.test(x)){n.dataset.ni='1';const lv=/più importanti/.test(x)?3:/^Corridore importante/.test(x)?2:1;n.innerHTML=`${ic2('cap',12)} ${'★'.repeat(lv)}${'☆'.repeat(3-lv)} <span class="tm">${lv===3?'leader della squadra':lv===2?'importante':'non è un leader'}</span>`}
+  else if((m=x.match(/^(\d{4}): (\d+) punti, (\d+) vittorie, (\d+) giorni di corsa$/))){n.dataset.ni='1';n.outerHTML=`<div class="mkstat"><span class="kc">${ic2('calendar',12)}<b>${m[1]}</b></span><span class="kc" title="Punti">${ic2('chart',12)}<b>${m[2]}</b></span><span class="kc" title="Vittorie">${ic2('trophy',12)}<b>${m[3]}</b></span><span class="kc" title="Giorni di corsa">${ic2('bike',12)}<b>${m[4]}</b> gg</span></div>`}
+  else if(/^Sereno|^Molto contento|^Scontento|^Vuole andare via/.test(x)&&n.querySelector('.cond')){n.dataset.ni='1';const mm=x.match(/(\d+) corse con noi/);n.outerHTML=`<div class="mkstat"><span class="kc">${moodIc(r,14)}<b>${moodLab(moodOf(r)).t}</b></span>${mm?`<span class="kc" title="Corse con noi">${ic2('bike',12)}<b>${mm[1]}</b></span>`:''}${r.promise?`<span class="kc" title="Promesso">${ic2(PROM_IC[r.promise]||'cap',12)}<b>${PROMISE[r.promise]}</b></span>`:''}</div>`}
+  else if((m=x.match(/^Costo su questa stagione: (€\s?[\d.]+) · saldo previsto dopo: (-?€\s?-?[\d.]+)/))){n.dataset.ni='1';const neg=/-/.test(m[2]);n.innerHTML=`<span class="mkstat"><span class="kc" title="Costo su questa stagione">${ic2('euro',12)}<b>${m[1]}</b></span><span class="kc ${neg?'neg':''}" title="Saldo previsto dopo">${ic2('chart',12)}<b>${m[2]}</b></span></span>`}
+  else if(/^Pesa sul bilancio dal|^Il nuovo ingaggio pesa sul bilancio dal/.test(x)){n.dataset.ni='1';n.innerHTML=`${ic2('calendar',12)} dal ${SEASON+1}`}
+  else if(/^I contratti lunghi costano meno/.test(x)){n.dataset.ni='1';n.innerHTML=`${ic2('info',12)} lungo = meno all'anno`}
+  else if((m=x.match(/^Per lui l'offerta vale circa (€\s?[\d.]+)/))){n.dataset.ni='1';n.innerHTML=`${ic2('chart',12)} Vale per lui ~<b>${m[1]}</b>`}});
+ s.querySelectorAll('[data-act="negpromise"]').forEach(b=>{if(!b.querySelector('svg'))b.insertAdjacentHTML('afterbegin',ic2(PROM_IC[b.dataset.v]||'cap',13)+' ')});
+ s.querySelectorAll('[data-act="negyears"]').forEach(b=>{if(!b.querySelector('svg'))b.insertAdjacentHTML('afterbegin',ic2('calendar',11)+' ')});
+ s.querySelectorAll('[data-act="negcl"] b').forEach(b=>{const k=b.parentElement.dataset.v;if(!b.querySelector('svg')&&CL_IC[k])b.insertAdjacentHTML('afterbegin',ic2(CL_IC[k],13)+' ')});
+ const H={'Clausole':'contract',"Motivazione dell'offerta":'info','Ruolo promesso':'cap','Durata':'calendar'};
+ s.querySelectorAll('.eyebrow').forEach(e=>{if(e.querySelector('svg'))return;const k=e.textContent.trim();if(H[k])e.insertAdjacentHTML('afterbegin',ic2(H[k],11)+' ');else if(/^Indennizzo a /.test(k))e.innerHTML=`${ic2('euro',11)} Indennizzo ${(()=>{const tt=G.teams.find(x=>x.id===r.team);return tt?tJer(tt,12)+' '+esc(tt.short):''})()}`});
+};
+const _sellSheetP3=sellSheet;
+sellSheet=function(id){const o=_sellSheetP3(id);const s=$('#sheet'),r=RID(id);if(!s||!r)return o;
+ const eb=s.querySelector('.ph .eyebrow');if(eb&&!eb.querySelector('svg'))eb.insertAdjacentHTML('afterbegin',ic('market',12)+' ');
+ const sub=s.querySelector('.ph .note');if(sub){const m=sub.textContent.match(/(€\s?[\d.]*\d)/);sub.innerHTML=`<span class="mkstat"><span class="kc">${avatar(r,16)}${flagSvg(r.nat,13)}<b>${esc(r.name)}</b></span>${m?`<span class="kc" title="Valore stimato">${ic2('chart',12)}<b>~${m[1]}</b></span>`:''}</span>`}
+ s.querySelectorAll('.pb .note').forEach(n=>{if(/^Più alto è il prezzo/.test(n.textContent.trim()))n.innerHTML=`${ic2('info',12)} prezzo alto → meno offerte`});
+ s.querySelectorAll('.eyebrow').forEach(e=>{if(/Prezzo richiesto/i.test(e.textContent)&&!e.querySelector('svg'))e.insertAdjacentHTML('afterbegin',ic2('euro',11)+' ')});return o};
+/* ============================================================
+   TATTICA: intestazione a icone, colonne a icone
+   ============================================================ */
+const _renderTacticP3=renderTactic;
+renderTactic=function(){_renderTacticP3();const s=$('#sheet');if(!s)return;
+ const eb=s.querySelector('.ph .eyebrow');if(eb&&!eb.dataset.ti){eb.dataset.ti='1';eb.innerHTML=`${ic2('contract',12)} ${eb.innerHTML.replace(/^Tattica\s*·\s*/,'')}`}
+ const sub=s.querySelector('.ph .note');if(sub&&!sub.dataset.ti){sub.dataset.ti='1';const m=sub.textContent.match(/^(.+?) · ([\d.,]+) km · tempo massimo (\+\d+%)/);const k=m&&Object.keys(TYPE_LAB).find(x=>TYPE_LAB[x]===m[1]);
+  if(m)sub.innerHTML=`<span class="mkstat"><span class="kc">${k?typeIc(k,13):''}<b>${m[1]}</b></span><span class="kc" title="Distanza">${ic2('go',12)}<b>${m[2]}</b> km</span><span class="kc" title="Tempo massimo">${ic2('clockw',12)}<b>${m[3]}</b></span></span>`}
+ const H={'Corridore':null,'Punta':ic2('cap',12),'2ª':ic2('cap',12)+'2','Compito':ic('team',12),'Attacco':ic2('velocista',12),'Come corre':ic2('bike',12),'Quando attacca':ic2('velocista',12)};
+ s.querySelectorAll('tr.th td').forEach(td=>{const k=td.textContent.trim();if(H[k]){td.title=k;td.innerHTML=H[k]}});
+ s.querySelectorAll('.t.tac select.tsel').forEach(sl=>{if(sl.previousElementSibling&&sl.previousElementSibling.classList&&sl.previousElementSibling.classList.contains('selic'))return;sl.insertAdjacentHTML('beforebegin',`<span class="selic tm">${ic2('clockw',12)}</span>`)});
+};

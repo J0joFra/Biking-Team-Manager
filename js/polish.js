@@ -196,3 +196,86 @@ teamAwardsGrid=function(list){return DT(TH([['Coppa'],['Squadra'],['','r']]),lis
 function jerseyTeams(root){if(!root)return;root.querySelectorAll('table.t td').forEach(td=>{if(td.querySelector('svg,.pc,button,select,input')||td.children.length>1)return;const n=td.textContent.trim();if(!n||n.length<4)return;const t=teamByName(n)||(n===G.name?ME():null);if(t)td.innerHTML=`<span class="pc">${tJer(t,18)}<b>${esc(n)}</b></span>`})}
 const _raceSheetJ=raceSheet;raceSheet=function(id){const o=_raceSheetJ(id);jerseyTeams($('#sheet'));return o};
 const _showFinalJ=showFinal;showFinal=function(RC){const o=_showFinalJ(RC);jerseyTeams($('#sheet'));return o};
+/* ============================================================
+   POSTA: da fare, filtri per categoria, azioni nel messaggio
+   ============================================================ */
+const MCAT={gare:['Gare','flag',['DS','Organizzatori']],soldi:['Sponsor','euro',['Sponsor','Amministrazione']],merc:['Mercato','go',['Mercato']],squadra:['Squadra','bike',['Medico','Preparatore','Scuola']],naz:['Nazionale','trophy',['Federazione']]};
+const mcatOf=f=>Object.keys(MCAT).find(k=>MCAT[k][2].includes(f))||'gare';
+const _addNewsP=addNews;addNews=function(t){_addNewsP(t);if(G.news[0])G.news[0].w=G.week};
+function mailLinks(m){
+ const txt=m.title+' '+m.body,out=[],seen=new Set();
+ const mineFirst=Object.values(G.riders).filter(r=>r.name.length>5&&txt.includes(r.name)).sort((a,b)=>(a.team==='t0'?0:1)-(b.team==='t0'?0:1)).slice(0,2);
+ for(const r of mineFirst)out.push(`<button class="btn sm" data-act="rider" data-v="${r.id}">${avatar(r,18)} ${esc(r.name.split(' ').slice(-1)[0])}</button>`);
+ const race=G.races.filter(r=>txt.includes(r.name)).sort((a,b)=>b.name.length-a.name.length)[0];
+ if(race)out.push(`<button class="btn sm" data-act="race" data-v="${race.id}">${flagSvg(race.ctry,14)} ${race.status==='done'?'Risultati':'La corsa'}</button>`);
+ const go={Mercato:['market:bids',ic('market',14),'Mercato'],Sponsor:['spon',ic('spon',14),'Sponsor'],Amministrazione:['bil',ic2('euro',14),'Bilancio'],Federazione:['callups',ic2('trophy',14),'Convocazioni'],Preparatore:['train',ic2('bike',14),'Allenamento'],Scuola:['base',ic('base',14),'Scuola'],Organizzatori:['cal',ic('cal',14),'Calendario']}[m.from];
+ if(go&&!seen.has(go[0]))out.push(`<button class="btn sm" data-act="mgo" data-v="${go[0]}">${go[1]} ${go[2]}</button>`);
+ return out.join('');
+}
+function todoList(){
+ const T=[],bids=(G.bids||[]).filter(b=>RID(b.rid)&&RID(b.rid).team==='t0'),ex=ME().riders.map(RID).filter(r=>r.cEnd===SEASON&&!r.renewed&&!r.leavingTo);
+ if(typeof pkgPending==='function'&&pkgPending())T.push([ic2('calendar',15),'Scegli il pacchetto di corse','tab','home']);
+ for(const r of myPending())T.push([flagSvg(r.ctry,15),`Convoca: ${esc(r.name)}`,r.tier==='track'||r.tier==='naz'||r.tier==='jun'?'tab':'convoca',r.tier==='track'||r.tier==='naz'||r.tier==='jun'?'home':r.id]);
+ if(G.offers.length)T.push([ic('spon',15),`${G.offers.length} propost${G.offers.length>1?'e':'a'} sponsor`,'mgo','spon']);
+ if(bids.length)T.push([ic('market',15),`${bids.length} offert${bids.length>1?'e':'a'} per i tuoi corridori`,'mgo','market:bids']);
+ if(pendingCallups().length)T.push([ic2('trophy',15),`${pendingCallups().length} convocazion${pendingCallups().length>1?'i':'e'} in nazionale`,'callups','']);
+ if(ex.length&&G.phase==='season'&&G.week>=30||ex.length&&G.phase!=='season')T.push([ic2('contract',15),`${ex.length} contratt${ex.length>1?'i':'o'} in scadenza`,'mgo','market:renew']);
+ return T;
+}
+/* i fatti su cui agire tornano messaggi; il resto resta notizia ma con mittente e testo */
+MAIL_KEEP.push(['Mercato',/Offerta per|deluso|capitano|ci lascia/],['Medico',/infortunato/],['Federazione',/convocazione per|Convocazione scaduta/],['Sponsor',/obiettivo raggiunto|rimborso/],['Amministrazione',/Bonus/]);
+mail=function(from,title,body){if(MAIL_KEEP.some(([f,re])=>f===from&&re.test(title)))return _mailC(from,title,body);G.news.unshift({id:'n'+(G.nextId++),s:SEASON,w:G.week,t:title,from,body});G.news=G.news.slice(0,60)};
+const newsFrom=t=>/infortun/i.test(t)?'Medico':/Offerta|arriva|Firmato|Ingaggiat|rinnova|svincolat|passa a|cessione/i.test(t)?'Mercato':/sponsor|Accordo|Proposta/i.test(t)?'Sponsor':/livello|Ritiro/i.test(t)?'Preparatore':/Pacchetto|Traguardo|Vittoria/i.test(t)?'DS':/nazional|Mondial|Europe/i.test(t)?'Federazione':'DS';
+function mailItems(view){
+ const M=G.inbox.map(m=>Object.assign({},m,{ref:m}));
+ if(view!=='all')return M;
+ const N=G.news.filter(n=>n.s===SEASON).map((n,i)=>({id:n.id||'nx'+i,w:n.w||0,s:n.s,from:n.from||newsFrom(n.t),title:n.t,body:n.body||'',read:true,news:true}));
+ return M.concat(N).sort((a,b)=>(b.s-a.s)||(b.w-a.w));
+}
+renderMail=function(){
+ const view=G.mailView==='all'?'all':'mail',f=G.mailCat||'all';
+ const all=mailItems(view),M=all.filter(m=>f==='all'||mcatOf(m.from)===f),sel=all.find(m=>m.id===G.mailSel)||M[0];
+ if(sel&&sel.ref&&!sel.ref.read){sel.ref.read=true;save();setTimeout(()=>{const b=$('#tabs [data-v="mail"] .badge');const n=G.inbox.filter(m=>!m.read).length;if(b){if(n)b.textContent=n;else b.remove()}},0)}
+ const unread=G.inbox.filter(m=>!m.read).length;
+ const seg=`<div class="toolbar"><div class="seg sm">${[['mail',ic('mail',14),'Messaggi',unread],['all',ic2('radio',14),'Tutto',0]].map(([k,i,l,n])=>`<button data-act="mview" data-v="${k}" aria-pressed="${view===k}">${i} ${l}${n?` <b class="badge2">${n}</b>`:''}</button>`).join('')}</div>
+  <div class="chips">${[['all','Tutte','mail']].concat(Object.keys(MCAT).map(k=>[k,MCAT[k][0],MCAT[k][1]])).map(([k,l,i])=>{const n=k==='all'?0:G.inbox.filter(m=>!m.read&&mcatOf(m.from)===k).length;return`<button class="fchip" data-act="mcat" data-v="${k}" aria-pressed="${f===k}" title="${l}">${i==='mail'?ic('mail',13):ic2(i,13)}${k==='all'||f===k?' '+l:''}${n?` <b class="badge2">${n}</b>`:''}</button>`}).join('')}</div>${unread?`<button class="chip" data-act="mallread" title="Segna tutte come lette">${ic('check',12)} Lette</button>`:''}</div>`;
+ const T=todoList();
+ const todo=T.length?`<div class="sec-h"><h3>${ic2('warn',15)} Da fare</h3></div>${DT('',T.map(([i,t,a,v])=>`<tr data-act="${a}" data-v="${v}"><td><span class="pc">${i}<b>${t}</b></span></td><td class="r tm">›</td></tr>`).join(''),'todo')}`:'';
+ let lastW=null;
+ const rows=M.map(m=>{const head=m.w!==lastW?`<tr class="wkr"><td colspan="3">${m.w===G.week&&m.s===SEASON?'Questa settimana':m.w?`Settimana ${m.w}`:'Prima'}</td></tr>`:'';lastW=m.w;
+  return head+`<tr data-act="mailsel" data-v="${m.id}" class="${sel&&m.id===sel.id?'sel':''} ${m.read?'':'unr'} ${m.news?'nws':''}"><td style="width:22px"><span class="mci c_${mcatOf(m.from)}" title="${esc(m.from)}">${fromIc(m.from)}</span></td><td class="mt1">${m.read?'':'<span class="udot"></span> '}${esc(m.title)}</td><td class="r tm hs">${m.news?ic2('radio',11):esc(m.from)}</td></tr>`}).join('');
+ const left=todo+(M.length?`<div class="sec-h" style="margin-top:${T.length?10:0}px"><h3>${view==='all'?ic2('radio',15)+' Tutto':ic('mail',15)+' Messaggi'}</h3><span class="eyebrow">${M.length}</span></div>${DT('',rows,'mailt2')}`:`<div class="note">${ic('mail',13)} Nessun messaggio${view==='mail'?': le notizie minori sono in «Tutto».':'.'}</div>`);
+ const right=sel?`<div class="card pad mailread"><div class="mrh"><span class="mci c_${mcatOf(sel.from)}">${fromIc(sel.from)}</span><b>${esc(sel.from)}</b><span class="tm">S${sel.w||'—'}${sel.s!==SEASON?' · '+sel.s:''}${sel.news?' · notizia':''}</span><span style="flex:1"></span>${sel.news?'':`<button class="btn ghost sm" data-act="maildel" data-v="${sel.id}" title="Elimina">✕</button>`}</div><h2>${esc(sel.title)}</h2>${sel.body?`<div class="mailbody">${esc(sel.body).replace(/\n/g,'<br>')}</div>`:''}${(()=>{const l=mailLinks(sel);return l?`<div class="mlinks">${l}</div>`:''})()}</div>`:'';
+ $('#view').innerHTML=seg+`<div class="mailgrid"><div class="col">${left}</div><div class="col">${right}</div></div>`;
+};
+document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(!t||!G)return;const a=t.dataset.act,v=t.dataset.v;
+ if(a==='mview'){G.mailView=v;renderMail()}
+ else if(a==='mcat'){G.mailCat=v;G.mailSel=null;renderMail()}
+ else if(a==='mallread'){G.inbox.forEach(m=>m.read=true);save();render()}
+ else if(a==='maildel'){G.inbox=G.inbox.filter(m=>m.id!==v);G.mailSel=null;save();render()}
+ else if(a==='mgo'){const[tab,sub]=v.split(':');if(tab==='spon'||tab==='bil'){G.finTab=tab==='bil'?'bil':'spon';G.tab='spon'}else if(tab==='market'){G.tab='market';if(sub&&G.mk)G.mk.sub=sub}else G.tab=tab;save();closeSheet();render()}
+});
+/* ============================================================
+   PISTA: icone per specialità, convocazione e risultati
+   ============================================================ */
+IC2.elim='<circle cx="12" cy="12" r="9"/><path d="M8 8l8 8M16 8l-8 8"/>';
+const DISC_IC={ip:()=>ic2('crono',14),tp:()=>ic('team',14),pr:()=>ic2('chart',14),sc:()=>ic2('velocista',14),el:()=>ic2('elim',14)};
+const dIc=(k,s)=>DISC_IC[k]?DISC_IC[k]().replace(/width="14" height="14"/,`width="${s||14}" height="${s||14}"`):'';
+renderTrackConv=function(){
+ const race=TSEL.race,rs=ME().riders.map(RID).filter(r=>!whyCant(r,race));
+ const ok=race.disc.every(k=>k!=='tp'||TSEL.sel[k].length===0||TSEL.sel[k].length===4)&&race.disc.some(k=>TSEL.sel[k].length);
+ openSheet(sheetHead(`${ic2('pista',12)} Pista · ${weekLab(race.w)}`,`${flagSvg(race.ctry,18)} ${esc(race.name)}`,race.flag==='ita'?`${flagSvg('ITA',12)} Solo corridori italiani`:'')+
+ `<div class="pb wrap">${DT(`<tr class="th"><td>Corridore</td>${race.disc.map(k=>{const n=TSEL.sel[k].length,need=k==='tp'?4:DISC[k].max,bad=k==='tp'&&n&&n!==4;return`<td class="c" title="${esc(DISC[k].lab+': '+DISC[k].d)}"><span class="dh">${dIc(k,15)}<small>${TK_SHORT[k]}</small><b class="${bad?'neg':n?'pos':''}">${n}/${need}</b></span></td>`}).join('')}</tr>`,
+  rs.slice().sort((a,b)=>Math.max(...race.disc.map(k=>trackScore(b,k)))-Math.max(...race.disc.map(k=>trackScore(a,k)))).map(r=>`<tr><td>${personCell(r)}</td>${race.disc.map(k=>{const on=TSEL.sel[k].includes(r.id),sc=trackScore(r,k),best=Math.max(...rs.map(x=>trackScore(x,k)));return`<td class="c"><button class="tkc ${sc>=best-3?'best':''}" data-act="tksel" data-k="${k}" data-v="${r.id}" aria-pressed="${on}">${on?'✓ ':''}${sc}</button></td>`}).join('')}</tr>`).join(''),'trk')}</div>
+ <div class="pf"><div class="wrap fr"><button class="btn ghost" data-act="close" title="Chiudi">✕</button><button class="btn ghost" data-act="tkskip">${ic2('elim',15)} Non partecipo</button><span style="flex:1"></span><button class="btn primary" data-act="tkgo" ${ok?'':'disabled'}>${ic2('pista',16)} Corri</button></div></div>`,'wide');
+};
+trackResultSheet=function(race){
+ const R=race.result,idx={};for(const r of Object.values(G.riders))idx[r.name]=r;
+ const mine=(R.mine||[]).slice().sort((a,b)=>a.pos-b.pos).slice(0,6).map(m=>{const r=idx[m.name];return`<span class="mres">${dIc(m.k,13)} ${r?avatar(r,18):''}<b>${esc(m.name.split(' ').slice(-1)[0])}</b> ${medalOf(m.pos)}</span>`}).join('');
+ openSheet(sheetHead(`${ic2('pista',12)} Pista · risultati`,`${flagSvg(race.ctry,18)} ${esc(race.name)}`,'')+
+ `<div class="pb wrap">${mine||R.prize?`<div class="myres">${mine}${R.prize?`<span class="chip amber">${ic2('euro',11)} ${eurk(R.prize)}</span>`:''}</div>`:''}<div class="trackgrid">${Object.entries(R.disc).map(([k,l])=>`<div><div class="sec-h"><h3>${dIc(k,16)} ${DISC[k].lab}</h3></div>${DT('',l.map((x,i)=>{const rr=k!=='tp'&&idx[x.name],t=teamByName(x.team)||(x.me?ME():null);
+  return`<tr class="${x.me?'me':''}"><td class="n">${i<3?medalOf(i+1):i+1}</td><td>${rr?personCell(rr):`<span class="pc">${tJer(t||teamByName(x.name),18)}<b>${esc(x.name)}</b></span>`}</td><td class="hs">${rr&&t?`<span class="pc">${tJer(t,14)}<span class="tm">${esc(t.short)}</span></span>`:''}</td><td class="r">${fmtTrack(k,x.v)||(x.p!=null?x.p+' pt':'')}</td></tr>`}).join(''),'tkres')}</div>`).join('')}</div></div>
+ <div class="pf"><div class="wrap fr"><button class="btn primary" data-act="close">Continua</button></div></div>`,'wide');
+};
+const _raceSheetT=raceSheet;
+raceSheet=function(id){const o=_raceSheetT(id);const r=G.races.find(x=>x.id===id);if(r&&r.tier==='track'&&!(r.status==='done'&&r.result&&r.result.track)){const pb=$('#sheet .stages');if(pb)pb.innerHTML=`<div class="sec-h"><h3>${ic2('pista',15)} Specialità</h3></div>`+DT('',r.disc.map(k=>`<tr title="${esc(DISC[k].d)}"><td><span class="pc"><span class="stic on">${dIc(k,14)}</span><b>${DISC[k].lab}</b><span class="tm sub">${esc(DISC[k].d.split(':')[0])}</span></span></td></tr>`).join(''))}return o};

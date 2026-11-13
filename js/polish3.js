@@ -90,3 +90,6 @@ riderSheet=function(id){
  if(rh){const tb=rh.parentElement.querySelector('table');if(tb)tb.querySelectorAll('tr').forEach(tr=>{const td=tr.lastElementChild;if(!td)return;const m=td.textContent.trim().match(/^(\d+)°/);if(m&&+m[1]<=3)td.innerHTML=td.innerHTML.replace(/^\s*\d+°/,medalOf(+m[1]))})}
 };
 if(G)render();
+/* ---------- gara dal vivo: capitano e seconda punta a icona ---------- */
+const _renderMineP3=renderMine;
+renderMine=function(full){_renderMineP3(full);document.querySelectorAll('#mine .l1 .chip:not([data-ic])').forEach(c=>{c.dataset.ic='1';const t=c.textContent.trim();c.title=t;c.classList.add('chico');c.innerHTML=ic2('cap',12)+(/Seconda/.test(t)?'2':'')})};

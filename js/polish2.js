@@ -89,3 +89,82 @@ new MutationObserver(()=>{document.querySelectorAll('.menu button:not([data-ic])
 /* Palmarès: la sottoriga "21 anni · 0 V nel 2027" ripete le colonne */
 const _renderPalmP2=renderPalm;renderPalm=function(){_renderPalmP2();setTimeout(()=>document.querySelectorAll('#view .tm').forEach(x=>{if(/^\d+ anni · \d+ V nel \d{4}$/.test(x.textContent.trim()))x.remove()}),0)};
 if(G)render();
+/* ============================================================
+   PALMARÈS della squadra: tutto in tabella, niente elenchi
+   ============================================================ */
+const riderByName=n=>{for(const r of Object.values(G.riders))if(r.name===n)return r;return null};
+const rCell=(n,s)=>{const r=riderByName(n);return r?personCell(r):`<b>${esc(n)}</b>`};
+const shortSur=n=>esc(String(n).split(' ').slice(-1)[0]);
+const BIG_T=['gt','mon','uwt1','uwt2','pro'];
+renderPalm=function(){
+ const P=teamPalm(),hist=G.history.slice(),A=(G.awards||[]).slice().reverse();
+ const cur={season:SEASON,cat:G.cat,rank:myCatRank(),pts:teamPoints(ME()),wins:P.w.filter(w=>w.s===SEASON).length,cur:G.phase==='season'};
+ const all=hist.concat(G.phase==='season'||!hist.some(h=>h.season===SEASON)?[cur]:[]).slice().reverse();
+ const riders={};for(const w of P.w)riders[w.r]=(riders[w.r]||0)+1;
+ const top=Object.entries(riders).sort((a,b)=>b[1]-a[1]).slice(0,8);
+ const cups=A.reduce((n,s)=>n+(s.list||[]).filter(a=>a.me).length+(s.teams||[]).filter(a=>a.me).length,0);
+ const stat=`<div class="toolbar"><div class="mkstat"><span class="kc" title="Vittorie">${ic2('trophy',14)}<b>${P.w.length}</b></span><span class="kc" title="Podi">${ic2('cap',14)}<b>${P.pod}</b></span><span class="kc" title="Stagioni">${ic2('calendar',14)}<b>${all.length}</b></span><span class="kc" title="Medaglie in nazionale">${ic2('flag',14)}<b>${P.nat.length}</b></span><span class="kc" title="Coppe di fine stagione">${trophySvg('#D4A017',14)}<b>${cups}</b></span></div></div>`;
+ const seasons=DT(TH([[ic2('calendar',12)],['Categoria'],[ic2('chart',12),'r'],[ic2('trophy',12),'r'],['Punti','r']]),all.map(h=>`<tr class="${h.cur?'me':''}"><td class="n">${h.season}</td><td><span class="chip">${CAT[h.cat].lab}</span>${h.cur?` <span class="tm">${ic2('clockw',11)}</span>`:''}</td><td class="r">${h.rank<=3?medalOf(h.rank):h.rank+'ª'}</td><td class="r">${h.wins||'<span class="tm">—</span>'}</td><td class="r">${h.pts??'—'}</td></tr>`).join(''));
+ const rosa=ME().riders.map(RID).map(r=>({r,p:palmOf(r)})).sort((a,b)=>b.p.w.length-a.p.w.length||b.p.pod-a.p.pod||b.p.t10-a.p.t10||(a.p.best?a.p.best.p:999)-(b.p.best?b.p.best.p:999));
+ const rosaT=DT(TH([['Corridore'],[ic2('trophy',12),'r'],[ic2('cap',12),'r'],['10','r hs'],['Migliore','hm']]),rosa.map(({r,p})=>`<tr data-act="rider" data-v="${r.id}"><td>${personCell(r)}</td><td class="r">${p.w.length||'<span class="tm">—</span>'}</td><td class="r">${p.pod||'<span class="tm">—</span>'}</td><td class="r hs">${p.t10||'<span class="tm">—</span>'}</td><td class="hm tm bestc" title="${p.best?esc(p.best.n)+' ('+p.best.s+')':''}">${p.best?`${p.best.p<=3?medalOf(p.best.p):p.best.p+'°'} ${esc(p.best.n)}`:'—'}</td></tr>`).join(''),'palmt');
+ let lastS=null;
+ const wins=P.w.slice().sort((a,b)=>b.s-a.s||TIER_W[b.t]-TIER_W[a.t]).map(w=>{const h=w.s!==lastS?`<tr class="wkr"><td colspan="3">${w.s} · ${P.w.filter(x=>x.s===w.s).length} ${ic2('trophy',11)}</td></tr>`:'';lastS=w.s;
+  return h+`<tr><td class="bestc"><span class="pc">${BIG_T.includes(w.t)?`<span class="wy pos">${ic2('trophy',13)}</span>`:''}<span class="chip cls">${esc(w.c)}</span><b>${esc(w.n)}</b></span></td><td class="nowrap">${(()=>{const r=riderByName(w.r);return`<span class="pc" title="${esc(w.r)}">${r?avatar(r,18):''}<span>${shortSur(w.r)}</span></span>`})()}</td></tr>`}).join('');
+ const winsT=P.w.length?DT('',wins,'palmt'):`<div class="note">${ic2('trophy',13)} Ancora nessuna vittoria.</div>`;
+ const topT=top.length?DT('',top.map(([n,c],i)=>`<tr><td class="n">${i<3?medalOf(i+1):i+1}</td><td>${rCell(n)}</td><td class="r"><b>${c}</b> ${ic2('trophy',12)}</td></tr>`).join('')):'';
+ const natT=P.nat.length?DT('',P.nat.slice().reverse().map(m=>`<tr><td>${medalOf(m.p)}</td><td>${rCell(m.r)}</td><td class="tm bestc">${esc(m.n)}</td><td class="r tm">${m.s}</td></tr>`).join('')):'';
+ const albo=A.length?A.map(s=>`<div class="eyebrow" style="margin:6px 0 4px">${trophySvg('#D4A017',12)} ${s.s}</div>${s.teams&&s.teams.length?teamAwardsGrid(s.teams):''}${awardsGrid(s.list)}`).join(''):'';
+ $('#view').innerHTML=stat+`<div class="futgrid"><div class="col">
+  <div class="sec-h"><h3>${ic2('calendar',15)} Stagioni</h3></div>${seasons}
+  <div class="sec-h" style="margin-top:10px"><h3>${ic('team',15)} La rosa</h3><span class="eyebrow">carriera</span></div>${rosaT}
+  ${albo?`<div class="sec-h" style="margin-top:10px"><h3>${trophySvg('#D4A017',15)} Albo d'oro</h3></div>${albo}`:''}
+ </div><div class="col">
+  <div class="sec-h"><h3>${ic2('trophy',15)} Vittorie</h3><span class="chip">${P.w.length}</span></div>${winsT}
+  ${topT?`<div class="sec-h" style="margin-top:10px"><h3>${ic2('cap',15)} I più vincenti</h3></div>${topT}`:''}
+  ${natT?`<div class="sec-h" style="margin-top:10px"><h3>${ic2('flag',15)} Medaglie in nazionale</h3></div>${natT}`:''}
+ </div></div>`;
+};
+/* palmarès nella scheda del corridore: tabelle al posto degli elenchi */
+palmBlock=function(r){
+ const p=palmOf(r),wins=p.w.slice().reverse(),pods=p.podl.slice().reverse().slice(0,6);
+ const rows=wins.slice(0,12).map(w=>`<tr><td>${medalOf(1)}</td><td class="bestc"><b>${esc(w.n)}</b></td><td class="r tm nowrap"><span class="chip cls">${esc(w.c)}</span> ${w.s}</td></tr>`).concat(pods.map(w=>`<tr><td>${medalOf(w.p)}</td><td class="bestc">${esc(w.n)}</td><td class="r tm">${w.s}</td></tr>`)).join('');
+ return`<div class="card pad stack"><div class="sec-h" style="margin:0"><h3>${ic2('trophy',15)} Palmarès</h3><span class="mkstat"><span class="kc" title="Vittorie">${ic2('trophy',12)}<b>${p.w.length}</b></span><span class="kc" title="Podi">${ic2('cap',12)}<b>${p.pod}</b></span><span class="kc" title="Top 10">${ic2('chart',12)}<b>${p.t10}</b></span></span></div>
+  ${(r.titles||[]).length?`<div class="titles">${r.titles.map(t=>`<span class="chip amber">${ic2('flag',11)} ${esc(t)}</span>`).join('')}</div>`:''}
+  ${rows?DT('',rows,'palmt'):p.best?`<div class="note">${ic2('chart',13)} Migliore: <b>${ord(p.best.p)}</b> · ${esc(p.best.n)} · ${p.best.s}</div>`:`<div class="note">${ic2('chart',13)} Nessun piazzamento.</div>`}
+  ${rows&&p.best&&p.best.p>3?'':''}</div>`;
+};
+/* ============================================================
+   GARA A TAPPE: titolo con numero e tipo di tappa, note a icone
+   ============================================================ */
+const _showStageResultP2=showStageResult;
+showStageResult=function(){
+ const RC=LIVE&&LIVE.RC,sr=RC&&RC.stages[RC.stages.length-1];
+ _showStageResultP2();const s=$('#sheet');if(!s||!RC||!sr)return;
+ if(RC.stageRace){const i=RC.stages.length-1,pro=RC.race.stages[0].t==='prologo',st=RC.race.stages[i];const eb=s.querySelector('.ph .eyebrow');
+  if(eb)eb.innerHTML=`${ic2('tappe',12)} ${esc(RC.race.name)} · ${st.t==='prologo'?'Prologo':`Tappa ${i+(pro?0:1)}/${RC.race.stages.length-(pro?1:0)}`} · ${typeIc(st.t,12)} ${TYPE_LAB[st.t]||''}`}
+ s.querySelectorAll('h3').forEach(h=>{const t=h.textContent.trim();if(h.querySelector('svg'))return;if(t==='Classifica generale')h.innerHTML=`${ic2('tappe',15)} Generale`;else if(t==='Classifica a squadre')h.innerHTML=`${ic('team',15)} Squadre`});
+ s.querySelectorAll('.sec-h .eyebrow').forEach(e=>{if(/somma dei 3/.test(e.textContent))e.textContent='3 migliori tempi'});
+ const n=[...s.querySelectorAll('.pb .note')].find(x=>/Meteo|cadut|Ritirati/.test(x.textContent));
+ if(n){const ch=[];if(sr.wx&&typeof wxIcon==='function')ch.push(`<span class="kc" title="${esc(wxText(sr.wx))}">${wxIcon(sr.wx.k,14)}</span>`);if(sr.crashes)ch.push(`<span class="kc" title="Cadute di gruppo">${ic2('warn',13)}<b>${sr.crashes}</b></span>`);
+  if(sr.dnf&&sr.dnf.length){const mine=sr.dnf.filter(id=>RID(id).team==='t0');ch.push(`<span class="kc neg" title="Ritirati${mine.length?': '+esc(mine.map(id=>RID(id).name).join(', ')):''}">${ic2('injury',13)}<b>${sr.dnf.length}</b>${mine.length?` · ${mine.map(id=>avatar(RID(id),16)).join('')}`:''}</span>`)}
+  n.outerHTML=`<div class="mkstat" style="margin-top:8px">${ch.join('')}</div>`}
+ const ot=s.querySelector('.msg.no');if(ot&&/Fuori tempo/.test(ot.textContent)){ot.innerHTML=`${ic2('clockw',13)} Fuori tempo: <b>${sr.otl.length}</b> ${sr.otl.filter(id=>RID(id).team==='t0').map(id=>avatar(RID(id),16)+' '+shortSur(RID(id).name)).join(' ')}`}
+ jerseyTeams(s);
+};
+/* ============================================================
+   NAZIONALE: partecipanti con avatar e bandiera, finale a medaglie
+   ============================================================ */
+natHero=function(ev){
+ const mine=(ev.field||[]).map(RID).filter(r=>r&&(r.team==='t0'||r.team==='acad'));
+ return`<div class="herorace"><div style="min-width:0"><div class="eyebrow">${ic2('flag',12)} ${CHAMP_LAB[ev.champ]} · nazionali</div><div class="rline">${flagSvg(ev.ctry,18)}<b class="rn1">${esc(ev.name)}</b><span class="mt">${raceChips(ev)}</span></div>
+  <div class="mkstat" style="margin-top:6px">${mine.map(r=>`<span class="kc" data-act="rider" data-v="${r.id}">${avatar(r,18)}${flagSvg(r.nat,13)}<b>${shortSur(r.name)}</b></span>`).join('')}</div></div>
+  <div class="row"><button class="btn sm" data-act="natgo" data-v="${ev.id}" data-m="sim">Simula</button><button class="btn primary sm" data-act="natgo" data-v="${ev.id}" data-m="live">Segui dal vivo</button></div></div>`;
+};
+const _natFinalSheetP=natFinalSheet;
+natFinalSheet=function(RC){
+ _natFinalSheetP(RC);const s=$('#sheet'),R=RC.race.result;if(!s||!R)return;
+ const eb=s.querySelector('.ph .eyebrow');if(eb)eb.insertAdjacentHTML('afterbegin',ic2('flag',12)+' ');
+ if(R.mine){const box=[...s.querySelectorAll('h3')].find(h=>/I tuoi corridori/.test(h.textContent));if(box){const wrap=box.closest('div').parentElement;
+  wrap.innerHTML=`<div class="sec-h"><h3>${ic('team',15)} I tuoi</h3></div>`+DT('',R.mine.map(m=>{const r=RID(m.id);return`<tr class="me" ${r?`data-act="rider" data-v="${r.id}"`:''}><td class="n">${m.pos===999?`<span class="tm">${ic2('injury',13)}</span>`:m.pos<=3?medalOf(m.pos):m.pos}</td><td>${r?personCell(r):esc(m.name)}</td></tr>`}).join(''))}}
+ s.querySelectorAll('h3').forEach(h=>{if(/Ordine d'arrivo/.test(h.textContent)&&!h.querySelector('svg'))h.innerHTML=`${ic2('finish',15)} Ordine d'arrivo`});
+};

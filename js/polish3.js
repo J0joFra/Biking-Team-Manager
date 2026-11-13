@@ -382,3 +382,28 @@ renderMail=function(){_renderMailP3();const v=$('#view');
  v.querySelectorAll('.mailt2 tr.wkr td').forEach(td=>{td.colSpan=2;if(!td.querySelector('svg'))td.insertAdjacentHTML('afterbegin',ic2(/Questa/.test(td.textContent)?'flag':'calendar',11)+' ')});
  const ms=[...v.querySelectorAll('.sec-h h3')].find(h=>/Messaggi|Tutto/.test(h.textContent));if(ms){const e=ms.parentElement.querySelector('.eyebrow');if(e&&!e.querySelector('svg'))e.innerHTML=`${ic('mail',11)} ${e.textContent}`}
  const mr=v.querySelector('.mailread .mrh .tm');if(mr&&!mr.querySelector('svg'))mr.insertAdjacentHTML('afterbegin',ic2('calendar',11)+' ')};
+/* ============================================================
+   GARA DAL VIVO e RISULTATI: altre icone
+   ============================================================ */
+const GN_IC=[[/Fuga|Testa|In testa|Davanti/i,'go'],[/Contrattacco|Insegu/i,'speed'],[/Gruppo|Plotone/i,'team'],[/Gruppetto|Staccat|Ultimi/i,'clockw'],[/Arrivati/i,'finish']];
+const W_IC=[[/Ritirato/,'injury'],[/^Arrivato/,'finish'],[/Foratura/,'warn'],[/Fuga|Testa/i,'go'],[/Insegu|Contrattacco/i,'speed'],[/Gruppetto|Staccat/i,'clockw'],[/Gruppo/i,'team']];
+const INT_IC={scatto:'velocista','risponde a uno scatto':'free','in testa':'speed','si rialza':'battery',volata:'velocista',ritirato:'injury'};
+const _updateRaceUIP3=updateRaceUI;
+updateRaceUI=function(){_updateRaceUIP3();
+ document.querySelectorAll('#grps .grp .gn').forEach(g=>{if(g.dataset.ri)return;g.dataset.ri='1';const t=g.childNodes[0]&&g.childNodes[0].textContent.trim();const m=GN_IC.find(([re])=>re.test(t||''));if(m)g.insertAdjacentHTML('afterbegin',ic2(m[1],12)+' ');const c=g.querySelector('.gc');if(c){const n=c.textContent.match(/(\d+)/);if(n)c.innerHTML=`${ic('team',11)} ${n[1]}`}});
+ document.querySelectorAll('#grps .grp > div > .gc').forEach(c=>{if(/^\+ altri (\d+)/.test(c.textContent)&&!c.dataset.ri){c.dataset.ri='1';c.innerHTML=`+${c.textContent.match(/\d+/)[0]} ${ic('team',11)}`}});
+ document.querySelectorAll('#mine .where').forEach(w=>{const t=w.textContent;if(!t||w.querySelector('svg'))return;const[pos,int]=t.split(' · ');const m=W_IC.find(([re])=>re.test(pos));const ii=int&&INT_IC[int.trim()];
+  w.innerHTML=`${m?ic2(m[1],12)+' ':''}${esc(pos)}${int?` · ${ii?ic2(ii,12)+' ':''}${esc(int)}`:''}`});
+};
+/* risultati della tappa e bilancio: intestazioni a icone */
+const _showStageResultP3c=showStageResult;
+showStageResult=function(){_showStageResultP3c();const s=$('#sheet');if(!s)return;
+ const h=s.querySelector('.ph h2');if(h&&!h.querySelector('svg')){h.innerHTML=h.innerHTML.replace(/^Vince\s+/,'');h.insertAdjacentHTML('afterbegin',ic2('trophy',18)+' ')}
+ const sub=s.querySelector('.ph .note');if(sub&&!sub.dataset.ri){const m=sub.textContent.match(/^(.+?) · ([\d.,]+) km in (.+?) · media ([\d,]+) km\/h/);if(m){sub.dataset.ri='1';const t=teamByName(m[1]);sub.innerHTML=`<span class="mkstat"><span class="kc">${t?tJer(t,13):ic('team',12)}<b>${esc(m[1])}</b></span><span class="kc" title="Distanza">${ic2('go',12)}<b>${m[2]}</b> km</span><span class="kc" title="Tempo">${ic2('crono',12)}<b>${m[3]}</b></span><span class="kc" title="Media">${ic2('speed',12)}<b>${m[4]}</b> km/h</span></span>`}}
+ const eb=s.querySelector('.ph .eyebrow');if(eb&&!eb.querySelector('svg'))eb.insertAdjacentHTML('afterbegin',ic2('finish',12)+' ')};
+const _showFinalP3c=showFinal;
+showFinal=function(RC){const o=_showFinalP3c(RC);const s=$('#sheet'),R=RC&&RC.race&&RC.race.result;if(!s||!R)return o;
+ const eb=s.querySelector('.ph .eyebrow');if(eb&&!eb.querySelector('svg'))eb.insertAdjacentHTML('afterbegin',ic2('chart',12)+' ');
+ const sub=s.querySelector('.ph .note');if(sub&&!sub.dataset.ri){sub.dataset.ri='1';const w=riderByName(R.winner),t=teamByName(R.winnerTeam);sub.innerHTML=`<span class="mkstat"><span class="kc" title="${RC.stageRace?'Vincitore finale':'Vincitore'}">${ic2('trophy',12)}${w?avatar(w,16)+flagSvg(w.nat,12):''}<b>${esc(R.winner)}</b></span>${R.winnerTeam?`<span class="kc">${t?tJer(t,13):''}<b>${esc(R.winnerTeam)}</b></span>`:''}</span>`}
+ s.querySelectorAll('.pb .tm').forEach(x=>{const m=x.textContent.trim().match(/^(\d+) km in fuga$/);if(m&&!x.dataset.ri){x.dataset.ri='1';x.innerHTML=`${ic2('go',11)} ${m[1]} km`}});
+ return o};

@@ -267,3 +267,29 @@ sponsorSheet=function(id){_sponsorSheetP3o(id);const s=$('#sheet'),sp=SP(id);if(
  if(o&&!s.querySelector('.offact')){const pf=s.querySelector('.pf .wrap');if(pf)pf.insertAdjacentHTML('afterbegin',`<span class="offact mkstat" style="margin-right:auto">${o.renew?`<span class="kc">${ic2('contract',12)}<b>Rinnovo</b></span>`:''}<span class="kc">${slotIc(o.slot,12)}<b>${eurk(o.amount)}</b>/anno</span><span class="kc">${ic2('calendar',12)}<b>${o.years}</b></span>${o.pen?`<span class="kc neg" title="Penale: ${esc(o.obj.txt)}">${ic2('warn',12)}<b>${eurk(o.pen)}</b></span>`:''}</span><button class="btn ghost" data-act="offno" data-v="${o.id}">${ic2('elim',14)} No</button><button class="btn primary" data-act="offyes" data-v="${o.id}">${ic('check',14)} Accetta</button>`)}};
 document.addEventListener('click',e=>{const t=e.target.closest('#sheet .offact ~ [data-act="offyes"], #sheet .offact ~ [data-act="offno"]');if(t)setTimeout(()=>{if(G)closeSheet()},0)});
 NOTE_SHORT.push([/^Per lui conta il ruolo.*/,()=>`${ic2('cap',13)} Per lui conta il ruolo: capitano = chiede meno · ${ic2('warn',12)} promessa non mantenuta → scontento`]);
+/* ============================================================
+   ALLENAMENTO e STAFF: altre icone
+   ============================================================ */
+const STAT_IC={SAL:'montagna',PIA:'passista',CRO:'crono',VOL:'velocista',RES:'battery',REC:'clockw'};
+const _renderTrainP3=renderTrain;
+renderTrain=function(){_renderTrainP3();const v=$('#view');
+ v.querySelectorAll('.chip.u23').forEach(c=>{const m=c.textContent.trim().match(/^(SAL|PIA|CRO|VOL|RES|REC)\s*([+−-]\d+)$/);if(m&&!c.querySelector('svg')){c.title=m[1];c.innerHTML=`${ic2(STAT_IC[m[1]],11)} ${m[1]} ${m[2]}`}});
+ v.querySelectorAll('tr.th td').forEach(td=>{const k=td.textContent.trim();if(k==='Giorno')td.innerHTML=ic2('calendar',12);else if(k==='Seduta')td.innerHTML=ic2('bike',12);else if(k==='Effetto')td.innerHTML=ic2('chart',12);else if(k==='Località')td.innerHTML=`${ic2('alt',12)} Località`;else if(k==='Ritiro')td.innerHTML=`${ic2('alt',12)} Ritiro`});
+ v.querySelectorAll('.eyebrow').forEach(e=>{if(/picco/.test(e.textContent)&&!e.querySelector('svg'))e.innerHTML=`${ic2('chart',11)} picco +1–3 sett.`});
+ v.querySelectorAll('select.tsel[data-tr] option').forEach(o=>{const k=o.value;if(TR_IC[k]&&!o.dataset.i){o.dataset.i='1'}})};
+const _campSheetP3=campSheet;
+campSheet=function(){_campSheetP3();const s=$('#sheet');if(!s||!CAMPSEL)return;const L=CAMPS.find(x=>x.id===CAMPSEL.loc);
+ const eb=s.querySelector('.ph .eyebrow');if(eb&&!eb.querySelector('svg'))eb.innerHTML=`${ic2('alt',12)} Ritiro · ${L.alt} m`;
+ const sub=s.querySelector('.ph .note');if(sub&&!sub.dataset.ci){sub.dataset.ci='1';sub.innerHTML=`<span class="mkstat"><span class="kc">${ic('base',12)}<b>${esc(L.place)}</b></span><span class="kc" title="Costo a corridore a settimana">${ic2('euro',12)}<b>${eurk(L.cost)}</b>/sett.</span></span>`}
+ s.querySelectorAll('[data-act="campweeks"]').forEach(b=>{if(!b.querySelector('svg'))b.insertAdjacentHTML('afterbegin',ic2('calendar',12)+' ')});
+ const to=CAMPSEL.from+CAMPSEL.weeks-1;
+ s.querySelectorAll('.pb .note').forEach(n=>{const t=n.textContent.trim();if(/^Rientro il/.test(t)&&!n.dataset.ci){n.dataset.ci='1';n.outerHTML=`<div class="mkstat"><span class="kc" title="Rientro">${ic2('go',12)}<b>${weekLab(to+1)}</b></span><span class="kc" title="Picco di forma">${ic2('chart',12)}<b>${weekLab(to+2)}–${weekLab(to+4)}</b></span>${CAMPSEL.weeks===3?`<span class="kc pos" title="Tre settimane: effetto più forte">${ic2('svil',12)}<b>+</b></span>`:''}</div>`}
+  else if(/^\d+ corridori × \d+ settimane/.test(t)&&!n.dataset.ci){n.dataset.ci='1';n.innerHTML=`${ic('team',12)} ${CAMPSEL.ids.size} × ${ic2('calendar',12)} ${CAMPSEL.weeks} × ${ic2('euro',12)} ${eurk(L.cost)}`}});
+ s.querySelectorAll('.pf .note').forEach(n=>{if(/Max 8/.test(n.textContent))n.innerHTML=`${ic('team',12)} ${CAMPSEL.ids.size}/8`});
+ s.querySelectorAll('td.tm').forEach(td=>{if(/cresce$/.test(td.textContent.trim()))td.title='In crescita: il ritiro rende di più'})};
+const _renderStaffP3=renderStaff;
+renderStaff=function(){_renderStaffP3();const v=$('#view');
+ v.querySelectorAll('tr.th td').forEach(td=>{const k=td.textContent.trim();if(k==='Ruolo')td.innerHTML=`${ic('staff',12)} Ruolo`;else if(k==='Nome')td.innerHTML=`${ic('team',12)} Nome`;else if(k==='Età')td.innerHTML=ic2('calendar',12)});
+ v.querySelectorAll('td .pc > span > .tm, td .pc .tm').forEach(t=>{if(t.dataset.si||t.querySelector('svg'))return;const x=t.textContent.trim();if(x&&!/libero/.test(x)&&x.length>6){t.dataset.si='1';t.insertAdjacentHTML('afterbegin',ic2('info',10)+' ')}});
+ v.querySelectorAll('td.r.hm.pos, td.r.hm.neg').forEach(td=>{if(!td.querySelector('svg'))td.insertAdjacentHTML('afterbegin',ic2(td.classList.contains('pos')?'go':'warn',11)+' ')});
+ const h=[...v.querySelectorAll('h2')].find(x=>/Sul mercato/.test(x.textContent));if(h){const s=h.parentElement.querySelector('.eyebrow');if(s&&!s.querySelector('svg'))s.insertAdjacentHTML('afterbegin',ic2('euro',11)+' ')}};

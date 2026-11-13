@@ -362,3 +362,23 @@ renderPalm=function(){_renderPalmP3();const v=$('#view');
  v.querySelectorAll('.sec-h .eyebrow').forEach(e=>{if(/carriera/i.test(e.textContent)&&!e.querySelector('svg'))e.innerHTML=`${ic2('calendar',11)} carriera`});
  v.querySelectorAll('tr.wkr td').forEach(td=>{if(!td.dataset.pi){td.dataset.pi='1';td.insertAdjacentHTML('afterbegin',ic2('calendar',11)+' ')}});
  v.querySelectorAll('.eyebrow').forEach(e=>{if(/^\d{4}$/.test(e.textContent.trim())&&!e.dataset.pi){e.dataset.pi='1'}})};
+/* ============================================================
+   HOME e POSTA: ultime icone
+   ============================================================ */
+trainMini=function(){const T=trainState(),racing=teamRacingWeek(G.week);
+ return`<button class="dashrow" data-act="gotrain">${ic2('bike',18)}<span><b>Allenamento</b> ${racing?`<span class="tm">${ic2('flag',12)} gara</span>`:`<span class="pc" style="display:inline-flex;gap:4px">${['s1','s2'].map(k=>`<span class="stic on" title="${esc(TRAIN[T[k]].lab)}">${ic2(TR_IC[T[k]]||'bike',13)}</span>`).join('')}<span class="tm">${esc(TRAIN[T.s1].lab)} · ${esc(TRAIN[T.s2].lab)}</span></span>`}</span><span class="go">›</span></button>`};
+const _renderHomeP3c=renderHome;
+renderHome=function(){_renderHomeP3c();const v=$('#view');
+ v.querySelectorAll('.banner[data-act="tab"][data-v="spon"]').forEach(b=>{const m=b.textContent.match(/(\d+)/);if(m&&!b.dataset.hi){b.dataset.hi='1';b.classList.add('sideban');b.innerHTML=`${ic('spon',16)}<b class="rn1">${m[1]} propost${+m[1]>1?'e':'a'} sponsor</b><span class="badge2">${m[1]}</span><span class="go">›</span>`}});
+ v.querySelectorAll('.banner').forEach(b=>{if(b.dataset.hi||b.dataset.act==='side'||b.classList.contains('nat'))return;const t=b.textContent.trim();let m;if((m=t.match(/^Premiazioni (\d{4}): (\d+) copp/))){b.dataset.hi='1';b.innerHTML=`${trophySvg('#D4A017',18)}<b>Premiazioni ${m[1]}</b><span class="kc">${ic2('trophy',12)}<b>${m[2]}</b></span><span class="go">›</span>`;b.classList.add('sideban')}});
+ /* pacchetto di gare: intestazioni a icone, descrizioni nel suggerimento */
+ const H={'Corse':ic('cal',12),'Giorni':ic2('bike',12),'Costo':ic2('euro',12),'Terreni':ic2('montagna',12),'Corse principali':ic2('trophy',12),'Pacchetto':`${ic2('contract',12)} Pacchetto`};
+ v.querySelectorAll('.pkhero tr.th td').forEach(td=>{const k=td.textContent.trim();if(H[k]&&!td.querySelector('svg')){td.title=k;td.innerHTML=H[k]}});
+ v.querySelectorAll('.pkhero tr[data-act="pkpick"] td:first-child .tm').forEach(d=>{const td=d.closest('td');td.title=d.textContent;d.remove()});
+};
+const _renderMailP3=renderMail;
+renderMail=function(){_renderMailP3();const v=$('#view');
+ v.querySelectorAll('.mailt2 tr[data-act="mailsel"]').forEach(tr=>{const l=tr.lastElementChild;if(l&&l.classList.contains('hs'))l.remove()});
+ v.querySelectorAll('.mailt2 tr.wkr td').forEach(td=>{td.colSpan=2;if(!td.querySelector('svg'))td.insertAdjacentHTML('afterbegin',ic2(/Questa/.test(td.textContent)?'flag':'calendar',11)+' ')});
+ const ms=[...v.querySelectorAll('.sec-h h3')].find(h=>/Messaggi|Tutto/.test(h.textContent));if(ms){const e=ms.parentElement.querySelector('.eyebrow');if(e&&!e.querySelector('svg'))e.innerHTML=`${ic('mail',11)} ${e.textContent}`}
+ const mr=v.querySelector('.mailread .mrh .tm');if(mr&&!mr.querySelector('svg'))mr.insertAdjacentHTML('afterbegin',ic2('calendar',11)+' ')};

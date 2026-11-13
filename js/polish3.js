@@ -345,3 +345,20 @@ function grpIcons(root){if(!root)return;
 const _renderTrackConvP3=renderTrackConv;
 renderTrackConv=function(){_renderTrackConvP3();const s=$('#sheet');if(!s)return;
  s.querySelectorAll('button.tkc.best').forEach(b=>{if(!b.title)b.title='Tra i migliori per questa specialità'})};
+/* ============================================================
+   CLASSIFICA e PALMARÈS: ultime icone
+   ============================================================ */
+const _renderRankP3=renderRank;
+renderRank=function(){_renderRankP3();const v=$('#view');
+ const TC={wt:'tierc wt',pro:'tierc pro',conti:'tierc ct'},TL={wt:'WT',pro:'PRO',conti:'CT'};
+ v.querySelectorAll('.fchip[data-act="rankf"]').forEach(b=>{const k=b.dataset.v;if(b.dataset.ri)return;b.dataset.ri='1';if(TC[k])b.innerHTML=`<span class="${TC[k]}">${TL[k]}</span> ${b.textContent.trim()}`;else if(k==='all')b.innerHTML=`${ic2('chart',13)} Tutte`});
+ v.querySelectorAll('[data-act="rkscope"]').forEach(b=>{if(b.querySelector('svg'))return;b.insertAdjacentHTML('afterbegin',(b.dataset.v==='all'?ic('team',12):ic2('flag',12))+' ')});
+ v.querySelectorAll('[data-act="rkside"]').forEach(b=>{if(b.querySelector('svg'))return;b.insertAdjacentHTML('afterbegin',ic('team',12)+' ')});
+ v.querySelectorAll('tr.th td').forEach(td=>{const k=td.textContent.trim();if(k==='Squadra'&&!td.querySelector('svg'))td.innerHTML=`${ic('team',12)} Squadra`;else if(k==='Corridore'&&!td.querySelector('svg'))td.innerHTML=`${ic2('bike',12)} Corridore`});
+};
+const _renderPalmP3=renderPalm;
+renderPalm=function(){_renderPalmP3();const v=$('#view');
+ v.querySelectorAll('tr.th td').forEach(td=>{const k=td.textContent.trim();if(td.querySelector('svg'))return;if(k==='Categoria'){td.title=k;td.innerHTML=ic2('contract',12)}else if(k==='Punti'){td.title=k;td.innerHTML=ic2('chart',12)}else if(k==='Corridore')td.innerHTML=`${ic2('bike',12)} Corridore`;else if(k==='Migliore'){td.title='Miglior piazzamento';td.innerHTML=ic2('finish',12)}else if(k==='10'){td.title='Top 10';td.innerHTML=`${ic2('chart',11)}10`}});
+ v.querySelectorAll('.sec-h .eyebrow').forEach(e=>{if(/carriera/i.test(e.textContent)&&!e.querySelector('svg'))e.innerHTML=`${ic2('calendar',11)} carriera`});
+ v.querySelectorAll('tr.wkr td').forEach(td=>{if(!td.dataset.pi){td.dataset.pi='1';td.insertAdjacentHTML('afterbegin',ic2('calendar',11)+' ')}});
+ v.querySelectorAll('.eyebrow').forEach(e=>{if(/^\d{4}$/.test(e.textContent.trim())&&!e.dataset.pi){e.dataset.pi='1'}})};

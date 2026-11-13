@@ -234,3 +234,36 @@ renderTactic=function(){_renderTacticP3();const s=$('#sheet');if(!s)return;
  s.querySelectorAll('tr.th td').forEach(td=>{const k=td.textContent.trim();if(H[k]){td.title=k;td.innerHTML=H[k]}});
  s.querySelectorAll('.t.tac select.tsel').forEach(sl=>{if(sl.previousElementSibling&&sl.previousElementSibling.classList&&sl.previousElementSibling.classList.contains('selic'))return;sl.insertAdjacentHTML('beforebegin',`<span class="selic tm">${ic2('clockw',12)}</span>`)});
 };
+/* ============================================================
+   OFFERTE RICEVUTE e RINNOVI: icone e stato chiaro
+   ============================================================ */
+const _bidsListP3=bidsList;
+bidsList=function(){
+ let h=_bidsListP3();
+ const H={'Indennizzo':ic2('euro',12),'Ingaggio':ic2('contract',12),'Scade':ic2('clockw',12),'Squadra':ic('team',12),'Prezzo':ic2('euro',12)};
+ h=h.replace(/<td class="([^"]*)">(Indennizzo|Ingaggio|Scade|Squadra|Prezzo)<\/td>/g,(m,c,k)=>`<td class="${c}" title="${k}">${H[k]}</td>`);
+ h=h.replace(/(\d+) sett\.<\/td>/g,`${ic2('clockw',11)} $1</td>`).replace(/<span class="tm">ora (€[\w.,]+)<\/span>/g,`<span class="tm" title="Ingaggio attuale">${ic2('go',10)} da $1</span>`);
+ h=h.replace(/data-act="bidup" data-v="([^"]+)">\+(\d+)%/g,`data-act="bidup" data-v="$1" title="Chiedi di più">${ic2('chart',11)} +$2%`);
+ return h;
+};
+const _mkTableP3=mkTable;
+mkTable=function(list){
+ if(!(G.mk&&G.mk.sub==='renew'))return _mkTableP3(list);
+ if(!list.length)return`<div class="note">${ic('check',13)} Nessun contratto in scadenza.</div>`;
+ const py=r=>typeof prefYears==='function'?prefYears(r):2;
+ return DT(TH([['','r'],['Corridore'],[ic2('calendar',12),'r'],['','c'],[ic2('contract',12),'r'],['Rinnovo','r'],['','r']]),list.map(r=>{
+  const st=r.leavingTo?`<span class="pc neg" title="Ha firmato altrove">${ic2('go',12)}${tJer(TEAM(r.leavingTo),14)}<b>${esc(TEAM(r.leavingTo).short)}</b></span>`:r.renewed?`<span class="pc pos" title="Rinnovato fino al ${r.cEnd}">${ic('check',13)}<b>${eurk(r.nextSal)}</b><span class="tm">${r.cEnd}</span></span>`:`<span class="pc" title="Richiesta del procuratore">${ic2('euro',12)}<b>~${eurk(askSal(r,'renew',py(r)))}</b><span class="tm">${py(r)}a</span></span>`;
+  const act=!r.leavingTo&&!r.renewed?`<button class="btn primary sm" data-act="neg" data-v="${r.id}" title="Rinnova">${ic2('contract',13)}</button>`:'';
+  return`<tr data-act="rider" data-v="${r.id}"><td class="r"><b class="ov ${ovr(r)>=75?'hi':''}">${ovr(r)}</b></td><td>${personCell(r)} ${roleIc(r,13)}</td><td class="r tm">${r.age}</td><td class="c" title="Morale">${moodIc(r,15)}</td><td class="r">${eurk(r.sal)}</td><td class="r nowrap">${st}</td><td class="r">${act}</td></tr>`}).join(''),'renewt');
+};
+document.addEventListener('click',e=>{const b=e.target.closest('.renewt [data-act="neg"]');if(b)e.stopPropagation()},true);
+document.addEventListener('click',e=>{const b=e.target.closest('.renewt [data-act="neg"]');if(b&&G)openNeg(b.dataset.v)},true);
+/* proposte sponsor: scheda con icone */
+const _sponsorSheetP3o=sponsorSheet;
+sponsorSheet=function(id){_sponsorSheetP3o(id);const s=$('#sheet'),sp=SP(id);if(!s||!sp)return;
+ const sub=s.querySelector('.ph .note');if(sub&&!sub.dataset.oi){sub.dataset.oi='1';sub.innerHTML=`<span class="mkstat"><span class="kc">${ic('base',12)}<b>${esc(sp.city)}</b></span><span class="kc" title="Distanza dalla sede">${ic2('go',12)}<b>${spDist(sp)}</b> km</span></span>`}
+ s.querySelectorAll('.pb > div .note, .pb .note').forEach(n=>{if(n.dataset.oi)return;const t=n.textContent.trim();if(/^Azienda/.test(t)&&t.length>40){n.dataset.oi='1';n.innerHTML=`${ic2('info',12)} ${esc(t.split(':')[0])}`}});
+ const o=G.offers.find(x=>x.sid===id);
+ if(o&&!s.querySelector('.offact')){const pf=s.querySelector('.pf .wrap');if(pf)pf.insertAdjacentHTML('afterbegin',`<span class="offact mkstat" style="margin-right:auto">${o.renew?`<span class="kc">${ic2('contract',12)}<b>Rinnovo</b></span>`:''}<span class="kc">${slotIc(o.slot,12)}<b>${eurk(o.amount)}</b>/anno</span><span class="kc">${ic2('calendar',12)}<b>${o.years}</b></span>${o.pen?`<span class="kc neg" title="Penale: ${esc(o.obj.txt)}">${ic2('warn',12)}<b>${eurk(o.pen)}</b></span>`:''}</span><button class="btn ghost" data-act="offno" data-v="${o.id}">${ic2('elim',14)} No</button><button class="btn primary" data-act="offyes" data-v="${o.id}">${ic('check',14)} Accetta</button>`)}};
+document.addEventListener('click',e=>{const t=e.target.closest('#sheet .offact ~ [data-act="offyes"], #sheet .offact ~ [data-act="offno"]');if(t)setTimeout(()=>{if(G)closeSheet()},0)});
+NOTE_SHORT.push([/^Per lui conta il ruolo.*/,()=>`${ic2('cap',13)} Per lui conta il ruolo: capitano = chiede meno · ${ic2('warn',12)} promessa non mantenuta → scontento`]);

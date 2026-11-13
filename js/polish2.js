@@ -84,7 +84,8 @@ renderTrain=function(){
  $('#view').innerHTML=`<div class="basegrid"><div class="col">${trainCard()}</div><div class="col"><div class="sec-h"><h3>${ic2('alt',16)} Ritiri in altura</h3><span class="eyebrow">picco 1–3 sett. dopo</span></div>${avail}${mine?`<div class="sec-h" style="margin-top:10px"><h3>${ic2('alt',15)} I tuoi ritiri</h3></div>${mine}`:''}</div></div>`;
 };
 /* ---------- menu iniziale ---------- */
-const MENU_IC=[[/Nuova partita/i,'go'],[/Continua/i,'bike'],[/Come si gioca/i,'info'],[/Impostazioni/i,'staff'],[/Cancella/i,'elim']];
+IC2.gear='<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/>';
+const MENU_IC=[[/Nuova partita/i,'go'],[/Continua/i,'bike'],[/Come si gioca/i,'info'],[/Impostazioni/i,'gear'],[/Cancella/i,'elim']];
 new MutationObserver(()=>{document.querySelectorAll('.menu button:not([data-ic]), .mbtn:not([data-ic])').forEach(b=>{b.dataset.ic='1';const h=b.querySelector('b,strong,h3,span')||b;const m=MENU_IC.find(([re])=>re.test(b.textContent));if(m&&!b.querySelector('svg'))h.insertAdjacentHTML('afterbegin',icx(m[1],18)+' ')})}).observe(document.body,{childList:true,subtree:true});
 /* Palmarès: la sottoriga "21 anni · 0 V nel 2027" ripete le colonne */
 const _renderPalmP2=renderPalm;renderPalm=function(){_renderPalmP2();setTimeout(()=>document.querySelectorAll('#view .tm').forEach(x=>{if(/^\d+ anni · \d+ V nel \d{4}$/.test(x.textContent.trim()))x.remove()}),0)};

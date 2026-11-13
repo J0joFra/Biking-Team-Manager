@@ -93,3 +93,36 @@ if(G)render();
 /* ---------- gara dal vivo: capitano e seconda punta a icona ---------- */
 const _renderMineP3=renderMine;
 renderMine=function(full){_renderMineP3(full);document.querySelectorAll('#mine .l1 .chip:not([data-ic])').forEach(c=>{c.dataset.ic='1';const t=c.textContent.trim();c.title=t;c.classList.add('chico');c.innerHTML=ic2('cap',12)+(/Seconda/.test(t)?'2':'')})};
+/* ============================================================
+   MENU INIZIALE, IMPOSTAZIONI, GUIDA E NUOVA PARTITA: icone
+   ============================================================ */
+IC2.sun='<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>';
+IC2.moon='<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>';
+IC2.screen='<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>';
+IC2.save='<path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h7V3M8 14h8v7H8z"/>';
+/* pulsanti del menu: icona a sinistra in un riquadro colorato */
+new MutationObserver(()=>{document.querySelectorAll('.mbtn:not([data-mi])').forEach(b=>{b.dataset.mi='1';const s=b.querySelector(':scope > span svg');if(!s)return;const w=document.createElement('span');w.className='mico';w.appendChild(s);b.insertBefore(w,b.firstChild)})}).observe(document.body,{childList:true,subtree:true});
+/* impostazioni */
+settingsSheet=function(){
+ const t=applyTheme();
+ const th=[['system','screen','Sistema'],['light','sun','Chiaro'],['dark','moon','Scuro']];
+ openSheet(sheetHead(`${ic2('gear',12)} Impostazioni`,'Preferenze')+`<div class="pb wrap stack">
+  ${DT('',`<tr><td><span class="pc"><span class="stic on">${ic2(th.find(x=>x[0]===t)[1],15)}</span><b>Tema</b></span></td><td class="r"><div class="seg sm">${th.map(([k,i,l])=>`<button data-act="mtheme" data-v="${k}" aria-pressed="${t===k}" title="${l}">${ic2(i,14)} ${l}</button>`).join('')}</div></td></tr>
+  <tr><td><span class="pc"><span class="stic on">${ic2('save',15)}</span><b>Salvataggio</b></span></td><td class="r"><span class="chip u23">${ic('check',11)} automatico</span></td></tr>
+  ${G?`<tr><td><span class="pc">${typeof myJersey==='function'?myJersey(22):''}<b>${esc(G.name)}</b><span class="chip">${CAT[G.cat].lab}</span><span class="tm">${ic2('calendar',11)} ${SEASON}</span></span></td><td class="r"><button class="btn ghost sm" data-act="mdel" title="Cancella la partita">${ic2('elim',14)} Cancella</button></td></tr>`:''}`,'sett')}
+ </div><div class="pf"><div class="wrap fr"><button class="btn primary" data-act="close">${ic('check',15)} Chiudi</button></div></div>`);
+};
+/* guida: icona per ogni tema */
+const GUIDE_IC=[[/settimana/i,'calendar'],[/^Le corse/i,'flag'],[/In corsa/i,'bike'],[/^La squadra/i,'team'],[/Soldi|sponsor/i,'spon'],[/Mercato/i,'market'],[/maschile e femminile/i,'team']];
+const _helpSheetP3=helpSheet;
+helpSheet=function(){_helpSheetP3();const s=$('#sheet');if(!s)return;const eb=s.querySelector('.ph .eyebrow');if(eb&&!eb.querySelector('svg'))eb.insertAdjacentHTML('afterbegin',ic2('info',12)+' ');
+ s.querySelectorAll('td.gk b').forEach(b=>{if(b.querySelector('svg'))return;const m=GUIDE_IC.find(([re])=>re.test(b.textContent));if(m)b.insertAdjacentHTML('afterbegin',`<span class="stic on">${icx(m[1],14)}</span> `)});
+ s.querySelectorAll('tr.th td').forEach(td=>{if(td.textContent.trim()==='Tema')td.innerHTML=ic2('info',12);else if(td.textContent.trim()==='Come funziona')td.textContent=''})};
+/* nuova partita: etichette a icone, note in breve */
+Object.assign(LAB_IC,{'Nome della squadra':'contract','Sede della squadra':'base','Maglia':'team','Squadra':'team','Tema':'sun','Salvataggio':'save'});
+const _renderIntroP3=renderIntro;
+renderIntro=function(){_renderIntroP3();const v=$('#view');
+ const ul=v.querySelector('.intro ul.note');if(ul)ul.outerHTML=`<div class="introtips">${[['flag','Continental e U23 subito · ProSeries su invito'],['euro','Ogni corsa: iscrizione + trasferta'],['spon','Sponsor dal territorio, poi dall\'Italia e dall\'estero'],['save','Salvataggio automatico']].map(([i,t])=>`<span class="kc">${icx(i,13)} ${t}</span>`).join('')}</div>`;
+ v.querySelectorAll('.intro .field .note').forEach(n=>{if(/sponsor vicini/.test(n.textContent))n.innerHTML=`${ic('spon',12)} Sponsor più propensi vicino alla sede`});
+ v.querySelectorAll('.intro label.eyebrow, .intro span.eyebrow').forEach(e=>{if(e.querySelector('svg'))return;const k=LAB_IC[e.textContent.trim()];if(k)e.insertAdjacentHTML('afterbegin',icx(k,12)+' ')});
+ const st=v.querySelector('[data-act="start"]');if(st&&!st.querySelector('svg'))st.insertAdjacentHTML('afterbegin',ic2('go',16)+' ')};

@@ -293,3 +293,40 @@ renderStaff=function(){_renderStaffP3();const v=$('#view');
  v.querySelectorAll('td .pc > span > .tm, td .pc .tm').forEach(t=>{if(t.dataset.si||t.querySelector('svg'))return;const x=t.textContent.trim();if(x&&!/libero/.test(x)&&x.length>6){t.dataset.si='1';t.insertAdjacentHTML('afterbegin',ic2('info',10)+' ')}});
  v.querySelectorAll('td.r.hm.pos, td.r.hm.neg').forEach(td=>{if(!td.querySelector('svg'))td.insertAdjacentHTML('afterbegin',ic2(td.classList.contains('pos')?'go':'warn',11)+' ')});
  const h=[...v.querySelectorAll('h2')].find(x=>/Sul mercato/.test(x.textContent));if(h){const s=h.parentElement.querySelector('.eyebrow');if(s&&!s.querySelector('svg'))s.insertAdjacentHTML('afterbegin',ic2('euro',11)+' ')}};
+/* ============================================================
+   SCUOLA JUNIORES e NAZIONALE: icone
+   ============================================================ */
+const jrRow=(name,pos,me)=>{const r=riderByName(name);return`<tr class="${me?'me':''}" ${r?`data-act="rider" data-v="${r.id}"`:''}><td class="n">${pos>=999?`<span class="tm">${ic2('injury',12)}</span>`:pos<=3?medalOf(pos):pos}</td><td>${r?personCell(r):esc(name)}</td></tr>`};
+jrHero=function(race){const js=acadJuniors();
+ return`<div class="herorace"><div style="min-width:0"><div class="eyebrow">${ic2('svil',12)} Scuola juniores</div><div class="rline">${flagSvg(race.ctry,18)}<b class="rn1">${esc(race.name)}</b><span class="chip cls">${race.lab}</span>${typeIc(race.stages[0].t,14)}</div>
+  <div class="mkstat" style="margin-top:6px">${js.map(r=>`<span class="kc" data-act="rider" data-v="${r.id}">${avatar(r,18)}<b>${shortSur(r.name)}</b></span>`).join('')}</div>
+  <div class="note">${ic2('bike',12)} dal vivo: ${ic2('speed',12)} +3% e ${ic2('svil',12)} più crescita</div></div>
+  <div class="row"><button class="btn sm" data-act="jrgo" data-v="${race.id}" data-m="skip">${ic2('ffwd',14)} Salta</button><button class="btn primary sm" data-act="jrgo" data-v="${race.id}" data-m="live">${ic2('bike',14)} Dal vivo</button></div></div>`};
+jrFinalSheet=function(RC){const R=RC.race.result;
+ openSheet(sheetHead(`${ic2('svil',12)} Gara juniores`,`${flagSvg(RC.race.ctry,18)} ${esc(RC.race.name)}`,R.winner?`${ic2('trophy',12)} <b>${esc(R.winner)}</b> · ${esc(R.winnerTeam||'')}`:'')+
+ `<div class="pb wrap"><div class="negbox"><div><div class="sec-h"><h3>${ic2('svil',15)} I ragazzi</h3>${RC.watched?`<span class="chip u23" title="Seguiti dal vivo: più motivati, più crescita">${ic2('bike',11)} ${ic2('svil',11)}+</span>`:''}</div>${DT('',R.junior.map(j=>jrRow(j.name,j.pos,true)).join(''))}</div>
+ <div><div class="sec-h"><h3>${ic2('finish',15)} Ordine d'arrivo</h3></div>${DT('',(R.top||[]).map((x,i)=>{const r=RID(x.id);return`<tr class="${x.team==='Scuola'?'me':''}"><td class="n">${i<3?medalOf(i+1):i+1}</td><td>${r?personCell(r):esc(x.name)}</td><td class="r">${i===0?fmtT(x.t):fmtGap(x.t-R.top[0].t)}</td></tr>`}).join(''))}</div></div></div>
+ <div class="pf"><div class="wrap fr"><button class="btn primary" data-act="close">${ic2('go',15)} Continua</button></div></div>`,'wide')};
+const _promoteSheetP3=promoteSheet;
+promoteSheet=function(id){_promoteSheetP3(id);const s=$('#sheet'),r=RID(id);if(!s||!r)return;
+ const eb=s.querySelector('.ph .eyebrow');if(eb&&!eb.querySelector('svg'))eb.insertAdjacentHTML('afterbegin',ic2('svil',12)+' ');
+ const sub=s.querySelector('.ph .note');if(sub)sub.innerHTML=`<span class="mkstat"><span class="kc">${avatar(r,16)}${flagSvg(r.nat,13)}<b>${r.age}</b></span><span class="kc" title="Arriva in squadra">${ic2('go',12)}<b>${SEASON+1}</b> Rookie</span><span class="kc">${ic2('svil',12)}<b>${SEASON+2}</b> U23</span></span>`;
+ s.querySelectorAll('.pb .note').forEach(n=>{const m=n.textContent.match(/Contratto di (\d) anni fino al (\d{4})/);if(m)n.innerHTML=`<span class="mkstat"><span class="kc">${ic2('contract',12)}<b>${m[1]}</b> anni</span><span class="kc">${ic2('calendar',12)}<b>${m[2]}</b></span><span class="kc pos">${ic('check',12)} senza trattativa</span></span>`});
+ const ok=s.querySelector('[data-act="promoteok"]');if(ok&&!ok.querySelector('svg'))ok.insertAdjacentHTML('afterbegin',ic2('contract',14)+' ');
+ const rl=s.querySelector('[data-act="jrrelease"]');if(rl&&!rl.querySelector('svg'))rl.insertAdjacentHTML('afterbegin',ic2('elim',14)+' ')};
+callupBanner=function(){const P=pendingCallups(),n=P.length;return n?`<button class="banner nat sideban" data-act="callups"><span class="chip amber">${ic2('flag',11)}</span>${ic2('trophy',14)}<b class="rn1">${n} convocazion${n>1?'i':'e'} in nazionale</b>${P.slice(0,4).map(c=>{const r=RID(c.rid);return r?`${avatar(r,18)}${flagSvg(r.nat,12)}`:''}).join('')}<span class="go">›</span></button>`:''};
+/* scheda corsa: juniores e nazionali */
+const _raceSheetP3n=raceSheet;
+raceSheet=function(id){const o=_raceSheetP3n(id);const r=G.races.find(x=>x.id===id),s=$('#sheet');if(!r||!s)return o;
+ if(r.tier==='jun'&&r.result&&r.result.junior){const tb=s.querySelector('.rsside .card.tbl, .rsside table');if(tb){const box=tb.closest('.card.tbl')||tb;box.outerHTML=`<div class="sec-h"><h3>${ic2('svil',15)} I ragazzi</h3></div>`+DT('',r.result.junior.map(j=>jrRow(j.name,j.pos,true)).join(''))}}
+ if(r.tier==='naz'){const ce=[...s.querySelectorAll('.rsside .eyebrow')].find(e=>/Costi/.test(e.textContent));if(ce)ce.closest('.card').remove();const cs=(G.callups||[]).filter(c=>c.keys.includes(r.key)&&RID(c.rid));const n=[...s.querySelectorAll('.note')].find(x=>/convocato|rifiutata|in attesa/.test(x.textContent));
+  if(n&&cs.length)n.outerHTML=`<div class="sec-h" style="margin-top:6px"><h3>${ic2('flag',14)} Convocati</h3></div>`+DT('',cs.map(c=>{const rr=RID(c.rid);return`<tr data-act="rider" data-v="${rr.id}"><td>${personCell(rr)}</td><td class="r"><span class="chip ${c.status==='accepted'?'u23':c.status==='declined'?'red':'amber'}">${c.status==='accepted'?ic('check',11):c.status==='declined'?ic2('elim',11):ic2('clockw',11)}</span></td></tr>`}).join(''))}
+ return o};
+const _callupSheetP3=callupSheet;
+callupSheet=function(){_callupSheetP3();const s=$('#sheet');if(!s)return;
+ const eb=s.querySelector('.ph .eyebrow');if(eb&&!eb.querySelector('svg'))eb.innerHTML=`${ic2('flag',12)} Federazioni`;
+ const h=s.querySelector('.ph h2');if(h&&!h.querySelector('svg'))h.insertAdjacentHTML('afterbegin',ic2('trophy',18)+' ');
+ const H={'Corridore':`${ic('team',12)} Corridore`,'Corse':ic2('trophy',12),'Periodo':ic2('calendar',12)};
+ s.querySelectorAll('tr.th td').forEach(td=>{const k=td.textContent.trim();if(H[k]){td.title=k;td.innerHTML=H[k]}});
+ s.querySelectorAll('.chip.u23, .chip.red').forEach(c=>{const t=c.textContent.trim();if(t==='Convocato'&&!c.querySelector('svg'))c.innerHTML=`${ic('check',11)} Convocato`;else if(t==='Rifiutata'&&!c.querySelector('svg'))c.innerHTML=`${ic2('elim',11)} Rifiutata`});
+ const cl=s.querySelector('.pf [data-act="close"]');if(cl&&!cl.querySelector('svg'))cl.insertAdjacentHTML('afterbegin',ic('check',14)+' ')};

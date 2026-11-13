@@ -126,3 +126,53 @@ renderIntro=function(){_renderIntroP3();const v=$('#view');
  v.querySelectorAll('.intro .field .note').forEach(n=>{if(/sponsor vicini/.test(n.textContent))n.innerHTML=`${ic('spon',12)} Sponsor più propensi vicino alla sede`});
  v.querySelectorAll('.intro label.eyebrow, .intro span.eyebrow').forEach(e=>{if(e.querySelector('svg'))return;const k=LAB_IC[e.textContent.trim()];if(k)e.insertAdjacentHTML('afterbegin',icx(k,12)+' ')});
  const st=v.querySelector('[data-act="start"]');if(st&&!st.querySelector('svg'))st.insertAdjacentHTML('afterbegin',ic2('go',16)+' ')};
+/* ============================================================
+   SCHEDA CORRIDORE: icone ovunque
+   ============================================================ */
+const ROLE_K_IC=k=>k==='cap'||k==='luog'?'cap':k==='free'?'free':k==='svil'?'svil':'gregario';
+const raceByName=n=>G.races.find(x=>x.name===n);
+const _riderSheetP3b=riderSheet;
+riderSheet=function(id){
+ _riderSheetP3b(id);const r=RID(id),s=$('#sheet');if(!r||!s)return;
+ /* intestazione */
+ const eb=s.querySelector('.ph .eyebrow');if(eb&&!eb.dataset.ri){eb.dataset.ri='1';eb.innerHTML=`${archIc(r,12)} ${eb.innerHTML}${r.team==='t0'&&r.role&&ROLES[r.role]?` · ${ic2(ROLE_K_IC(r.role),11)} ${ROLES[r.role].lab}`:''}`}
+ const sub=s.querySelector('.ph .note');const t=G.teams.find(x=>x.id===r.team);
+ if(sub&&!sub.dataset.ri){sub.dataset.ri='1';sub.innerHTML=`<span class="mkstat"><span class="kc" title="Età">${ic2('calendar',12)}<b>${r.age}</b></span><span class="kc" title="${esc(COUNTRY[r.nat]||r.nat)}">${flagSvg(r.nat,14)}<b>${r.nat}</b></span>${t?`<span class="kc">${tJer(t,14)}<b>${esc(t.id==='t0'?G.name:t.name)}</b></span>`:r.team==='acad'?`<span class="kc">${ic2('svil',12)}<b>Scuola juniores</b></span>`:r.team==='fa'?`<span class="kc">${ic2('free',12)}<b>Svincolato</b></span>`:''}</span>`}
+ /* carriera */
+ s.querySelectorAll('table.car').forEach(tb=>{const H={'Anno':ic2('calendar',11),'Val.':ic2('cap',11),'Gg':ic2('calendar',11)+' gg','V':ic2('trophy',11),'Punti':ic2('chart',11),'UCI':'UCI'};
+  tb.querySelectorAll('tr.th td').forEach(td=>{const k=td.textContent.trim();if(H[k]){td.title=k;td.innerHTML=H[k]}});
+  tb.querySelectorAll('tr:not(.th)').forEach(tr=>{const c=tr.children[1];if(!c||c.querySelector('svg'))return;const sh=c.childNodes[0]&&c.childNodes[0].textContent.trim(),tt=G.teams.find(x=>x.short===sh)||(sh===ME().short?ME():null);if(tt)c.insertAdjacentHTML('afterbegin',tJer(tt,14)+' ')})});
+ const xp=s.querySelector('.xpline .eyebrow');if(xp&&!xp.querySelector('svg'))xp.insertAdjacentHTML('afterbegin',ic2('svil',11)+' ');
+ /* umore, promessa e mercato */
+ if(r.team==='t0'){const ce=[...s.querySelectorAll('.eyebrow')].find(e=>/Contratto/.test(e.textContent));const card=ce&&ce.parentElement;
+  const mn=card&&[...card.querySelectorAll('.note')].find(n=>n.querySelector('.cond'));
+  if(mn){const ml=moodLab(moodOf(r));mn.outerHTML=`<div class="mkstat"><span class="kc" title="Morale">${moodIc(r,14)}<b>${ml.t}</b></span>${r.promise&&PROMISE[r.promise]?`<span class="kc" title="Ruolo promesso">${ic2('cap',12)}<b>${PROMISE[r.promise]}</b>${r.promise==='cap'?`<span class="tm">${r.capN||0}/${r.myRaces||0}</span>`:''}</span>`:''}${r.listed?`<span class="kc" title="Sul mercato">${ic('market',12)}<b>${eurk(r.listed)}</b></span>`:''}</div>`}}
+ /* ruolo in squadra */
+ s.querySelectorAll('.rolepick button[data-act="setrole"]').forEach(b=>{if(!b.querySelector('svg'))b.insertAdjacentHTML('afterbegin',ic2(ROLE_K_IC(b.dataset.v),13)+' ')});
+ const rp=s.querySelector('.rolepick');if(rp){const n=rp.parentElement.querySelector(':scope > .note');if(n&&!n.dataset.ri){n.dataset.ri='1';const warn=/Attenzione/.test(n.textContent);n.innerHTML=`${ic2('info',12)} ${esc(n.textContent.replace(/\s*Attenzione:.*$/,''))}${warn?` <span class="neg">${ic2('warn',12)} promesso capitano</span>`:''}`}}
+ s.querySelectorAll('label.field > span.eyebrow').forEach(e=>{if(/Specialità/.test(e.textContent)&&!e.querySelector('svg'))e.insertAdjacentHTML('afterbegin',ic2('flag',11)+' ')});
+ /* programma individuale: nota età breve */
+ s.querySelectorAll('.note').forEach(n=>{const m=n.textContent.trim().match(/^Età (\d+): (.*)\.$/);if(m&&!n.dataset.ri){n.dataset.ri='1';const up=/molto/.test(m[2])?'svil':/buoni/.test(m[2])?'go':/poco/.test(m[2])?'clockw':'warn';n.innerHTML=`${ic2(up,12)} ${m[2]}`}});
+ /* fatica: chip */
+ const fe=[...s.querySelectorAll('.eyebrow')].find(e=>/Fatica/.test(e.textContent));
+ if(fe){const n=fe.parentElement.querySelector(':scope > .note');if(n&&!n.dataset.ri){n.dataset.ri='1';const rd=recDays(r);n.outerHTML=`<div class="mkstat" style="margin-top:6px"><span class="kc" title="Fatica">${ic2('drop',12)}<b>${Math.round(r.fat)}</b>/100</span><span class="kc" title="${rd?'Recupero completo':'Riposato'}">${ic2('clockw',12)}<b>${rd?'~'+rd+' gg':'ok'}</b></span><span class="kc" title="Giorni di corsa">${ic2('bike',12)}<b>${r.days}</b> gg</span></div>`}}
+ /* risultati della stagione: bandiera e medaglie */
+ const rh=[...s.querySelectorAll('.eyebrow')].find(e=>/^Risultati \d{4}/.test(e.textContent.trim()));
+ if(rh&&r.res&&r.res.length){const box=rh.parentElement.querySelector('.card.tbl')||rh.nextElementSibling;if(box)box.outerHTML=DT('',r.res.slice().reverse().map(x=>{const rc=raceByName(x.name);return`<tr ${rc?`data-act="race" data-v="${rc.id}"`:''}><td class="n">${x.pos?(x.pos<=3?medalOf(x.pos):x.pos+'°'):`<span class="tm">${ic2('injury',12)}</span>`}</td><td class="bestc"><span class="pc">${rc?flagSvg(rc.ctry,14):''}<span>${esc(x.name)}</span></span></td><td class="r nowrap"><span class="chip cls">${esc(x.cls||'')}</span>${x.w?` <span class="chip amber">${ic2('trophy',10)} ${x.w}</span>`:''}</td></tr>`}).join(''),'palmt')}
+ else if(rh){const n=rh.parentElement.querySelector(':scope > .note');if(n)n.innerHTML=`${ic2('finish',12)} Nessuna corsa`}
+};
+/* ============================================================
+   GUIDA TATTICA (tutorial in corsa): icone su temi e ordini
+   ============================================================ */
+const TGUIDE_IC=[[/barre/i,'battery'],[/ordini/i,'radio'],[/attaccare/i,'velocista'],[/coprire/i,'shield'],[/fuga/i,'go'],[/volata/i,'velocista'],[/Imprevisti/i,'injury']];
+const WORD_IC={Energia:'battery','Riserva scatti':'velocista',Piano:'contract',Ruota:'bike',Copri:'free',Tira:'speed',Scatta:'velocista',Scorta:'shield','Fuga di squadra':'team',salita:'montagna','muri e sul pavé':'pave',fuga:'go'};
+const _guideSheetP3=guideSheet;
+guideSheet=function(){_guideSheetP3();const s=$('#sheet');if(!s)return;
+ const eb=s.querySelector('.ph .eyebrow');if(eb&&!eb.querySelector('svg'))eb.insertAdjacentHTML('afterbegin',ic2('info',12)+' ');
+ const nt=s.querySelector('.ph .note');if(nt)nt.innerHTML=`${ic2('clockw',12)} Corsa in pausa`;
+ s.querySelectorAll('td.gk b').forEach(b=>{if(b.querySelector('svg'))return;const m=TGUIDE_IC.find(([re])=>re.test(b.textContent));if(m)b.insertAdjacentHTML('afterbegin',`<span class="stic on">${icx(m[1],14)}</span> `)});
+ s.querySelectorAll('td.gtx b').forEach(b=>{const k=WORD_IC[b.textContent.trim()];if(k&&!b.querySelector('svg'))b.insertAdjacentHTML('afterbegin',icx(k,13)+' ')});
+ s.querySelectorAll('tr.th td').forEach(td=>{if(td.textContent.trim()==='Tema')td.innerHTML=ic2('info',12);else if(td.textContent.trim()==='Come funziona')td.textContent=''});
+ const ok=s.querySelector('[data-act="close-guide"]');if(ok&&!ok.querySelector('svg'))ok.insertAdjacentHTML('afterbegin',ic('check',15)+' ')};
+/* anche la guida generale: parole chiave a icona */
+const _helpSheetP3b=helpSheet;helpSheet=function(){_helpSheetP3b();document.querySelectorAll('#sheet td.gtx b').forEach(b=>{const k=WORD_IC[b.textContent.trim()];if(k&&!b.querySelector('svg'))b.insertAdjacentHTML('afterbegin',icx(k,13)+' ')})};

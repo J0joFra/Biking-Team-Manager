@@ -176,3 +176,17 @@ guideSheet=function(){_guideSheetP3();const s=$('#sheet');if(!s)return;
  const ok=s.querySelector('[data-act="close-guide"]');if(ok&&!ok.querySelector('svg'))ok.insertAdjacentHTML('afterbegin',ic('check',15)+' ')};
 /* anche la guida generale: parole chiave a icona */
 const _helpSheetP3b=helpSheet;helpSheet=function(){_helpSheetP3b();document.querySelectorAll('#sheet td.gtx b').forEach(b=>{const k=WORD_IC[b.textContent.trim()];if(k&&!b.querySelector('svg'))b.insertAdjacentHTML('afterbegin',icx(k,13)+' ')})};
+/* ============================================================
+   CONVOCAZIONE e CALENDARIO: altre icone
+   ============================================================ */
+const _renderConvocaP3=renderConvoca;
+renderConvoca=function(){
+ _renderConvocaP3();const s=$('#sheet'),race=SEL&&SEL.race;if(!s||!race)return;
+ const eb=s.querySelector('.ph .eyebrow');if(eb&&!eb.dataset.ci){eb.dataset.ci='1';eb.innerHTML=`${ic('team',12)} ${eb.innerHTML.replace(/^(Convocazioni|Singoli)\s*·\s*/,'')}`}
+ const sub=s.querySelector('.ph .note');if(sub&&!sub.dataset.ci){sub.dataset.ci='1';const pro=race.stages[0].t==='prologo';sub.innerHTML=`<span class="convst">${race.stages.map((x,i)=>`<span class="kc" title="${TYPE_LAB[x.t]}">${race.stages.length>1?`<b>${x.t==='prologo'?'P':i+(pro?0:1)}</b>`:''}${typeIc(x.t,13)}${race.stages.length>1?'':` ${TYPE_LAB[x.t]}`}</span>`).join('')}</span>`}
+ s.querySelectorAll('tr input[data-act="pick"]').forEach(inp=>{const r=RID(inp.dataset.v),tr=inp.closest('tr');if(!r||!tr)return;
+  const cd=tr.querySelector('.cond');if(cd&&!cd.dataset.ci){cd.dataset.ci='1';const c=condOf(r);cd.outerHTML=`<span class="kc" title="Forma: ${c.t}" style="color:${c.c}">${ic2('battery',14)}<b>${c.t}</b></span>`}
+  const st=tr.querySelector('button.star[data-act="cap"]');if(st&&!st.dataset.ci){st.dataset.ci='1';st.innerHTML=ic2('cap',14)}});
+};
+const _renderCalP3b=renderCal;
+renderCal=function(){_renderCalP3b();document.querySelectorAll('#view tr.wkr td').forEach(td=>{if(td.dataset.ci)return;td.dataset.ci='1';const now=/adesso/i.test(td.textContent);td.innerHTML=`${ic2(now?'flag':'calendar',11)} ${td.innerHTML.replace(/\s*·\s*adesso/i,'')}${now?` <span class="chip u23">${ic2('go',10)} ora</span>`:''}`})};

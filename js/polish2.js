@@ -52,7 +52,7 @@ renderConvoca=function(){
  _renderConvocaP2();
  const s=$('#sheet');if(!s)return;
  s.querySelectorAll('tr input[data-act="pick"]').forEach(inp=>{const r=RID(inp.dataset.v),tr=inp.closest('tr');if(!r||!tr)return;
-  const sub=tr.querySelector('label .tm');const ch=tr.querySelector('label .chip');if(ch){ch.outerHTML=`${roleIc(r,14)}${(r.role==='cap'||r.role==='luog')&&r.spec&&typeof GSPEC_IC!=='undefined'&&GSPEC_IC[r.spec]?`<span class="tm" title="${esc(SPEC[r.spec])}">${ic2(GSPEC_IC[r.spec],12)}</span>`:''}`}
+  const sub=tr.querySelector('label .tm');const ch=tr.querySelector('label .chip');if(ch){ch.outerHTML=`${roleIc(r,14)}`}
   if(sub){sub.innerHTML=sub.innerHTML.replace(new RegExp('(</span>)\\s*'+esc(ARCH[r.arch].lab)),'$1').replace(/^(\s*<span class="aic"[\s\S]*?<\/span>)\s*·?\s*/,'$1 ').replace(/altura \+([\d.]+)%/,`${ic2('alt',11)}+$1%`)}});
  const H={'Forma':ic2('battery',12),'Fatica':ic2('drop',12),'Gg':ic2('calendar',12),'Adatto':ic2('chart',12),'Cap.':ic2('cap',12)};
  s.querySelectorAll('tr.th td').forEach(td=>{const k=td.textContent.trim();if(H[k]){td.title=k;td.innerHTML=H[k]}});

@@ -73,7 +73,7 @@ NOTE_SHORT.push(
  [/^Corsa per nazionali.*/,()=>`${ic2('flag',13)} Corsa per nazionali: convocano i CT`],
  [/^\* stagione in corso$/,()=>null],
  [/^Sei tra le prime due ProTeam.*/,()=>`${ic('check',13)} Invito automatico`],
- [/^(Main sponsor|Co-sponsor|Partner) dal (\d+) al (\d+): (€\s?[\d.]+) l'anno\. Soddisfazione (\d+)%\.?/,m=>`${ic('spon',13)} ${m[1]} · ${ic2('calendar',12)} ${m[2]}–${m[3]} · ${ic2('euro',12)} ${m[4]} · ${m[5]}%`]
+ [/^(Main sponsor|Co-sponsor|Partner) dal (\d+) al (\d+): (€\s?[\d.]+) l'anno\. Soddisfazione (\d+)%\.?/,m=>`${ic('spon',13)} ${m[1]} · ${ic2('calendar',12)} ${m[2]}–${m[3]} · ${m[4]} · ${m[5]}%`]
 );
 {const run=()=>{for(const id of ['view','sheet']){const r=document.getElementById(id);if(!r)continue;r.querySelectorAll('.msg:not([data-ns])').forEach(n=>{n.dataset.ns='1';const t=n.textContent.trim();for(const[re,f]of NOTE_SHORT){const m=t.match(re);if(m){const h=f(m);if(h===null)n.remove();else n.innerHTML=h;break}}})}};
  let pend=false;new MutationObserver(()=>{if(!pend){pend=true;requestAnimationFrame(()=>{pend=false;if(G)run()})}}).observe(document.body,{childList:true,subtree:true})}

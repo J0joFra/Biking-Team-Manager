@@ -37,7 +37,7 @@ const SKINC=['#F3D2B8','#E8BC98','#D19C76','#B27A54','#7A4E33'],HAIRC=['#1F1A17'
 function teamCols(r){if(!r||r.team==='t0'||r.team==='acad')return G&&G.jersey?G.jersey:['#1D4ED1','#F2C14E'];const t=G.teams.find(x=>x.id===r.team);const c=t?t.color:'#64748B';return[c,'#ffffff']}
 function avatar(r,s=30){
  if(!r)return'';
- const h=hashStr(r.name+(r.id||'')),sk=SKINC[(SKIN[r.nat]||[0,1,2])[h%((SKIN[r.nat]||[0,1,2]).length)]],hc=HAIRC[(h>>3)%HAIRC.length],st=(h>>6)%4,[c1,c2]=teamCols(r);
+ const h=hashStr(r.name+(r.id||'')),sk=SKINC[(SKIN[r.nat]||[0,1,2])[h%((SKIN[r.nat]||[0,1,2]).length)]],hc=HAIRC[(h>>>3)%HAIRC.length],st=(h>>>6)%4,[c1,c2]=teamCols(r);
  const old=r.age>=34&&!r.f?HAIRC[5]:hc;
  let hair='';
  if(r.f)hair=st%2?`<path d="M13 21c0-9 5-13 11-13s11 4 11 13v10h-4V20c-2-4-12-4-14 0v11h-4z" fill="${old}"/>`:`<path d="M13 22c0-9 5-14 11-14s11 5 11 14c-1 0-2-5-6-6-4 2-10 2-12 0-3 1-4 6-4 6z" fill="${old}"/><circle cx="33" cy="22" r="4" fill="${old}"/>`;
